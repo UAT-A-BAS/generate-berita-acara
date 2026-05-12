@@ -1,0 +1,1760 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Generator Berita Acara</title>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f6f7f2;
+      --panel: #ffffff;
+      --ink: #17202a;
+      --muted: #5f6b75;
+      --line: #d8ded6;
+      --soft: #eef2e9;
+      --brand: #0b6b78;
+      --brand-2: #07515b;
+      --accent: #b7791f;
+      --danger: #b42318;
+      --ok: #1f7a4d;
+      --focus: #2563eb;
+      --shadow: 0 14px 34px rgba(23, 32, 42, 0.08);
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      max-width: 100%;
+      overflow-x: hidden;
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, rgba(11, 107, 120, 0.08), transparent 300px),
+        var(--bg);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.45;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: 3px solid rgba(37, 99, 235, 0.35);
+      outline-offset: 2px;
+    }
+
+    .app {
+      min-height: 100vh;
+      padding: 14px 18px 22px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: end;
+      max-width: none;
+      width: 100%;
+      margin: 0 auto 12px;
+    }
+
+    .eyebrow {
+      margin: 0 0 4px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(26px, 3vw, 42px);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      max-width: 760px;
+      margin: 8px 0 0;
+      color: var(--muted);
+    }
+
+    .status {
+      display: inline-flex;
+      min-height: 40px;
+      align-items: center;
+      justify-content: flex-end;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: right;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(520px, var(--left-pane, 52%)) 10px minmax(520px, 1fr);
+      gap: 12px;
+      max-width: none;
+      width: 100%;
+      margin: 0 auto;
+      align-items: start;
+    }
+
+    .splitter {
+      position: sticky;
+      top: 18px;
+      width: 10px;
+      height: calc(100vh - 36px);
+      border: 0;
+      border-radius: 999px;
+      background: linear-gradient(180deg, transparent, var(--line), transparent);
+      cursor: col-resize;
+      touch-action: none;
+    }
+
+    .splitter::before {
+      content: "";
+      display: block;
+      width: 4px;
+      height: 54px;
+      margin: 38vh auto 0;
+      border-radius: 999px;
+      background: var(--brand);
+      opacity: 0.45;
+    }
+
+    .splitter:hover::before,
+    .splitter:focus-visible::before {
+      opacity: 0.85;
+    }
+
+    .panel {
+      min-width: 0;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .panel-header {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-header h2 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .panel-header p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .panel-body {
+      padding: 22px 32px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 14px;
+    }
+
+    .section {
+      display: grid;
+      gap: 12px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .section-title {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .section-title h3 {
+      margin: 0;
+      font-size: 15px;
+      letter-spacing: 0;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      padding: 10px 11px;
+      font-size: 14px;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: #b9c2c8;
+      font-weight: 400;
+      opacity: 1;
+    }
+
+    textarea {
+      min-height: 92px;
+      resize: vertical;
+    }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--soft);
+    }
+
+    .segmented label {
+      display: block;
+      color: var(--ink);
+      cursor: pointer;
+    }
+
+    .segmented input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .segmented span {
+      display: flex;
+      min-height: 34px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .segmented input:checked + span {
+      background: var(--panel);
+      color: var(--brand-2);
+      box-shadow: 0 2px 8px rgba(23, 32, 42, 0.08);
+    }
+
+    .checkline {
+      display: flex;
+      gap: 9px;
+      align-items: center;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .checkline input {
+      width: 18px;
+      height: 18px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .btn {
+      display: inline-flex;
+      min-height: 38px;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 9px 12px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 850;
+      text-decoration: none;
+      transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+    }
+
+    .btn-icon {
+      width: 32px;
+      min-width: 32px;
+      min-height: 32px;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .icon {
+      width: 13px;
+      height: 13px;
+      stroke-width: 2.25;
+      flex: 0 0 auto;
+      pointer-events: none;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.58;
+      transform: none;
+    }
+
+    .btn-primary {
+      background: var(--brand);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--brand-2);
+    }
+
+    .btn-secondary {
+      background: #fff;
+      color: var(--brand-2);
+      border-color: var(--line);
+    }
+
+    .btn-danger {
+      background: #fff;
+      color: var(--danger);
+      border-color: #f0c8c2;
+    }
+
+    .activity-groups {
+      display: grid;
+      gap: 12px;
+    }
+
+    .section-actions,
+    .group-foot {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .group {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .group-head {
+      display: grid;
+      grid-template-columns: minmax(160px, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 12px;
+      background: var(--soft);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .row-list {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+    }
+
+    .group-foot {
+      padding: 0 12px 12px;
+    }
+
+    .activity-row {
+      display: grid;
+      grid-template-columns: 32px minmax(190px, 1.15fr) minmax(180px, 1fr) minmax(110px, 0.6fr) auto;
+      gap: 8px;
+      align-items: start;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fcfdfb;
+    }
+
+    .activity-row input[readonly] {
+      background: #f2f4ef;
+      color: var(--muted);
+      text-align: center;
+      font-weight: 800;
+      min-height: 34px;
+      padding: 7px 2px;
+      font-size: 13px;
+    }
+
+    .row-actions,
+    .maker-actions,
+    .move-stack {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .row-actions {
+      padding-top: 24px;
+    }
+
+    .move-stack {
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .maker-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    .notice {
+      display: none;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .notice.show {
+      display: block;
+    }
+
+    .notice.error {
+      border: 1px solid #f0c8c2;
+      background: #fff4f2;
+      color: var(--danger);
+    }
+
+    .notice.ok {
+      border: 1px solid #bfe1cf;
+      background: #f0fff6;
+      color: var(--ok);
+    }
+
+    .preview-wrap {
+      position: sticky;
+      top: 18px;
+    }
+
+    #preview {
+      max-width: 100%;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .pdf-export {
+      background: #fff;
+      width: 794px;
+      height: 1123px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 9999;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .pdf-export .paper {
+      width: 794px;
+      height: 1123px;
+      margin: 0;
+      border: 0;
+      box-shadow: none;
+    }
+
+    .paper {
+      width: min(100%, 794px);
+      height: 1123px;
+      margin: 0 auto;
+      background: #fff;
+      border: 1px solid var(--line);
+      box-shadow: 0 20px 50px rgba(23, 32, 42, 0.12);
+      padding: 96px 39px 58px 66px;
+      font-family: Calibri, Arial, sans-serif;
+      font-size: 14px;
+      color: #111;
+      overflow: hidden;
+      position: relative;
+      break-after: page;
+      page-break-after: always;
+    }
+
+    .paper:last-child {
+      break-after: auto;
+      page-break-after: auto;
+    }
+
+    .doc-header {
+      margin-bottom: 10px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.2;
+      text-transform: uppercase;
+    }
+
+    .doc-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-family: Calibri, Arial, sans-serif;
+      font-size: 10.5pt;
+    }
+
+    .doc-table th,
+    .doc-table td {
+      border: 1px solid #111;
+      padding: 5px 6px;
+      vertical-align: top;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .doc-table th:first-child,
+    .doc-table td:first-child {
+      padding-left: 2px;
+      padding-right: 2px;
+    }
+
+    .doc-table th {
+      font-size: 11pt;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .doc-table th:nth-child(4),
+    .doc-table td:nth-child(4) {
+      text-align: center;
+    }
+
+    .doc-table .date-row td {
+      text-align: left;
+      font-weight: 700;
+      padding-left: 8px;
+    }
+
+    .doc-body {
+      margin-top: 14px;
+    }
+
+    .signature {
+      margin-top: 28px;
+    }
+
+    .signature p {
+      margin: 0 0 4px;
+      font-family: Calibri, Arial, sans-serif;
+    }
+
+    .signature .role {
+      margin-top: 22px;
+      font-weight: 700;
+    }
+
+    .doc-footer {
+      position: absolute;
+      right: 39px;
+      bottom: 28px;
+      text-align: right;
+      color: #333;
+      font-size: 10.5pt;
+    }
+
+    .app-credit {
+      max-width: none;
+      width: 100%;
+      margin: 14px auto 0;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .empty-preview {
+      display: grid;
+      min-height: 360px;
+      place-items: center;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      color: var(--muted);
+      text-align: center;
+      padding: 18px;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 1120px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .splitter {
+        display: none;
+      }
+
+      .preview-wrap {
+        position: static;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .app {
+        padding: 12px;
+      }
+
+      .topbar,
+      .grid-2,
+      .grid-3,
+      .group-head,
+      .maker-row,
+      .activity-row {
+        grid-template-columns: 1fr;
+      }
+
+      .row-actions {
+        padding-top: 0;
+        justify-content: flex-start;
+      }
+
+      .status {
+        justify-content: flex-start;
+        text-align: left;
+      }
+
+      .paper {
+        width: 794px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <h1>Generator Berita Acara</h1>
+    </header>
+    <div class="status sr-only" id="status" aria-live="polite"></div>
+
+    <div class="layout">
+      <section class="panel" aria-labelledby="form-title">
+        <div class="panel-header">
+          <div>
+            <h2 id="form-title">Data Berita Acara</h2>
+          </div>
+          <div class="actions">
+            <button class="btn btn-secondary" id="saveDraftBtn" type="button">Save Draft</button>
+            <button class="btn btn-secondary" id="loadDraftBtn" type="button">Load Draft</button>
+            <button class="btn btn-secondary" id="resetBtn" type="button">Reset</button>
+            <input class="sr-only" id="importDraftInput" type="file" accept="application/json,.json">
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="stack">
+            <div class="notice error" id="errorBox" role="alert"></div>
+            <div class="notice ok" id="successBox" role="status"></div>
+
+            <section class="section" aria-labelledby="header-section">
+              <div class="section-title">
+                <h3 id="header-section">Header Word</h3>
+              </div>
+              <div class="segmented" role="radiogroup" aria-label="Jenis berita acara">
+                <label>
+                  <input type="radio" name="baType" value="pilot" checked>
+                  <span>Pilot</span>
+                </label>
+                <label>
+                  <input type="radio" name="baType" value="nasional">
+                  <span>Nasional</span>
+                </label>
+              </div>
+              <div class="grid-3">
+                <label>Nama fitur
+                  <input id="featureName" autocomplete="off" placeholder="BDS IDS 23.1">
+                </label>
+                <label>Cabang
+                  <input id="branchName" autocomplete="off" placeholder="Cabang">
+                </label>
+                <label>Tanggal implementasi
+                  <input id="implementationDate" type="date">
+                </label>
+              </div>
+            </section>
+
+            <section class="section" aria-labelledby="activity-section">
+              <div class="section-title">
+                <h3 id="activity-section">Tabel Aktivitas</h3>
+              </div>
+              <div class="activity-groups" id="groups"></div>
+              <div class="section-actions">
+                <button class="btn btn-secondary btn-icon" id="addGroupBtn" type="button" aria-label="Tambah tanggal" title="Tambah tanggal">
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                </button>
+              </div>
+            </section>
+
+            <section class="section" aria-labelledby="closing-section">
+              <div class="section-title">
+                <h3 id="closing-section">Penutup & Sign-off</h3>
+              </div>
+              <div class="grid-3">
+                <label>Bureau
+                  <select id="bureau">
+                    <option>A</option>
+                    <option>B</option>
+                    <option>C</option>
+                    <option>D</option>
+                  </select>
+                </label>
+                <label>Kota
+                  <input id="city" placeholder="Kota">
+                </label>
+                <label>Tanggal sign-off
+                  <input id="signDate" type="date">
+                </label>
+              </div>
+            </section>
+
+            <section class="section" aria-labelledby="maker-section">
+              <div class="section-title">
+                <h3 id="maker-section">Pembuat</h3>
+              </div>
+              <div class="stack" id="makers"></div>
+              <div class="section-actions">
+                <button class="btn btn-secondary btn-icon" id="addMakerBtn" type="button" aria-label="Tambah pembuat" title="Tambah pembuat">
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                </button>
+              </div>
+            </section>
+
+            <section class="section" aria-labelledby="approval-section">
+              <div class="section-title">
+                <h3 id="approval-section">Menyetujui</h3>
+              </div>
+              <div class="grid-2">
+                <label>Nama
+                  <input id="approverName" placeholder="Nama">
+                </label>
+                <label>Jabatan
+                  <input id="approverRole" placeholder="Jabatan">
+                </label>
+              </div>
+            </section>
+
+            <section class="section" aria-labelledby="output-section">
+              <div class="section-title">
+                <h3 id="output-section">Output</h3>
+              </div>
+              <div class="actions">
+                <button class="btn btn-primary" id="generateBtn" type="button">Generate PDF</button>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <button class="splitter" id="splitter" type="button" aria-label="Atur lebar panel"></button>
+
+      <aside class="panel preview-wrap" aria-labelledby="preview-title">
+        <div class="panel-header">
+          <div>
+            <h2 id="preview-title">Preview</h2>
+            <p>Preview visual, output final PDF.</p>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div id="preview"></div>
+        </div>
+      </aside>
+    </div>
+    <footer class="app-credit">Developed by Alex Surya Marcelo (UAT - A) &bull; Generator Berita Acara</footer>
+  </main>
+
+  <template id="groupTemplate">
+    <section class="group" data-group>
+      <div class="group-head">
+        <label>Tanggal aktivitas
+          <input data-field="date" type="date">
+        </label>
+        <div class="actions">
+          <div class="move-stack">
+            <button class="btn btn-secondary btn-icon" data-move-group="up" type="button" aria-label="Pindah tanggal ke atas" title="Pindah tanggal ke atas">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>
+            </button>
+            <button class="btn btn-secondary btn-icon" data-move-group="down" type="button" aria-label="Pindah tanggal ke bawah" title="Pindah tanggal ke bawah">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+          </div>
+          <button class="btn btn-danger btn-icon" data-remove-group type="button" aria-label="Hapus tanggal" title="Hapus tanggal">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="row-list" data-rows></div>
+      <div class="group-foot">
+        <button class="btn btn-secondary btn-icon" data-add-row type="button" aria-label="Tambah aktivitas" title="Tambah aktivitas">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+      </div>
+    </section>
+  </template>
+
+  <template id="rowTemplate">
+    <div class="activity-row" data-row>
+      <label>No.
+        <input data-field="no" readonly>
+      </label>
+      <label>Aktivitas
+        <textarea data-field="activity" placeholder="Aktivitas"></textarea>
+      </label>
+      <label>Hasil / Keterangan
+        <textarea data-field="result" placeholder="Hasil / Keterangan"></textarea>
+      </label>
+      <label>PIC
+        <textarea data-field="pic" placeholder="PIC"></textarea>
+      </label>
+      <div class="row-actions">
+        <div class="move-stack">
+          <button class="btn btn-secondary btn-icon" data-move-row="up" type="button" aria-label="Pindah aktivitas ke atas" title="Pindah aktivitas ke atas">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>
+          </button>
+          <button class="btn btn-secondary btn-icon" data-move-row="down" type="button" aria-label="Pindah aktivitas ke bawah" title="Pindah aktivitas ke bawah">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+        </div>
+        <button class="btn btn-danger btn-icon" data-remove-row type="button" aria-label="Hapus aktivitas" title="Hapus aktivitas">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        </button>
+      </div>
+    </div>
+  </template>
+
+  <template id="makerTemplate">
+    <div class="maker-row" data-maker>
+      <label>Nama
+        <input data-field="name" placeholder="Nama">
+      </label>
+      <label>Jabatan
+        <input data-field="role" placeholder="Jabatan">
+      </label>
+      <button class="btn btn-danger btn-icon" data-remove-maker type="button" aria-label="Hapus pembuat" title="Hapus pembuat">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+      </button>
+    </div>
+  </template>
+
+  <script>
+    const AUTOSAVE_KEY = "ba-generator-autosave-v1";
+    const monthNames = [
+      "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+      "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    ];
+    const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+    const els = {
+      status: document.getElementById("status"),
+      errorBox: document.getElementById("errorBox"),
+      successBox: document.getElementById("successBox"),
+      groups: document.getElementById("groups"),
+      makers: document.getElementById("makers"),
+      preview: document.getElementById("preview"),
+      splitter: document.getElementById("splitter"),
+      generateBtn: document.getElementById("generateBtn"),
+      importDraftInput: document.getElementById("importDraftInput")
+    };
+
+    const fields = {
+      featureName: document.getElementById("featureName"),
+      branchName: document.getElementById("branchName"),
+      implementationDate: document.getElementById("implementationDate"),
+      bureau: document.getElementById("bureau"),
+      city: document.getElementById("city"),
+      signDate: document.getElementById("signDate"),
+      approverName: document.getElementById("approverName"),
+      approverRole: document.getElementById("approverRole")
+    };
+
+    function toUpper(value) {
+      return String(value || "").trim().toLocaleUpperCase("id-ID");
+    }
+
+    function parseDate(value) {
+      if (!value) return null;
+      const [year, month, day] = value.split("-").map(Number);
+      if (!year || !month || !day) return null;
+      return new Date(year, month - 1, day);
+    }
+
+    function formatDate(value, upper = false) {
+      const d = parseDate(value);
+      if (!d) return "";
+      const text = `${d.getDate()} ${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+      return upper ? text.toLocaleUpperCase("id-ID") : text;
+    }
+
+    function formatDayDate(value) {
+      const d = parseDate(value);
+      if (!d) return "";
+      return `${dayNames[d.getDay()]},\u00a0${formatDate(value)}`;
+    }
+
+    function normalizeText(value) {
+      return String(value || "").trim().replace(/\r\n/g, "\n");
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function sanitizeFilename(value) {
+      return String(value || "berita-acara")
+        .replace(/[\\/:*?"<>|]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 120) || "berita-acara";
+    }
+
+    function timestampForFilename(date = new Date()) {
+      const pad = (value) => String(value).padStart(2, "0");
+      return [
+        date.getFullYear(),
+        pad(date.getMonth() + 1),
+        pad(date.getDate())
+      ].join("") + "-" + [
+        pad(date.getHours()),
+        pad(date.getMinutes()),
+        pad(date.getSeconds())
+      ].join("");
+    }
+
+    function setMessage(type, message) {
+      els.errorBox.classList.remove("show");
+      els.successBox.classList.remove("show");
+      if (!message) return;
+      const box = type === "error" ? els.errorBox : els.successBox;
+      box.textContent = message;
+      box.classList.add("show");
+    }
+
+    function setStatus(message) {
+      els.status.textContent = message;
+    }
+
+    function getType() {
+      return document.querySelector("input[name='baType']:checked")?.value || "pilot";
+    }
+
+    function buildHeaderLineOne(data) {
+      const mode = data.baType === "pilot" ? "PILOT IMPLEMENTASI" : "IMPLEMENTASI";
+      return `BERITA ACARA VERIFIKASI ${mode} ${toUpper(data.featureName)}`.trim();
+    }
+
+    function buildHeaderLineTwo(data) {
+      const branch = toUpper(data.branchName);
+      const date = formatDate(data.implementationDate, true);
+      return [branch, date].filter(Boolean).join(", ");
+    }
+
+    function createGroup(groupData = {}) {
+      const node = document.getElementById("groupTemplate").content.firstElementChild.cloneNode(true);
+      node.querySelector("[data-field='date']").value = groupData.date || fields.implementationDate.value || "";
+      els.groups.appendChild(node);
+      const rows = groupData.rows?.length ? groupData.rows : [{ activity: "", result: "", pic: "" }];
+      rows.forEach((row) => createActivityRow(node, row));
+      refreshNumbers();
+      return node;
+    }
+
+    function createActivityRow(groupNode, rowData = {}) {
+      const node = document.getElementById("rowTemplate").content.firstElementChild.cloneNode(true);
+      node.querySelector("[data-field='activity']").value = rowData.activity || "";
+      node.querySelector("[data-field='result']").value = rowData.result || "";
+      node.querySelector("[data-field='pic']").value = rowData.pic || "";
+      groupNode.querySelector("[data-rows]").appendChild(node);
+      refreshNumbers();
+      return node;
+    }
+
+    function createMaker(makerData = {}) {
+      const node = document.getElementById("makerTemplate").content.firstElementChild.cloneNode(true);
+      node.querySelector("[data-field='name']").value = makerData.name || "";
+      node.querySelector("[data-field='role']").value = makerData.role || "";
+      els.makers.appendChild(node);
+      refreshMakerControls();
+      return node;
+    }
+
+    function refreshMakerControls() {
+      const makers = [...els.makers.querySelectorAll("[data-maker]")];
+      makers.forEach((maker) => {
+        const removeButton = maker.querySelector("[data-remove-maker]");
+        if (removeButton) removeButton.hidden = makers.length <= 1;
+      });
+    }
+
+    function refreshNumbers() {
+      [...els.groups.querySelectorAll("[data-group]")].forEach((group) => {
+        [...group.querySelectorAll("[data-row]")].forEach((row, index) => {
+          row.querySelector("[data-field='no']").value = index + 1;
+        });
+      });
+      refreshMoveControls();
+    }
+
+    function refreshMoveControls() {
+      const groups = [...els.groups.querySelectorAll("[data-group]")];
+      groups.forEach((group, groupIndex) => {
+        const upButton = group.querySelector("[data-move-group='up']");
+        const downButton = group.querySelector("[data-move-group='down']");
+        if (upButton) upButton.hidden = groupIndex === 0;
+        if (downButton) downButton.hidden = groupIndex === groups.length - 1;
+
+        const rows = [...group.querySelectorAll("[data-row]")];
+        rows.forEach((row, rowIndex) => {
+          const rowUp = row.querySelector("[data-move-row='up']");
+          const rowDown = row.querySelector("[data-move-row='down']");
+          if (rowUp) rowUp.hidden = rowIndex === 0;
+          if (rowDown) rowDown.hidden = rowIndex === rows.length - 1;
+        });
+      });
+    }
+
+    function collectData() {
+      const groups = [...els.groups.querySelectorAll("[data-group]")].map((group) => ({
+        date: group.querySelector("[data-field='date']").value,
+        rows: [...group.querySelectorAll("[data-row]")].map((row) => ({
+          activity: normalizeText(row.querySelector("[data-field='activity']").value),
+          result: normalizeText(row.querySelector("[data-field='result']").value),
+          pic: normalizeText(row.querySelector("[data-field='pic']").value)
+        }))
+      }));
+
+      const makers = [...els.makers.querySelectorAll("[data-maker]")].map((maker) => ({
+        name: normalizeText(maker.querySelector("[data-field='name']").value),
+        role: normalizeText(maker.querySelector("[data-field='role']").value)
+      }));
+
+      return {
+        schema: 1,
+        baType: getType(),
+        featureName: normalizeText(fields.featureName.value),
+        branchName: normalizeText(fields.branchName.value),
+        implementationDate: fields.implementationDate.value,
+        autoMerge: true,
+        groups,
+        bureau: fields.bureau.value,
+        city: normalizeText(fields.city.value),
+        signDate: fields.signDate.value,
+        makers,
+        approverName: normalizeText(fields.approverName.value),
+        approverRole: normalizeText(fields.approverRole.value)
+      };
+    }
+
+    function applyData(data) {
+      document.querySelector(`input[name='baType'][value='${data.baType || "pilot"}']`).checked = true;
+      fields.featureName.value = data.featureName || "";
+      fields.branchName.value = data.branchName || "";
+      fields.implementationDate.value = data.implementationDate || "";
+      fields.bureau.value = data.bureau || "A";
+      fields.city.value = data.city || "";
+      fields.signDate.value = data.signDate || "";
+      fields.approverName.value = data.approverName || "";
+      fields.approverRole.value = data.approverRole || "";
+
+      els.groups.innerHTML = "";
+      (data.groups?.length ? data.groups : [{ date: fields.implementationDate.value || "", rows: [{}] }])
+        .forEach(createGroup);
+
+      els.makers.innerHTML = "";
+      (data.makers?.length ? data.makers : [{ name: "", role: "" }]).forEach(createMaker);
+      refreshMakerControls();
+      refreshNumbers();
+      renderPreview();
+      autosave();
+    }
+
+    function validateData(data) {
+      const errors = [];
+      if (!data.featureName) errors.push("Nama fitur wajib diisi.");
+      if (!data.branchName) errors.push("Cabang wajib diisi.");
+      if (!data.implementationDate) errors.push("Tanggal implementasi wajib diisi.");
+      if (!data.city) errors.push("Kota wajib diisi.");
+      if (!data.signDate) errors.push("Tanggal sign-off wajib diisi.");
+      if (!data.groups.length) errors.push("Minimal 1 tanggal aktivitas.");
+
+      const filledRows = data.groups.flatMap((group) => group.rows).filter((row) =>
+        row.activity || row.result || row.pic
+      );
+      if (!filledRows.length) errors.push("Minimal 1 aktivitas wajib diisi.");
+
+      data.groups.forEach((group, groupIndex) => {
+        if (!group.date) errors.push(`Tanggal aktivitas #${groupIndex + 1} wajib diisi.`);
+        group.rows.forEach((row, rowIndex) => {
+          const hasAny = row.activity || row.result || row.pic;
+          if (hasAny && !row.activity) errors.push(`Aktivitas ${groupIndex + 1}.${rowIndex + 1} wajib diisi.`);
+          if (hasAny && !row.result) errors.push(`Hasil/Keterangan ${groupIndex + 1}.${rowIndex + 1} wajib diisi.`);
+          if (hasAny && !row.pic) errors.push(`PIC ${groupIndex + 1}.${rowIndex + 1} wajib diisi.`);
+        });
+      });
+
+      const validMakers = data.makers.filter((maker) => maker.name || maker.role);
+      if (!validMakers.length) errors.push("Minimal 1 pembuat wajib diisi.");
+      validMakers.forEach((maker, index) => {
+        if (!maker.name) errors.push(`Nama pembuat #${index + 1} wajib diisi.`);
+        if (!maker.role) errors.push(`Jabatan pembuat #${index + 1} wajib diisi.`);
+      });
+
+      if (!data.approverName) errors.push("Nama menyetujui wajib diisi.");
+      if (!data.approverRole) errors.push("Jabatan menyetujui wajib diisi.");
+      return errors;
+    }
+
+    function saveDraft() {
+      const data = collectData();
+      const base = [data.featureName, data.branchName].filter(Boolean).join(" ") || "draft-berita-acara";
+      const name = sanitizeFilename(`${base} ${timestampForFilename()}`);
+      const blob = new Blob([JSON.stringify({ ...data, exportedAt: new Date().toISOString() }, null, 2)], { type: "application/json" });
+      downloadBlob(blob, `${name}.json`);
+      setMessage("ok", "Draft JSON diekspor.");
+      setStatus("Draft JSON diekspor.");
+    }
+
+    function loadDraft() {
+      els.importDraftInput.click();
+    }
+
+    function importDraft(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(reader.result);
+          applyData(data);
+          setMessage("ok", "Draft JSON berhasil diimpor.");
+          setStatus("Draft impor aktif.");
+        } catch (error) {
+          setMessage("error", `Import gagal: ${error.message}`);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    let autosaveTimer = null;
+    function autosave() {
+      clearTimeout(autosaveTimer);
+      autosaveTimer = setTimeout(() => {
+        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(collectData()));
+      }, 250);
+    }
+
+    function maybeLoadAutosave() {
+      try {
+        const data = JSON.parse(localStorage.getItem(AUTOSAVE_KEY) || "null");
+        if (data) return data;
+      } catch {
+        return null;
+      }
+      return null;
+    }
+
+    function renderPreview() {
+      const data = collectData();
+      const hasCore = data.featureName || data.branchName || data.groups.some((g) => g.rows.some((r) => r.activity || r.result || r.pic));
+      if (!hasCore) {
+        els.preview.innerHTML = `<div class="empty-preview">Isi data untuk melihat preview berita acara.</div>`;
+        return;
+      }
+
+      els.preview.innerHTML = "";
+      const pages = [];
+
+      const createPaper = (withTable = true) => {
+        const article = document.createElement("article");
+        article.className = "paper";
+        article.innerHTML = `
+          <div class="doc-header">
+            <div>${escapeHtml(buildHeaderLineOne(data))}</div>
+            <div>${escapeHtml(buildHeaderLineTwo(data))}</div>
+          </div>
+          ${withTable ? `
+          <table class="doc-table">
+            <thead>
+              <tr>
+                <th style="width:6%;">No.</th>
+                <th style="width:42%;">Aktivitas</th>
+                <th style="width:38%;">Hasil / Keterangan</th>
+                <th style="width:14%;">PIC</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>` : ""}
+          <div class="doc-footer"></div>`;
+        els.preview.appendChild(article);
+        pages.push(article);
+        return article;
+      };
+
+      const overflows = (page) => page.scrollHeight > page.clientHeight + 2;
+      const makeDateRow = (group) => {
+        const row = document.createElement("tr");
+        row.className = "date-row";
+        row.innerHTML = `<td colspan="4">${escapeHtml(formatDayDate(group.date))}</td>`;
+        return row;
+      };
+      const makeActivityRow = (rowData, index) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td style="width:6%; text-align:center;">${index + 1}</td>
+          <td style="width:42%;">${escapeHtml(rowData.activity)}</td>
+          <td style="width:38%;">${escapeHtml(rowData.result)}</td>
+          <td style="width:14%;">${escapeHtml(rowData.pic)}</td>`;
+        return row;
+      };
+
+      let page = createPaper(true);
+      let tbody = page.querySelector("tbody");
+
+      data.groups.forEach((group) => {
+        let dateRow = makeDateRow(group);
+        tbody.appendChild(dateRow);
+        if (overflows(page) && tbody.children.length > 1) {
+          dateRow.remove();
+          page = createPaper(true);
+          tbody = page.querySelector("tbody");
+          dateRow = makeDateRow(group);
+          tbody.appendChild(dateRow);
+        }
+
+        group.rows.forEach((rowData, index) => {
+          let row = makeActivityRow(rowData, index);
+          tbody.appendChild(row);
+          if (overflows(page) && tbody.children.length > 2) {
+            row.remove();
+            page = createPaper(true);
+            tbody = page.querySelector("tbody");
+            tbody.appendChild(makeDateRow(group));
+            row = makeActivityRow(rowData, index);
+            tbody.appendChild(row);
+          }
+        });
+      });
+
+      const makers = data.makers
+        .filter((maker) => maker.name || maker.role)
+        .map((maker) => `<p>${escapeHtml(formatPersonText(maker))}</p>`)
+        .join("");
+
+      const closing = document.createElement("div");
+      closing.innerHTML = `
+        <p class="doc-body">Demikian Berita Acara ini dibuat, atas perhatian dan kerja sama Bapak/Ibu, kami ucapkan terima kasih.</p>
+        <div class="doc-body">
+          <div><strong>OPERATION STRATEGY &amp; DEVELOPMENT GROUP (POL)</strong></div>
+          <div><strong>Application &amp; User Acceptance Test Bureau ${escapeHtml(data.bureau)}</strong></div>
+          <div>${escapeHtml(data.city)}, ${escapeHtml(formatDate(data.signDate))}</div>
+        </div>
+        <div class="signature">
+          <p class="role">Pembuat :</p>
+          ${makers || "<p>-</p>"}
+          <p class="role">Menyetujui :</p>
+          <p>${escapeHtml(formatPersonText({ name: data.approverName, role: data.approverRole }))}</p>
+        </div>`;
+      page.insertBefore(closing, page.querySelector(".doc-footer"));
+      if (overflows(page)) {
+        closing.remove();
+        page = createPaper(false);
+        page.insertBefore(closing, page.querySelector(".doc-footer"));
+      }
+
+      pages.forEach((paper, index) => {
+        paper.querySelector(".doc-footer").textContent = `Halaman ${index + 1}/${pages.length}`;
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\n/g, "<br>");
+    }
+
+    function formatPersonText(person) {
+      const name = normalizeText(person.name);
+      const role = normalizeText(person.role);
+      if (name && role) return `${name} \u2013 ${role}`;
+      return name || role || "";
+    }
+
+    async function generatePdf() {
+      const data = collectData();
+      const errors = validateData(data);
+      setMessage("", "");
+      if (errors.length) {
+        setMessage("error", errors.join(" "));
+        setStatus("Validasi gagal.");
+        return;
+      }
+      const JsPdfCtor = window.jspdf?.jsPDF;
+      if (!JsPdfCtor) {
+        setMessage("error", "Library render PDF belum lengkap. Refresh halaman lalu coba lagi.");
+        setStatus("PDF belum siap.");
+        return;
+      }
+
+      els.generateBtn.disabled = true;
+      els.generateBtn.textContent = "Membuat PDF...";
+      setStatus("Generate PDF berjalan.");
+      try {
+        renderPreview();
+        const filename = sanitizeFilename(`Form Berita Acara ${data.featureName}`) + ".pdf";
+        const pdf = new JsPdfCtor({ unit: "pt", format: "a4", orientation: "portrait" });
+        buildSelectablePdf(pdf, data);
+        pdf.save(filename);
+        setMessage("ok", "PDF berhasil dibuat.");
+        setStatus("PDF selesai.");
+      } catch (error) {
+        setMessage("error", `Generate gagal: ${error.message}`);
+        setStatus("Generate gagal.");
+      } finally {
+        els.generateBtn.disabled = false;
+        els.generateBtn.textContent = "Generate PDF";
+      }
+    }
+
+    function buildSelectablePdf(pdf, data) {
+      const layout = {
+        pageWidth: pdf.internal.pageSize.getWidth(),
+        pageHeight: pdf.internal.pageSize.getHeight(),
+        left: 50,
+        right: 29,
+        top: 72,
+        footerY: pdf.internal.pageSize.getHeight() - 21,
+        bottomLimit: pdf.internal.pageSize.getHeight() - 58,
+        tableHeaderHeight: 24,
+        dateHeight: 24,
+        padX: 5,
+        padY: 6,
+        bodySize: 10.5,
+        bodyLine: 13,
+        tableHeaderSize: 11
+      };
+      layout.contentWidth = layout.pageWidth - layout.left - layout.right;
+      layout.columns = [
+        layout.contentWidth * 0.06,
+        layout.contentWidth * 0.42,
+        layout.contentWidth * 0.38,
+        layout.contentWidth * 0.14
+      ];
+      setPdfBaseStyle(pdf);
+      let y = drawPdfPageHeader(pdf, data, layout);
+      y = drawPdfTableHeader(pdf, layout, y);
+
+      data.groups.forEach((group) => {
+        const rows = group.rows.filter((row) => row.activity || row.result || row.pic);
+        if (!rows.length) return;
+        const rowHeights = rows.map((row) => pdfRowHeight(pdf, layout, row));
+        const spans = buildPdfSpans(rows);
+        const dateText = formatDayDate(group.date);
+
+        if (y + layout.dateHeight > layout.bottomLimit) {
+          pdf.addPage();
+          setPdfBaseStyle(pdf);
+          y = drawPdfPageHeader(pdf, data, layout);
+          y = drawPdfTableHeader(pdf, layout, y);
+        }
+        y = drawPdfDateRow(pdf, layout, y, dateText);
+
+        rows.forEach((row, index) => {
+          const blockEnd = Math.max(
+            index + spans.activity.lengths[index],
+            index + spans.result.lengths[index],
+            index + spans.pic.lengths[index],
+            index + 1
+          );
+          const blockHeight = sumRange(rowHeights, index, blockEnd);
+          if (y + blockHeight > layout.bottomLimit) {
+            pdf.addPage();
+            setPdfBaseStyle(pdf);
+            y = drawPdfPageHeader(pdf, data, layout);
+            y = drawPdfTableHeader(pdf, layout, y);
+            y = drawPdfDateRow(pdf, layout, y, dateText);
+          }
+          y = drawPdfActivityRow(pdf, layout, row, index, rows, rowHeights, spans, y);
+        });
+      });
+
+      y += 18;
+      if (y + 185 > layout.bottomLimit) {
+        pdf.addPage();
+        setPdfBaseStyle(pdf);
+        y = drawPdfPageHeader(pdf, data, layout);
+      }
+      drawPdfClosing(pdf, data, layout, y);
+      drawPdfFooters(pdf, layout);
+    }
+
+    function setPdfBaseStyle(pdf) {
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(0, 0, 0);
+      pdf.setDrawColor(0, 0, 0);
+      pdf.setLineWidth(0.8);
+    }
+
+    function drawPdfPageHeader(pdf, data, layout) {
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(12);
+      pdf.text(buildHeaderLineOne(data), layout.pageWidth / 2, layout.top + 12, { align: "center" });
+      pdf.text(buildHeaderLineTwo(data), layout.pageWidth / 2, layout.top + 27, { align: "center" });
+      return layout.top + 57;
+    }
+
+    function drawPdfTableHeader(pdf, layout, y) {
+      const headers = ["No.", "Aktivitas", "Hasil / Keterangan", "PIC"];
+      let x = layout.left;
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(layout.tableHeaderSize);
+      headers.forEach((header, index) => {
+        const width = layout.columns[index];
+        pdf.rect(x, y, width, layout.tableHeaderHeight);
+        pdf.text(header, x + width / 2, y + 15.5, { align: "center" });
+        x += width;
+      });
+      return y + layout.tableHeaderHeight;
+    }
+
+    function drawPdfDateRow(pdf, layout, y, text) {
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(layout.bodySize);
+      pdf.rect(layout.left, y, layout.contentWidth, layout.dateHeight);
+      pdf.text(text, layout.left + layout.padX, y + 15.5);
+      return y + layout.dateHeight;
+    }
+
+    function pdfRowHeight(pdf, layout, row) {
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(layout.bodySize);
+      const widths = [layout.columns[1], layout.columns[2], layout.columns[3]];
+      const values = [row.activity, row.result, row.pic];
+      const lineCounts = values.map((value, index) => splitPdfText(pdf, value, widths[index] - layout.padX * 2).length);
+      return Math.max(28, Math.max(...lineCounts) * layout.bodyLine + layout.padY * 2);
+    }
+
+    function splitPdfText(pdf, value, width) {
+      return String(value || "")
+        .split("\n")
+        .flatMap((line) => pdf.splitTextToSize(line || " ", Math.max(8, width)));
+    }
+
+    function buildPdfSpans(rows) {
+      return {
+        activity: buildPdfSpan(rows, "activity"),
+        result: buildPdfSpan(rows, "result"),
+        pic: buildPdfSpan(rows, "pic")
+      };
+    }
+
+    function buildPdfSpan(rows, key) {
+      const lengths = Array(rows.length).fill(1);
+      const hidden = Array(rows.length).fill(false);
+      let index = 0;
+      while (index < rows.length) {
+        const value = normalizeText(rows[index][key]);
+        let end = index + 1;
+        while (value && end < rows.length && normalizeText(rows[end][key]) === value) end += 1;
+        lengths[index] = end - index;
+        for (let i = index + 1; i < end; i += 1) hidden[i] = true;
+        index = end;
+      }
+      return { lengths, hidden };
+    }
+
+    function drawPdfActivityRow(pdf, layout, row, index, rows, rowHeights, spans, y) {
+      const rowHeight = rowHeights[index];
+      let x = layout.left;
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(layout.bodySize);
+      drawPdfCell(pdf, layout, x, y, layout.columns[0], rowHeight, [String(index + 1)], "center");
+      x += layout.columns[0];
+
+      ["activity", "result", "pic"].forEach((key, offset) => {
+        const span = spans[key];
+        const colIndex = offset + 1;
+        const width = layout.columns[colIndex];
+        if (!span.hidden[index]) {
+          const height = sumRange(rowHeights, index, index + span.lengths[index]);
+          const lines = splitPdfText(pdf, rows[index][key], width - layout.padX * 2);
+          drawPdfCell(pdf, layout, x, y, width, height, lines, key === "pic" ? "center" : "left");
+        }
+        x += width;
+      });
+      return y + rowHeight;
+    }
+
+    function drawPdfCell(pdf, layout, x, y, width, height, lines, align = "left") {
+      pdf.rect(x, y, width, height);
+      const textX = align === "center" ? x + width / 2 : x + layout.padX;
+      const options = align === "center" ? { align: "center" } : {};
+      lines.forEach((line, index) => {
+        pdf.text(line, textX, y + layout.padY + layout.bodySize + index * layout.bodyLine, options);
+      });
+    }
+
+    function sumRange(values, start, end) {
+      return values.slice(start, end).reduce((total, value) => total + value, 0);
+    }
+
+    function drawPdfClosing(pdf, data, layout, y) {
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(layout.bodySize);
+      pdf.text("Demikian Berita Acara ini dibuat, atas perhatian dan kerja sama Bapak/Ibu, kami ucapkan terima kasih.", layout.left, y);
+
+      y += 34;
+      pdf.setFont("helvetica", "bold");
+      pdf.text("OPERATION STRATEGY & DEVELOPMENT GROUP (POL)", layout.left, y);
+      y += 15;
+      pdf.text(`Application & User Acceptance Test Bureau ${data.bureau}`, layout.left, y);
+      y += 15;
+      pdf.setFont("helvetica", "normal");
+      pdf.text(`${data.city}, ${formatDate(data.signDate)}`, layout.left, y);
+
+      y += 44;
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Pembuat :", layout.left, y);
+      y += 15;
+      pdf.setFont("helvetica", "normal");
+      const makers = data.makers.filter((maker) => maker.name || maker.role);
+      (makers.length ? makers : [{ name: "-", role: "" }]).forEach((maker) => {
+        pdf.text(formatPersonText(maker), layout.left, y);
+        y += 15;
+      });
+
+      y += 18;
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Menyetujui :", layout.left, y);
+      y += 15;
+      pdf.setFont("helvetica", "normal");
+      pdf.text(formatPersonText({ name: data.approverName, role: data.approverRole }), layout.left, y);
+    }
+
+    function drawPdfFooters(pdf, layout) {
+      const total = pdf.internal.getNumberOfPages();
+      for (let page = 1; page <= total; page += 1) {
+        pdf.setPage(page);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(10.5);
+        pdf.setTextColor(0, 0, 0);
+        pdf.text(`Halaman ${page}/${total}`, layout.pageWidth - layout.right, layout.footerY, { align: "right" });
+      }
+    }
+
+    function resetForm() {
+      applyData(defaultData());
+      localStorage.removeItem(AUTOSAVE_KEY);
+      setMessage("ok", "Form reset.");
+      setStatus("Form reset.");
+    }
+
+    function defaultData() {
+      return {
+        baType: "pilot",
+        featureName: "",
+        branchName: "",
+        implementationDate: "",
+        autoMerge: true,
+        groups: [{
+          date: "",
+          rows: [
+            {
+              activity: "",
+              result: "",
+              pic: ""
+            }
+          ]
+        }],
+        bureau: "A",
+        city: "",
+        signDate: "",
+        makers: [{ name: "", role: "" }],
+        approverName: "",
+        approverRole: ""
+      };
+    }
+
+    document.addEventListener("input", (event) => {
+      if (event.target.matches("input, textarea, select")) {
+        refreshNumbers();
+        renderPreview();
+        autosave();
+      }
+    });
+
+    document.addEventListener("change", (event) => {
+      if (event.target.matches("input, textarea, select")) {
+        renderPreview();
+        autosave();
+      }
+    });
+
+    document.getElementById("addGroupBtn").addEventListener("click", () => {
+      createGroup();
+      renderPreview();
+      autosave();
+    });
+
+    document.getElementById("addMakerBtn").addEventListener("click", () => {
+      createMaker();
+      renderPreview();
+      autosave();
+    });
+
+    els.makers.addEventListener("click", (event) => {
+      const removeMaker = event.target.closest("[data-remove-maker]");
+      if (!removeMaker) return;
+      if (els.makers.querySelectorAll("[data-maker]").length > 1) {
+        removeMaker.closest("[data-maker]").remove();
+        refreshMakerControls();
+        renderPreview();
+        autosave();
+      }
+    });
+
+    document.getElementById("saveDraftBtn").addEventListener("click", saveDraft);
+    document.getElementById("loadDraftBtn").addEventListener("click", loadDraft);
+    document.getElementById("generateBtn").addEventListener("click", generatePdf);
+    document.getElementById("resetBtn").addEventListener("click", resetForm);
+    els.importDraftInput.addEventListener("change", (event) => importDraft(event.target.files[0]));
+
+    els.groups.addEventListener("click", (event) => {
+      const addRow = event.target.closest("[data-add-row]");
+      const removeGroup = event.target.closest("[data-remove-group]");
+      const removeRow = event.target.closest("[data-remove-row]");
+      const moveGroup = event.target.closest("[data-move-group]");
+      const moveRow = event.target.closest("[data-move-row]");
+      if (addRow) {
+        createActivityRow(addRow.closest("[data-group]"));
+      }
+      if (moveGroup) {
+        const group = moveGroup.closest("[data-group]");
+        if (moveGroup.dataset.moveGroup === "up" && group.previousElementSibling) {
+          group.parentElement.insertBefore(group, group.previousElementSibling);
+        }
+        if (moveGroup.dataset.moveGroup === "down" && group.nextElementSibling) {
+          group.parentElement.insertBefore(group.nextElementSibling, group);
+        }
+      }
+      if (removeGroup && els.groups.querySelectorAll("[data-group]").length > 1) {
+        removeGroup.closest("[data-group]").remove();
+      }
+      if (moveRow) {
+        const row = moveRow.closest("[data-row]");
+        if (moveRow.dataset.moveRow === "up" && row.previousElementSibling) {
+          row.parentElement.insertBefore(row, row.previousElementSibling);
+        }
+        if (moveRow.dataset.moveRow === "down" && row.nextElementSibling) {
+          row.parentElement.insertBefore(row.nextElementSibling, row);
+        }
+      }
+      if (removeRow) {
+        const group = removeRow.closest("[data-group]");
+        if (group.querySelectorAll("[data-row]").length > 1) {
+          removeRow.closest("[data-row]").remove();
+        }
+      }
+      refreshNumbers();
+      renderPreview();
+      autosave();
+    });
+
+    function enableSplitter() {
+      const layout = document.querySelector(".layout");
+      if (!layout || !els.splitter) return;
+      const drag = (event) => {
+        const rect = layout.getBoundingClientRect();
+        const raw = ((event.clientX - rect.left) / rect.width) * 100;
+        const next = Math.min(68, Math.max(32, raw));
+        document.documentElement.style.setProperty("--left-pane", `${next}%`);
+      };
+      els.splitter.addEventListener("pointerdown", (event) => {
+        els.splitter.setPointerCapture(event.pointerId);
+        drag(event);
+      });
+      els.splitter.addEventListener("pointermove", (event) => {
+        if (els.splitter.hasPointerCapture(event.pointerId)) drag(event);
+      });
+    }
+
+    enableSplitter();
+    applyData(defaultData());
+    if (!window.jspdf?.jsPDF) {
+      setMessage("error", "Library PDF belum termuat. Refresh jika tombol generate gagal.");
+    }
+  </script>
+</body>
+</html>
