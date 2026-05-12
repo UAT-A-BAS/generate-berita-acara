@@ -910,6 +910,10 @@
       "Juli", "Agustus", "September", "Oktober", "November", "Desember"
     ];
     const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+    const pdfFontSources = {
+      regular: "https://raw.githubusercontent.com/googlefonts/carlito/main/fonts/ttf/Carlito-Regular.ttf",
+      bold: "https://raw.githubusercontent.com/googlefonts/carlito/main/fonts/ttf/Carlito-Bold.ttf"
+    };
     const els = {
       status: document.getElementById("status"),
       errorBox: document.getElementById("errorBox"),
@@ -1072,15 +1076,19 @@
       groups.forEach((group, groupIndex) => {
         const upButton = group.querySelector("[data-move-group='up']");
         const downButton = group.querySelector("[data-move-group='down']");
+        const removeGroup = group.querySelector("[data-remove-group]");
         if (upButton) upButton.hidden = groupIndex === 0;
         if (downButton) downButton.hidden = groupIndex === groups.length - 1;
+        if (removeGroup) removeGroup.hidden = groups.length <= 1;
 
         const rows = [...group.querySelectorAll("[data-row]")];
         rows.forEach((row, rowIndex) => {
           const rowUp = row.querySelector("[data-move-row='up']");
           const rowDown = row.querySelector("[data-move-row='down']");
+          const rowRemove = row.querySelector("[data-remove-row]");
           if (rowUp) rowUp.hidden = rowIndex === 0;
           if (rowDown) rowDown.hidden = rowIndex === rows.length - 1;
+          if (rowRemove) rowRemove.hidden = rows.length <= 1;
         });
       });
     }
@@ -1375,7 +1383,8 @@
         renderPreview();
         const filename = sanitizeFilename(`Form Berita Acara ${data.featureName}`) + ".pdf";
         const pdf = new JsPdfCtor({ unit: "pt", format: "a4", orientation: "portrait" });
-        buildSelectablePdf(pdf, data);
+        const pdfFont = await registerPdfFonts(pdf);
+        buildSelectablePdf(pdf, data, pdfFont);
         pdf.save(filename);
         setMessage("ok", "PDF berhasil dibuat.");
         setStatus("PDF selesai.");
@@ -1388,10 +1397,44 @@
       }
     }
 
-    function buildSelectablePdf(pdf, data) {
+    async function registerPdfFonts(pdf) {
+      try {
+        const [regular, bold] = await Promise.all([
+          fetchFontAsBase64(pdfFontSources.regular),
+          fetchFontAsBase64(pdfFontSources.bold)
+        ]);
+        pdf.addFileToVFS("Carlito-Regular.ttf", regular);
+        pdf.addFileToVFS("Carlito-Bold.ttf", bold);
+        pdf.addFont("Carlito-Regular.ttf", "Carlito", "normal");
+        pdf.addFont("Carlito-Bold.ttf", "Carlito", "bold");
+        return "Carlito";
+      } catch {
+        return "helvetica";
+      }
+    }
+
+    async function fetchFontAsBase64(url) {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Font gagal load: ${response.status}`);
+      const buffer = await response.arrayBuffer();
+      return arrayBufferToBase64(buffer);
+    }
+
+    function arrayBufferToBase64(buffer) {
+      const bytes = new Uint8Array(buffer);
+      let binary = "";
+      const chunkSize = 0x8000;
+      for (let index = 0; index < bytes.length; index += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+      }
+      return btoa(binary);
+    }
+
+    function buildSelectablePdf(pdf, data, fontFamily = "helvetica") {
       const layout = {
         pageWidth: pdf.internal.pageSize.getWidth(),
         pageHeight: pdf.internal.pageSize.getHeight(),
+        fontFamily,
         left: 50,
         right: 29,
         top: 72,
@@ -1412,7 +1455,7 @@
         layout.contentWidth * 0.38,
         layout.contentWidth * 0.14
       ];
-      setPdfBaseStyle(pdf);
+      setPdfBaseStyle(pdf, layout);
       let y = drawPdfPageHeader(pdf, data, layout);
       y = drawPdfTableHeader(pdf, layout, y);
 
@@ -1425,7 +1468,7 @@
 
         if (y + layout.dateHeight > layout.bottomLimit) {
           pdf.addPage();
-          setPdfBaseStyle(pdf);
+          setPdfBaseStyle(pdf, layout);
           y = drawPdfPageHeader(pdf, data, layout);
           y = drawPdfTableHeader(pdf, layout, y);
         }
@@ -1441,7 +1484,7 @@
           const blockHeight = sumRange(rowHeights, index, blockEnd);
           if (y + blockHeight > layout.bottomLimit) {
             pdf.addPage();
-            setPdfBaseStyle(pdf);
+            setPdfBaseStyle(pdf, layout);
             y = drawPdfPageHeader(pdf, data, layout);
             y = drawPdfTableHeader(pdf, layout, y);
             y = drawPdfDateRow(pdf, layout, y, dateText);
@@ -1453,22 +1496,22 @@
       y += 18;
       if (y + 185 > layout.bottomLimit) {
         pdf.addPage();
-        setPdfBaseStyle(pdf);
+        setPdfBaseStyle(pdf, layout);
         y = drawPdfPageHeader(pdf, data, layout);
       }
       drawPdfClosing(pdf, data, layout, y);
       drawPdfFooters(pdf, layout);
     }
 
-    function setPdfBaseStyle(pdf) {
-      pdf.setFont("helvetica", "normal");
+    function setPdfBaseStyle(pdf, layout) {
+      pdf.setFont(layout.fontFamily, "normal");
       pdf.setTextColor(0, 0, 0);
       pdf.setDrawColor(0, 0, 0);
       pdf.setLineWidth(0.8);
     }
 
     function drawPdfPageHeader(pdf, data, layout) {
-      pdf.setFont("helvetica", "bold");
+      pdf.setFont(layout.fontFamily, "bold");
       pdf.setFontSize(12);
       pdf.text(buildHeaderLineOne(data), layout.pageWidth / 2, layout.top + 12, { align: "center" });
       pdf.text(buildHeaderLineTwo(data), layout.pageWidth / 2, layout.top + 27, { align: "center" });
@@ -1478,7 +1521,7 @@
     function drawPdfTableHeader(pdf, layout, y) {
       const headers = ["No.", "Aktivitas", "Hasil / Keterangan", "PIC"];
       let x = layout.left;
-      pdf.setFont("helvetica", "bold");
+      pdf.setFont(layout.fontFamily, "bold");
       pdf.setFontSize(layout.tableHeaderSize);
       headers.forEach((header, index) => {
         const width = layout.columns[index];
@@ -1490,7 +1533,7 @@
     }
 
     function drawPdfDateRow(pdf, layout, y, text) {
-      pdf.setFont("helvetica", "bold");
+      pdf.setFont(layout.fontFamily, "bold");
       pdf.setFontSize(layout.bodySize);
       pdf.rect(layout.left, y, layout.contentWidth, layout.dateHeight);
       pdf.text(text, layout.left + layout.padX, y + 15.5);
@@ -1498,7 +1541,7 @@
     }
 
     function pdfRowHeight(pdf, layout, row) {
-      pdf.setFont("helvetica", "normal");
+      pdf.setFont(layout.fontFamily, "normal");
       pdf.setFontSize(layout.bodySize);
       const widths = [layout.columns[1], layout.columns[2], layout.columns[3]];
       const values = [row.activity, row.result, row.pic];
@@ -1538,7 +1581,7 @@
     function drawPdfActivityRow(pdf, layout, row, index, rows, rowHeights, spans, y) {
       const rowHeight = rowHeights[index];
       let x = layout.left;
-      pdf.setFont("helvetica", "normal");
+      pdf.setFont(layout.fontFamily, "normal");
       pdf.setFontSize(layout.bodySize);
       drawPdfCell(pdf, layout, x, y, layout.columns[0], rowHeight, [String(index + 1)], "center");
       x += layout.columns[0];
@@ -1571,24 +1614,24 @@
     }
 
     function drawPdfClosing(pdf, data, layout, y) {
-      pdf.setFont("helvetica", "normal");
+      pdf.setFont(layout.fontFamily, "normal");
       pdf.setFontSize(layout.bodySize);
       pdf.text("Demikian Berita Acara ini dibuat, atas perhatian dan kerja sama Bapak/Ibu, kami ucapkan terima kasih.", layout.left, y);
 
       y += 34;
-      pdf.setFont("helvetica", "bold");
+      pdf.setFont(layout.fontFamily, "bold");
       pdf.text("OPERATION STRATEGY & DEVELOPMENT GROUP (POL)", layout.left, y);
       y += 15;
       pdf.text(`Application & User Acceptance Test Bureau ${data.bureau}`, layout.left, y);
       y += 15;
-      pdf.setFont("helvetica", "normal");
+      pdf.setFont(layout.fontFamily, "normal");
       pdf.text(`${data.city}, ${formatDate(data.signDate)}`, layout.left, y);
 
       y += 44;
-      pdf.setFont("helvetica", "bold");
+      pdf.setFont(layout.fontFamily, "bold");
       pdf.text("Pembuat :", layout.left, y);
       y += 15;
-      pdf.setFont("helvetica", "normal");
+      pdf.setFont(layout.fontFamily, "normal");
       const makers = data.makers.filter((maker) => maker.name || maker.role);
       (makers.length ? makers : [{ name: "-", role: "" }]).forEach((maker) => {
         pdf.text(formatPersonText(maker), layout.left, y);
@@ -1596,10 +1639,10 @@
       });
 
       y += 18;
-      pdf.setFont("helvetica", "bold");
+      pdf.setFont(layout.fontFamily, "bold");
       pdf.text("Menyetujui :", layout.left, y);
       y += 15;
-      pdf.setFont("helvetica", "normal");
+      pdf.setFont(layout.fontFamily, "normal");
       pdf.text(formatPersonText({ name: data.approverName, role: data.approverRole }), layout.left, y);
     }
 
@@ -1607,7 +1650,7 @@
       const total = pdf.internal.getNumberOfPages();
       for (let page = 1; page <= total; page += 1) {
         pdf.setPage(page);
-        pdf.setFont("helvetica", "normal");
+        pdf.setFont(layout.fontFamily, "normal");
         pdf.setFontSize(10.5);
         pdf.setTextColor(0, 0, 0);
         pdf.text(`Halaman ${page}/${total}`, layout.pageWidth - layout.right, layout.footerY, { align: "right" });
