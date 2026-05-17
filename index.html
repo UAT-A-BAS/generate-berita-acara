@@ -7,19 +7,21 @@
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <style>
     :root {
-      --bg: #f6f7f2;
+      --bg: #eef3f8;
       --panel: #ffffff;
-      --ink: #17202a;
-      --muted: #5f6b75;
-      --line: #d8ded6;
-      --soft: #eef2e9;
-      --brand: #0b6b78;
-      --brand-2: #07515b;
-      --accent: #b7791f;
+      --surface-muted: #f7f9fc;
+      --ink: #1c2734;
+      --muted: #5b6778;
+      --line: #c9d3df;
+      --soft: #f7f9fc;
+      --brand: #1b4d78;
+      --brand-2: #132a45;
+      --accent: #1b4d78;
+      --accent-soft: #d9e8f5;
       --danger: #b42318;
       --ok: #1f7a4d;
-      --focus: #2563eb;
-      --shadow: 0 14px 34px rgba(23, 32, 42, 0.08);
+      --focus: #0067bd;
+      --shadow: 0 18px 40px rgba(31, 45, 61, 0.08);
       --radius: 8px;
     }
 
@@ -33,9 +35,9 @@
       overflow-x: hidden;
       color: var(--ink);
       background:
-        linear-gradient(180deg, rgba(11, 107, 120, 0.08), transparent 300px),
-        var(--bg);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        radial-gradient(circle at top left, rgba(27, 77, 120, 0.08), transparent 34%),
+        linear-gradient(180deg, #f4f7fb 0%, #eaf0f6 100%);
+      font-family: Aptos, Calibri, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
       line-height: 1.45;
     }
 
@@ -216,11 +218,19 @@
     }
 
     label {
-      display: grid;
-      gap: 6px;
+      display: block;
       color: var(--muted);
       font-size: 12px;
       font-weight: 750;
+    }
+
+    label > input,
+    label > select,
+    label > textarea,
+    label > .date-range,
+    label > .date-field,
+    label > .role-combobox {
+      margin-top: 6px;
     }
 
     input,
@@ -229,7 +239,7 @@
       width: 100%;
       min-width: 0;
       border: 1px solid var(--line);
-      border-radius: 6px;
+      border-radius: 8px;
       background: #fff;
       color: var(--ink);
       padding: 10px 11px;
@@ -238,9 +248,55 @@
 
     input::placeholder,
     textarea::placeholder {
-      color: #b9c2c8;
+      color: rgba(91, 103, 120, 0.48);
       font-weight: 400;
       opacity: 1;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: rgba(27, 77, 120, 0.72);
+      box-shadow: 0 0 0 4px rgba(27, 77, 120, 0.12);
+      outline: none;
+    }
+
+    .date-input {
+      cursor: pointer;
+      background:
+        linear-gradient(90deg, #fff calc(100% - 34px), var(--surface-muted, #f7f9fc) calc(100% - 34px));
+      padding-right: 42px;
+    }
+
+    .date-field {
+      position: relative;
+      display: block;
+    }
+
+    .date-field::after {
+      content: "";
+      position: absolute;
+      right: 11px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 15px;
+      height: 15px;
+      pointer-events: none;
+      opacity: 0.8;
+      background: no-repeat center / 15px 15px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%230067bd' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2v4'/%3E%3Cpath d='M16 2v4'/%3E%3Crect width='18' height='18' x='3' y='4' rx='2'/%3E%3Cpath d='M3 10h18'/%3E%3C/svg%3E");
+    }
+
+    .required-mark {
+      color: var(--danger);
+      font-weight: 900;
+    }
+
+    .date-range {
+      display: block;
+    }
+
+    .date-range span {
+      display: none;
     }
 
     textarea {
@@ -384,10 +440,10 @@
     }
 
     .group {
-      border: 1px solid var(--line);
-      border-radius: 8px;
+      border: 1px solid rgba(201, 211, 223, 0.95);
+      border-radius: 12px;
       overflow: hidden;
-      background: #fff;
+      background: var(--soft);
     }
 
     .group-head {
@@ -396,7 +452,7 @@
       gap: 10px;
       align-items: center;
       padding: 12px;
-      background: var(--soft);
+      background: linear-gradient(180deg, rgba(217, 232, 245, 0.72), rgba(247, 249, 252, 0.98));
       border-bottom: 1px solid var(--line);
     }
 
@@ -404,6 +460,7 @@
       display: grid;
       gap: 10px;
       padding: 12px;
+      background: var(--soft);
     }
 
     .group-foot {
@@ -416,13 +473,27 @@
       gap: 8px;
       align-items: start;
       padding: 10px;
-      border: 1px solid var(--line);
+      border: 1px solid rgba(201, 211, 223, 0.95);
       border-radius: 8px;
-      background: #fcfdfb;
+      background: #fff;
+      box-shadow: 0 8px 18px rgba(27, 77, 120, 0.04);
+    }
+
+    .activity-row label {
+      color: #41536a;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .activity-row textarea,
+    .activity-row input {
+      border-color: rgba(201, 211, 223, 0.98);
+      color: #001b3a;
+      font-weight: 650;
     }
 
     .activity-row input[readonly] {
-      background: #f2f4ef;
+      background: #f7f9fc;
       color: var(--muted);
       text-align: center;
       font-weight: 800;
@@ -453,7 +524,184 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
       gap: 12px;
-      align-items: end;
+      align-items: start;
+    }
+
+    .maker-row:has([data-remove-maker][hidden]) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .maker-row > .btn {
+      margin-top: 28px;
+    }
+
+    .date-range-picker {
+      position: fixed;
+      z-index: 60;
+      width: 294px;
+      border: 1px solid rgba(201, 211, 223, 0.92);
+      border-radius: 18px;
+      padding: 16px;
+      background: #fff;
+      box-shadow: 0 24px 56px rgba(28, 39, 52, 0.2);
+    }
+
+    .date-range-picker[hidden] {
+      display: none;
+    }
+
+    .date-picker-header {
+      display: grid;
+      grid-template-columns: 34px 1fr 34px;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 16px;
+      color: #005bac;
+      font-weight: 700;
+    }
+
+    .date-picker-nav,
+    .date-picker-day {
+      border: 0;
+      padding: 0;
+      background: transparent;
+      box-shadow: none;
+      color: #001b3a;
+    }
+
+    .date-picker-nav {
+      width: 30px;
+      min-width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      color: #0066bd;
+      font-size: 1.4rem;
+      line-height: 1;
+    }
+
+    .date-picker-title {
+      text-align: center;
+      color: #005bac;
+      font-weight: 700;
+    }
+
+    .date-picker-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      text-align: center;
+    }
+
+    .date-picker-weekday {
+      color: #9aa8b8;
+      font-size: 0.82rem;
+    }
+
+    .date-picker-day {
+      width: 34px;
+      min-width: 34px;
+      height: 30px;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .date-picker-day.is-muted {
+      color: #b7c0cc;
+    }
+
+    .date-picker-day.is-in-range {
+      background: #eef2f6;
+    }
+
+    .date-picker-day.is-selected {
+      background: #0067bd;
+      color: #fff;
+    }
+
+    .date-picker-day:focus {
+      outline: 2px solid rgba(0, 103, 189, 0.35);
+      outline-offset: 2px;
+    }
+
+    .date-picker-footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .date-picker-footer button {
+      min-height: 32px;
+      border-radius: 10px;
+      padding: 7px 10px;
+      font-size: 0.8rem;
+    }
+
+    .role-combobox {
+      position: relative;
+      display: block;
+    }
+
+    .role-combobox input {
+      padding-right: 42px;
+    }
+
+    .role-toggle {
+      position: absolute;
+      right: 6px;
+      bottom: 6px;
+      width: 30px;
+      min-width: 30px;
+      height: 30px;
+      min-height: 30px;
+      border: 1px solid rgba(201, 211, 223, 0.95);
+      border-radius: 8px;
+      background: #f7f9fc;
+      color: #0067bd;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .role-menu {
+      position: fixed;
+      z-index: 70;
+      width: 260px;
+      border: 1px solid rgba(201, 211, 223, 0.92);
+      border-radius: 16px;
+      padding: 8px;
+      background: #fff;
+      box-shadow: 0 24px 56px rgba(28, 39, 52, 0.2);
+    }
+
+    .role-menu[hidden] {
+      display: none;
+    }
+
+    .role-option {
+      width: 100%;
+      justify-content: flex-start;
+      min-height: 36px;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: #1c2734;
+      font-weight: 750;
+      text-align: left;
+    }
+
+    .role-option:hover,
+    .role-option.is-active {
+      background: #d9e8f5;
+      color: #005bac;
+      transform: none;
+    }
+
+    .role-empty {
+      padding: 8px 10px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
     }
 
     [hidden] {
@@ -481,6 +729,27 @@
     .notice.ok {
       border: 1px solid #bfe1cf;
       background: #f0fff6;
+      color: var(--ok);
+    }
+
+    .output-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .generate-message {
+      min-height: 20px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .generate-message.error {
+      color: var(--danger);
+    }
+
+    .generate-message.ok {
       color: var(--ok);
     }
 
@@ -522,10 +791,11 @@
       background: #fff;
       border: 1px solid var(--line);
       box-shadow: 0 20px 50px rgba(23, 32, 42, 0.12);
-      padding: 96px 39px 58px 66px;
+      padding: 92px 57px 58px 96px;
       font-family: Calibri, Arial, sans-serif;
       font-size: 14px;
       color: #111;
+      line-height: 1.2;
       overflow: hidden;
       position: relative;
       break-after: page;
@@ -552,6 +822,7 @@
       table-layout: fixed;
       font-family: Calibri, Arial, sans-serif;
       font-size: 10.5pt;
+      line-height: 1.24;
     }
 
     .doc-table th,
@@ -606,8 +877,8 @@
 
     .doc-footer {
       position: absolute;
-      right: 39px;
-      bottom: 28px;
+      right: 57px;
+      bottom: 51px;
       text-align: right;
       color: #333;
       font-size: 10.5pt;
@@ -616,10 +887,22 @@
     .app-credit {
       max-width: none;
       width: 100%;
-      margin: 14px auto 0;
+      margin: 16px auto 0;
+      padding-top: 16px;
       color: var(--muted);
-      font-size: 12px;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
       text-align: center;
+    }
+
+    .app-credit::before {
+      content: "";
+      display: block;
+      width: min(420px, 72%);
+      height: 1px;
+      margin: 0 auto 14px;
+      background: linear-gradient(90deg, transparent, var(--line), transparent);
     }
 
     .empty-preview {
@@ -665,10 +948,8 @@
       }
 
       .topbar,
-      .grid-2,
       .grid-3,
       .group-head,
-      .maker-row,
       .activity-row {
         grid-template-columns: 1fr;
       }
@@ -685,6 +966,26 @@
 
       .paper {
         width: 794px;
+      }
+
+      .date-range {
+        grid-template-columns: 1fr;
+      }
+
+      .date-range span {
+        display: none;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .grid-2,
+      .maker-row {
+        grid-template-columns: 1fr;
+      }
+
+      .maker-row > .btn {
+        margin-top: 0;
+        justify-self: start;
       }
     }
   </style>
@@ -729,14 +1030,18 @@
                 </label>
               </div>
               <div class="grid-3">
-                <label>Nama fitur
+                <label>Nama Project <span class="required-mark">*</span>
                   <input id="featureName" autocomplete="off" placeholder="BDS IDS 23.1">
                 </label>
-                <label>Cabang
+                <label>Cabang <span class="required-mark">*</span>
                   <input id="branchName" autocomplete="off" placeholder="Cabang">
                 </label>
-                <label>Tanggal implementasi
-                  <input id="implementationDate" type="date">
+                <label>Tanggal implementasi <span class="required-mark">*</span>
+                  <span class="date-range date-field">
+                    <input class="date-input" id="implementationDate" autocomplete="off" placeholder="DD/MM/YYYY" readonly data-date-range>
+                    <input id="implementationStartDate" type="hidden">
+                    <input id="implementationEndDate" type="hidden">
+                  </span>
                 </label>
               </div>
             </section>
@@ -758,19 +1063,22 @@
                 <h3 id="closing-section">Penutup & Sign-off</h3>
               </div>
               <div class="grid-3">
-                <label>Bureau
+                <label>Bureau <span class="required-mark">*</span>
                   <select id="bureau">
+                    <option value="" selected disabled hidden>A</option>
                     <option>A</option>
                     <option>B</option>
                     <option>C</option>
                     <option>D</option>
                   </select>
                 </label>
-                <label>Kota
-                  <input id="city" placeholder="Kota">
+                <label>Kota <span class="required-mark">*</span>
+                  <input id="city" placeholder="Kota" value="Jakarta">
                 </label>
-                <label>Tanggal sign-off
-                  <input id="signDate" type="date">
+                <label>Tanggal sign-off <span class="required-mark">*</span>
+                  <span class="date-field">
+                    <input class="date-input" id="signDate" autocomplete="off" placeholder="DD/MM/YYYY" readonly data-date-single>
+                  </span>
                 </label>
               </div>
             </section>
@@ -792,11 +1100,16 @@
                 <h3 id="approval-section">Menyetujui</h3>
               </div>
               <div class="grid-2">
-                <label>Nama
+                <label>Nama <span class="required-mark">*</span>
                   <input id="approverName" placeholder="Nama">
                 </label>
-                <label>Jabatan
-                  <input id="approverRole" placeholder="Jabatan">
+                <label>Jabatan <span class="required-mark">*</span>
+                  <span class="role-combobox">
+                    <input id="approverRole" placeholder="Jabatan" autocomplete="off" data-role-input>
+                    <button class="role-toggle" type="button" aria-label="Pilih jabatan" title="Pilih jabatan" data-role-toggle>
+                      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                    </button>
+                  </span>
                 </label>
               </div>
             </section>
@@ -805,8 +1118,9 @@
               <div class="section-title">
                 <h3 id="output-section">Output</h3>
               </div>
-              <div class="actions">
+              <div class="output-actions">
                 <button class="btn btn-primary" id="generateBtn" type="button">Generate PDF</button>
+                <span class="generate-message" id="generateMessage" role="status" aria-live="polite"></span>
               </div>
             </section>
           </div>
@@ -828,13 +1142,17 @@
       </aside>
     </div>
     <footer class="app-credit">Developed by Alex Surya Marcelo (UAT - A) &bull; Generator Berita Acara</footer>
+    <div class="date-range-picker" id="datePicker" hidden></div>
+    <div class="role-menu" id="roleMenu" hidden></div>
   </main>
 
   <template id="groupTemplate">
     <section class="group" data-group>
       <div class="group-head">
-        <label>Tanggal aktivitas
-          <input data-field="date" type="date">
+        <label>Tanggal aktivitas <span class="required-mark">*</span>
+          <span class="date-field">
+          <input class="date-input" data-field="date" autocomplete="off" placeholder="DD/MM/YYYY" readonly data-date-single>
+          </span>
         </label>
         <div class="actions">
           <div class="move-stack">
@@ -864,13 +1182,13 @@
       <label>No.
         <input data-field="no" readonly>
       </label>
-      <label>Aktivitas
+      <label>Aktivitas <span class="required-mark">*</span>
         <textarea data-field="activity" placeholder="Aktivitas"></textarea>
       </label>
-      <label>Hasil / Keterangan
+      <label>Hasil / Keterangan <span class="required-mark">*</span>
         <textarea data-field="result" placeholder="Hasil / Keterangan"></textarea>
       </label>
-      <label>PIC
+      <label>PIC <span class="required-mark">*</span>
         <textarea data-field="pic" placeholder="PIC"></textarea>
       </label>
       <div class="row-actions">
@@ -891,11 +1209,16 @@
 
   <template id="makerTemplate">
     <div class="maker-row" data-maker>
-      <label>Nama
+      <label>Nama <span class="required-mark">*</span>
         <input data-field="name" placeholder="Nama">
       </label>
-      <label>Jabatan
-        <input data-field="role" placeholder="Jabatan">
+      <label>Jabatan <span class="required-mark">*</span>
+        <span class="role-combobox">
+          <input data-field="role" placeholder="Jabatan" autocomplete="off" data-role-input>
+          <button class="role-toggle" type="button" aria-label="Pilih jabatan" title="Pilih jabatan" data-role-toggle>
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+        </span>
       </label>
       <button class="btn btn-danger btn-icon" data-remove-maker type="button" aria-label="Hapus pembuat" title="Hapus pembuat">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
@@ -914,10 +1237,21 @@
       regular: "https://raw.githubusercontent.com/googlefonts/carlito/main/fonts/ttf/Carlito-Regular.ttf",
       bold: "https://raw.githubusercontent.com/googlefonts/carlito/main/fonts/ttf/Carlito-Bold.ttf"
     };
+    const roleOptions = [
+      "Staff",
+      "Assistant Officer",
+      "Associate Officer",
+      "Officer",
+      "Senior Officer",
+      "Adviser"
+    ];
     const els = {
       status: document.getElementById("status"),
       errorBox: document.getElementById("errorBox"),
       successBox: document.getElementById("successBox"),
+      generateMessage: document.getElementById("generateMessage"),
+      datePicker: document.getElementById("datePicker"),
+      roleMenu: document.getElementById("roleMenu"),
       groups: document.getElementById("groups"),
       makers: document.getElementById("makers"),
       preview: document.getElementById("preview"),
@@ -930,6 +1264,8 @@
       featureName: document.getElementById("featureName"),
       branchName: document.getElementById("branchName"),
       implementationDate: document.getElementById("implementationDate"),
+      implementationStartDate: document.getElementById("implementationStartDate"),
+      implementationEndDate: document.getElementById("implementationEndDate"),
       bureau: document.getElementById("bureau"),
       city: document.getElementById("city"),
       signDate: document.getElementById("signDate"),
@@ -937,15 +1273,39 @@
       approverRole: document.getElementById("approverRole")
     };
 
+    const datePickerState = {
+      target: null,
+      mode: "single",
+      viewDate: new Date(),
+      rangeStart: null,
+      rangeEnd: null
+    };
+
+    let activeRoleInput = null;
+
     function toUpper(value) {
       return String(value || "").trim().toLocaleUpperCase("id-ID");
     }
 
     function parseDate(value) {
       if (!value) return null;
-      const [year, month, day] = value.split("-").map(Number);
+      const text = String(value).trim();
+      let year;
+      let month;
+      let day;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+        [year, month, day] = text.split("-").map(Number);
+      } else {
+        const match = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (!match) return null;
+        day = Number(match[1]);
+        month = Number(match[2]);
+        year = Number(match[3]);
+      }
       if (!year || !month || !day) return null;
-      return new Date(year, month - 1, day);
+      const date = new Date(year, month - 1, day);
+      if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+      return date;
     }
 
     function formatDate(value, upper = false) {
@@ -955,14 +1315,80 @@
       return upper ? text.toLocaleUpperCase("id-ID") : text;
     }
 
+    function formatDateParts(value, upper = false) {
+      const d = parseDate(value);
+      if (!d) return null;
+      const month = upper ? monthNames[d.getMonth()].toLocaleUpperCase("id-ID") : monthNames[d.getMonth()];
+      return { day: d.getDate(), month, monthIndex: d.getMonth(), year: d.getFullYear() };
+    }
+
+    function formatDateInput(value) {
+      const d = parseDate(value);
+      if (!d) return value || "";
+      const pad = (number) => String(number).padStart(2, "0");
+      return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+    }
+
+    function dateToInput(date) {
+      return formatDateInput(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`);
+    }
+
+    function sameDate(a, b) {
+      return a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    }
+
+    function compareDates(a, b) {
+      return new Date(a.getFullYear(), a.getMonth(), a.getDate()) - new Date(b.getFullYear(), b.getMonth(), b.getDate());
+    }
+
+    function setFieldValue(input, value) {
+      input.value = value;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    function syncImplementationDateDisplay() {
+      fields.implementationDate.value = formatImplementationDateRange({
+        implementationStartDate: fields.implementationStartDate.value,
+        implementationEndDate: fields.implementationEndDate.value
+      });
+    }
+
     function formatDayDate(value) {
       const d = parseDate(value);
       if (!d) return "";
       return `${dayNames[d.getDay()]},\u00a0${formatDate(value)}`;
     }
 
+    function formatImplementationDateRange(data, upper = false) {
+      const startValue = data.implementationStartDate || data.implementationDate;
+      const endValue = data.implementationEndDate || data.implementationDate;
+      const start = formatDateParts(startValue, upper);
+      const end = formatDateParts(endValue, upper);
+      if (!start && !end) return "";
+      if (!start || !end) return formatDate(startValue || endValue, upper);
+      if (start.day === end.day && start.monthIndex === end.monthIndex && start.year === end.year) {
+        return `${start.day} ${start.month} ${start.year}`;
+      }
+      if (start.monthIndex === end.monthIndex && start.year === end.year) {
+        return `${start.day} ${start.month} - ${end.day} ${end.month} ${end.year}`;
+      }
+      if (start.year === end.year) {
+        return `${start.day} ${start.month} - ${end.day} ${end.month} ${end.year}`;
+      }
+      return `${start.day} ${start.month} ${start.year} - ${end.day} ${end.month} ${end.year}`;
+    }
+
     function normalizeText(value) {
       return String(value || "").trim().replace(/\r\n/g, "\n");
+    }
+
+    function normalizeCellText(value) {
+      return normalizeText(value)
+        .split("\n")
+        .map((line) => line.trim())
+        .join("\n")
+        .replace(/\n{3,}/g, "\n\n");
     }
 
     function downloadBlob(blob, filename) {
@@ -1010,6 +1436,12 @@
       els.status.textContent = message;
     }
 
+    function setGenerateMessage(type, message) {
+      els.generateMessage.className = "generate-message";
+      els.generateMessage.textContent = message || "";
+      if (type && message) els.generateMessage.classList.add(type);
+    }
+
     function getType() {
       return document.querySelector("input[name='baType']:checked")?.value || "pilot";
     }
@@ -1021,13 +1453,13 @@
 
     function buildHeaderLineTwo(data) {
       const branch = toUpper(data.branchName);
-      const date = formatDate(data.implementationDate, true);
+      const date = formatImplementationDateRange(data, true);
       return [branch, date].filter(Boolean).join(", ");
     }
 
     function createGroup(groupData = {}) {
       const node = document.getElementById("groupTemplate").content.firstElementChild.cloneNode(true);
-      node.querySelector("[data-field='date']").value = groupData.date || fields.implementationDate.value || "";
+      node.querySelector("[data-field='date']").value = formatDateInput(groupData.date || fields.implementationStartDate.value || "");
       els.groups.appendChild(node);
       const rows = groupData.rows?.length ? groupData.rows : [{ activity: "", result: "", pic: "" }];
       rows.forEach((row) => createActivityRow(node, row));
@@ -1097,9 +1529,9 @@
       const groups = [...els.groups.querySelectorAll("[data-group]")].map((group) => ({
         date: group.querySelector("[data-field='date']").value,
         rows: [...group.querySelectorAll("[data-row]")].map((row) => ({
-          activity: normalizeText(row.querySelector("[data-field='activity']").value),
-          result: normalizeText(row.querySelector("[data-field='result']").value),
-          pic: normalizeText(row.querySelector("[data-field='pic']").value)
+          activity: normalizeCellText(row.querySelector("[data-field='activity']").value),
+          result: normalizeCellText(row.querySelector("[data-field='result']").value),
+          pic: normalizeCellText(row.querySelector("[data-field='pic']").value)
         }))
       }));
 
@@ -1113,7 +1545,9 @@
         baType: getType(),
         featureName: normalizeText(fields.featureName.value),
         branchName: normalizeText(fields.branchName.value),
-        implementationDate: fields.implementationDate.value,
+        implementationDate: fields.implementationStartDate.value,
+        implementationStartDate: fields.implementationStartDate.value,
+        implementationEndDate: fields.implementationEndDate.value,
         autoMerge: true,
         groups,
         bureau: fields.bureau.value,
@@ -1129,15 +1563,17 @@
       document.querySelector(`input[name='baType'][value='${data.baType || "pilot"}']`).checked = true;
       fields.featureName.value = data.featureName || "";
       fields.branchName.value = data.branchName || "";
-      fields.implementationDate.value = data.implementationDate || "";
-      fields.bureau.value = data.bureau || "A";
-      fields.city.value = data.city || "";
-      fields.signDate.value = data.signDate || "";
+      fields.implementationStartDate.value = formatDateInput(data.implementationStartDate || data.implementationDate || "");
+      fields.implementationEndDate.value = formatDateInput(data.implementationEndDate || data.implementationDate || "");
+      syncImplementationDateDisplay();
+      fields.bureau.value = data.bureau || "";
+      fields.city.value = data.city || "Jakarta";
+      fields.signDate.value = formatDateInput(data.signDate || "");
       fields.approverName.value = data.approverName || "";
       fields.approverRole.value = data.approverRole || "";
 
       els.groups.innerHTML = "";
-      (data.groups?.length ? data.groups : [{ date: fields.implementationDate.value || "", rows: [{}] }])
+      (data.groups?.length ? data.groups : [{ date: fields.implementationStartDate.value || "", rows: [{}] }])
         .forEach(createGroup);
 
       els.makers.innerHTML = "";
@@ -1150,11 +1586,21 @@
 
     function validateData(data) {
       const errors = [];
-      if (!data.featureName) errors.push("Nama fitur wajib diisi.");
+      if (!data.featureName) errors.push("Nama Project wajib diisi.");
       if (!data.branchName) errors.push("Cabang wajib diisi.");
-      if (!data.implementationDate) errors.push("Tanggal implementasi wajib diisi.");
+      if (!data.implementationStartDate) errors.push("Tanggal awal implementasi wajib diisi.");
+      if (!data.implementationEndDate) errors.push("Tanggal akhir implementasi wajib diisi.");
+      if (data.implementationStartDate && !parseDate(data.implementationStartDate)) errors.push("Tanggal awal implementasi harus format DD/MM/YYYY.");
+      if (data.implementationEndDate && !parseDate(data.implementationEndDate)) errors.push("Tanggal akhir implementasi harus format DD/MM/YYYY.");
+      const implementationStart = parseDate(data.implementationStartDate);
+      const implementationEnd = parseDate(data.implementationEndDate);
+      if (implementationStart && implementationEnd && implementationStart > implementationEnd) {
+        errors.push("Tanggal awal implementasi tidak boleh setelah tanggal akhir.");
+      }
+      if (!data.bureau) errors.push("Bureau wajib diisi.");
       if (!data.city) errors.push("Kota wajib diisi.");
       if (!data.signDate) errors.push("Tanggal sign-off wajib diisi.");
+      if (data.signDate && !parseDate(data.signDate)) errors.push("Tanggal sign-off harus format DD/MM/YYYY.");
       if (!data.groups.length) errors.push("Minimal 1 tanggal aktivitas.");
 
       const filledRows = data.groups.flatMap((group) => group.rows).filter((row) =>
@@ -1164,6 +1610,7 @@
 
       data.groups.forEach((group, groupIndex) => {
         if (!group.date) errors.push(`Tanggal aktivitas #${groupIndex + 1} wajib diisi.`);
+        if (group.date && !parseDate(group.date)) errors.push(`Tanggal aktivitas #${groupIndex + 1} harus format DD/MM/YYYY.`);
         group.rows.forEach((row, rowIndex) => {
           const hasAny = row.activity || row.result || row.pic;
           if (hasAny && !row.activity) errors.push(`Aktivitas ${groupIndex + 1}.${rowIndex + 1} wajib diisi.`);
@@ -1182,6 +1629,184 @@
       if (!data.approverName) errors.push("Nama menyetujui wajib diisi.");
       if (!data.approverRole) errors.push("Jabatan menyetujui wajib diisi.");
       return errors;
+    }
+
+    function openDatePicker(input) {
+      const isRange = input.matches("[data-date-range]");
+      datePickerState.target = input;
+      datePickerState.mode = isRange ? "range" : "single";
+      datePickerState.rangeStart = parseDate(fields.implementationStartDate.value);
+      datePickerState.rangeEnd = parseDate(fields.implementationEndDate.value);
+      const base = datePickerState.rangeStart || parseDate(input.value) || new Date();
+      datePickerState.viewDate = new Date(base.getFullYear(), base.getMonth(), 1);
+      renderDatePicker();
+      positionDatePicker(input);
+      els.datePicker.hidden = false;
+    }
+
+    function closeDatePicker() {
+      els.datePicker.hidden = true;
+      datePickerState.target = null;
+    }
+
+    function positionDatePicker(input) {
+      const rect = input.getBoundingClientRect();
+      const pickerWidth = 294;
+      const left = Math.min(window.innerWidth - pickerWidth - 12, Math.max(12, rect.left));
+      const below = rect.bottom + 8;
+      const above = rect.top - 372;
+      const top = below + 360 > window.innerHeight && above > 12 ? above : below;
+      els.datePicker.style.left = `${left}px`;
+      els.datePicker.style.top = `${Math.max(12, top)}px`;
+    }
+
+    function renderDatePicker() {
+      const view = datePickerState.viewDate;
+      const month = view.getMonth();
+      const year = view.getFullYear();
+      const first = new Date(year, month, 1);
+      const start = new Date(year, month, 1 - first.getDay());
+      const weekdays = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+      const days = Array.from({ length: 42 }, (_, index) => {
+        const day = new Date(start.getFullYear(), start.getMonth(), start.getDate() + index);
+        const selected = datePickerState.mode === "range"
+          ? sameDate(day, datePickerState.rangeStart) || sameDate(day, datePickerState.rangeEnd)
+          : sameDate(day, parseDate(datePickerState.target?.value));
+        const inRange = datePickerState.mode === "range" && datePickerState.rangeStart && datePickerState.rangeEnd
+          && compareDates(day, datePickerState.rangeStart) > 0 && compareDates(day, datePickerState.rangeEnd) < 0;
+        const classes = [
+          "date-picker-day",
+          day.getMonth() !== month ? "is-muted" : "",
+          selected ? "is-selected" : "",
+          inRange ? "is-in-range" : ""
+        ].filter(Boolean).join(" ");
+        return `<button class="${classes}" type="button" data-date-day="${dateToInput(day)}">${day.getDate()}</button>`;
+      }).join("");
+
+      els.datePicker.innerHTML = `
+        <div class="date-picker-header">
+          <button class="date-picker-nav" type="button" data-date-nav="-1" aria-label="Bulan sebelumnya">&lsaquo;</button>
+          <div class="date-picker-title">${monthNames[month]} ${year}</div>
+          <button class="date-picker-nav" type="button" data-date-nav="1" aria-label="Bulan berikutnya">&rsaquo;</button>
+        </div>
+        <div class="date-picker-grid">
+          ${weekdays.map((day) => `<div class="date-picker-weekday">${day}</div>`).join("")}
+          ${days}
+        </div>
+        <div class="date-picker-footer">
+          <button class="btn btn-secondary" type="button" data-date-clear>Clear</button>
+          <button class="btn btn-primary" type="button" data-date-today>Today</button>
+        </div>`;
+    }
+
+    function handleDatePickerClick(event) {
+      const nav = event.target.closest("[data-date-nav]");
+      const day = event.target.closest("[data-date-day]");
+      if (nav) {
+        datePickerState.viewDate = new Date(
+          datePickerState.viewDate.getFullYear(),
+          datePickerState.viewDate.getMonth() + Number(nav.dataset.dateNav),
+          1
+        );
+        renderDatePicker();
+        return;
+      }
+      if (event.target.closest("[data-date-clear]")) {
+        if (datePickerState.mode === "range") {
+          fields.implementationStartDate.value = "";
+          fields.implementationEndDate.value = "";
+          setFieldValue(fields.implementationDate, "");
+          datePickerState.rangeStart = null;
+          datePickerState.rangeEnd = null;
+          renderDatePicker();
+          return;
+        }
+        setFieldValue(datePickerState.target, "");
+        closeDatePicker();
+        return;
+      }
+      if (event.target.closest("[data-date-today]")) {
+        const today = new Date();
+        const value = dateToInput(today);
+        if (datePickerState.mode === "range") {
+          fields.implementationStartDate.value = value;
+          fields.implementationEndDate.value = value;
+          syncImplementationDateDisplay();
+          setFieldValue(fields.implementationDate, fields.implementationDate.value);
+        } else {
+          setFieldValue(datePickerState.target, value);
+        }
+        closeDatePicker();
+        return;
+      }
+      if (!day) return;
+      const selected = parseDate(day.dataset.dateDay);
+      if (datePickerState.mode === "range") {
+        if (!datePickerState.rangeStart || datePickerState.rangeEnd || compareDates(selected, datePickerState.rangeStart) < 0) {
+          datePickerState.rangeStart = selected;
+          datePickerState.rangeEnd = null;
+          fields.implementationStartDate.value = dateToInput(selected);
+          fields.implementationEndDate.value = "";
+          setFieldValue(fields.implementationDate, dateToInput(selected));
+          renderDatePicker();
+          return;
+        }
+        datePickerState.rangeEnd = selected;
+        fields.implementationEndDate.value = dateToInput(selected);
+        syncImplementationDateDisplay();
+        setFieldValue(fields.implementationDate, fields.implementationDate.value);
+        renderDatePicker();
+        closeDatePicker();
+        return;
+      }
+      setFieldValue(datePickerState.target, dateToInput(selected));
+      closeDatePicker();
+    }
+
+    function openRoleMenu(input) {
+      activeRoleInput = input;
+      renderRoleMenu();
+      positionRoleMenu(input);
+      els.roleMenu.hidden = false;
+    }
+
+    function closeRoleMenu() {
+      els.roleMenu.hidden = true;
+      activeRoleInput = null;
+    }
+
+    function positionRoleMenu(input) {
+      const rect = input.getBoundingClientRect();
+      const width = Math.max(240, Math.min(320, rect.width));
+      const left = Math.min(window.innerWidth - width - 12, Math.max(12, rect.left));
+      const below = rect.bottom + 8;
+      const above = rect.top - 250;
+      const top = below + 250 > window.innerHeight && above > 12 ? above : below;
+      els.roleMenu.style.width = `${width}px`;
+      els.roleMenu.style.left = `${left}px`;
+      els.roleMenu.style.top = `${Math.max(12, top)}px`;
+    }
+
+    function renderRoleMenu() {
+      const value = normalizeText(activeRoleInput?.value);
+      const query = value.toLocaleLowerCase("id-ID");
+      const exactOptionSelected = roleOptions.some((role) => role.toLocaleLowerCase("id-ID") === query);
+      const options = exactOptionSelected
+        ? roleOptions
+        : roleOptions.filter((role) => role.toLocaleLowerCase("id-ID").includes(query));
+      els.roleMenu.innerHTML = options.length
+        ? options.map((role) => {
+          const active = value === role ? " is-active" : "";
+          return `<button class="btn role-option${active}" type="button" data-role-value="${escapeHtml(role)}">${escapeHtml(role)}</button>`;
+        }).join("")
+        : `<div class="role-empty">Ketik jabatan custom, lalu lanjut isi form.</div>`;
+    }
+
+    function chooseRole(value) {
+      if (!activeRoleInput) return;
+      setFieldValue(activeRoleInput, value);
+      activeRoleInput.focus();
+      closeRoleMenu();
     }
 
     function saveDraft() {
@@ -1276,13 +1901,30 @@
         row.innerHTML = `<td colspan="4">${escapeHtml(formatDayDate(group.date))}</td>`;
         return row;
       };
-      const makeActivityRow = (rowData, index) => {
+      const makeActivityRow = (rowData, displayIndex, rows, spans, localIndex = displayIndex) => {
         const row = document.createElement("tr");
+        const rowNumber = (rowData.originalIndex ?? displayIndex) + 1;
+        const mergedCell = (key, width, align = "left") => {
+          const span = spans[key];
+          if (span.hidden[localIndex]) return "";
+          const rowspan = span.lengths[localIndex] > 1 ? ` rowspan="${span.lengths[localIndex]}"` : "";
+          return `<td${rowspan} style="width:${width}; text-align:${align};">${escapeHtml(rows[localIndex][key])}</td>`;
+        };
         row.innerHTML = `
-          <td style="width:6%; text-align:center;">${index + 1}</td>
+          <td style="width:6%; text-align:center;">${rowData.continued ? "" : rowNumber}</td>
+          ${mergedCell("activity", "42%")}
+          ${mergedCell("result", "38%")}
+          ${mergedCell("pic", "14%", "center")}`;
+        return row;
+      };
+      const makePlainActivityRow = (rowData, displayIndex) => {
+        const row = document.createElement("tr");
+        const rowNumber = (rowData.originalIndex ?? displayIndex) + 1;
+        row.innerHTML = `
+          <td style="width:6%; text-align:center;">${rowData.continued ? "" : rowNumber}</td>
           <td style="width:42%;">${escapeHtml(rowData.activity)}</td>
           <td style="width:38%;">${escapeHtml(rowData.result)}</td>
-          <td style="width:14%;">${escapeHtml(rowData.pic)}</td>`;
+          <td style="width:14%; text-align:center;">${escapeHtml(rowData.pic)}</td>`;
         return row;
       };
 
@@ -1290,28 +1932,55 @@
       let tbody = page.querySelector("tbody");
 
       data.groups.forEach((group) => {
-        let dateRow = makeDateRow(group);
-        tbody.appendChild(dateRow);
-        if (overflows(page) && tbody.children.length > 1) {
-          dateRow.remove();
-          page = createPaper(true);
-          tbody = page.querySelector("tbody");
-          dateRow = makeDateRow(group);
-          tbody.appendChild(dateRow);
-        }
+        const rows = splitPreviewRows(group.rows.filter((row) => row.activity || row.result || row.pic));
+        if (!rows.length) return;
 
-        group.rows.forEach((rowData, index) => {
-          let row = makeActivityRow(rowData, index);
-          tbody.appendChild(row);
-          if (overflows(page) && tbody.children.length > 2) {
-            row.remove();
+        let rowStart = 0;
+        while (rowStart < rows.length) {
+          let dateRow = makeDateRow(group);
+          tbody.appendChild(dateRow);
+          if (overflows(page) && tbody.children.length > 1) {
+            dateRow.remove();
             page = createPaper(true);
             tbody = page.querySelector("tbody");
-            tbody.appendChild(makeDateRow(group));
-            row = makeActivityRow(rowData, index);
-            tbody.appendChild(row);
+            dateRow = makeDateRow(group);
+            tbody.appendChild(dateRow);
           }
-        });
+
+          const segmentRows = [];
+          while (rowStart + segmentRows.length < rows.length) {
+            const displayIndex = rowStart + segmentRows.length;
+            const testRow = makePlainActivityRow(rows[displayIndex], displayIndex);
+            tbody.appendChild(testRow);
+            if (overflows(page) && segmentRows.length === 0 && tbody.children.length > 2) {
+              testRow.remove();
+              dateRow.remove();
+              page = createPaper(true);
+              tbody = page.querySelector("tbody");
+              dateRow = makeDateRow(group);
+              tbody.appendChild(dateRow);
+              continue;
+            }
+            if (overflows(page) && segmentRows.length > 0) {
+              testRow.remove();
+              break;
+            }
+            segmentRows.push(rows[displayIndex]);
+            if (overflows(page)) break;
+          }
+
+          while (dateRow.nextSibling) dateRow.nextSibling.remove();
+          const pageSpans = buildPdfSpans(segmentRows);
+          segmentRows.forEach((rowData, localIndex) => {
+            tbody.appendChild(makeActivityRow(rowData, rowStart + localIndex, segmentRows, pageSpans, localIndex));
+          });
+          rowStart += segmentRows.length;
+
+          if (rowStart < rows.length) {
+            page = createPaper(true);
+            tbody = page.querySelector("tbody");
+          }
+        }
       });
 
       const makers = data.makers
@@ -1345,6 +2014,39 @@
       });
     }
 
+    function splitPreviewRows(rows) {
+      return rows.flatMap((row, index) => {
+        const activity = splitPreviewCell(row.activity);
+        const result = splitPreviewCell(row.result);
+        const pic = splitPreviewCell(row.pic);
+        const count = Math.max(activity.length, result.length, pic.length);
+        return Array.from({ length: count }, (_, chunkIndex) => ({
+          activity: activity[chunkIndex] || "",
+          result: result[chunkIndex] || "",
+          pic: pic[chunkIndex] || "",
+          continued: chunkIndex > 0,
+          originalIndex: index
+        }));
+      });
+    }
+
+    function splitPreviewCell(value) {
+      const maxChars = 850;
+      const text = normalizeText(value);
+      if (text.length <= maxChars) return [text];
+      const chunks = [];
+      let remaining = text;
+      while (remaining.length > maxChars) {
+        let cut = remaining.lastIndexOf("\n", maxChars);
+        if (cut < maxChars * 0.45) cut = remaining.lastIndexOf(" ", maxChars);
+        if (cut < maxChars * 0.45) cut = maxChars;
+        chunks.push(remaining.slice(0, cut).trim());
+        remaining = remaining.slice(cut).trim();
+      }
+      if (remaining) chunks.push(remaining);
+      return chunks.length ? chunks : [""];
+    }
+
     function escapeHtml(value) {
       return String(value || "")
         .replace(/&/g, "&amp;")
@@ -1364,14 +2066,15 @@
       const data = collectData();
       const errors = validateData(data);
       setMessage("", "");
+      setGenerateMessage("", "");
       if (errors.length) {
-        setMessage("error", errors.join(" "));
+        setGenerateMessage("error", errors.join(" "));
         setStatus("Validasi gagal.");
         return;
       }
       const JsPdfCtor = window.jspdf?.jsPDF;
       if (!JsPdfCtor) {
-        setMessage("error", "Library render PDF belum lengkap. Refresh halaman lalu coba lagi.");
+        setGenerateMessage("error", "Library render PDF belum lengkap. Refresh halaman lalu coba lagi.");
         setStatus("PDF belum siap.");
         return;
       }
@@ -1386,10 +2089,10 @@
         const pdfFont = await registerPdfFonts(pdf);
         buildSelectablePdf(pdf, data, pdfFont);
         pdf.save(filename);
-        setMessage("ok", "PDF berhasil dibuat.");
+        setGenerateMessage("ok", "PDF berhasil dibuat.");
         setStatus("PDF selesai.");
       } catch (error) {
-        setMessage("error", `Generate gagal: ${error.message}`);
+        setGenerateMessage("error", `Generate gagal: ${error.message}`);
         setStatus("Generate gagal.");
       } finally {
         els.generateBtn.disabled = false;
@@ -1435,11 +2138,11 @@
         pageWidth: pdf.internal.pageSize.getWidth(),
         pageHeight: pdf.internal.pageSize.getHeight(),
         fontFamily,
-        left: 50,
-        right: 29,
-        top: 72,
-        footerY: pdf.internal.pageSize.getHeight() - 21,
-        bottomLimit: pdf.internal.pageSize.getHeight() - 58,
+        left: 72,
+        right: 43,
+        top: 69,
+        footerY: pdf.internal.pageSize.getHeight() - 38,
+        bottomLimit: pdf.internal.pageSize.getHeight() - 72,
         tableHeaderHeight: 24,
         dateHeight: 24,
         padX: 5,
@@ -1460,37 +2163,55 @@
       y = drawPdfTableHeader(pdf, layout, y);
 
       data.groups.forEach((group) => {
-        const rows = group.rows.filter((row) => row.activity || row.result || row.pic);
+        const rows = splitPdfRows(pdf, layout, group.rows.filter((row) => row.activity || row.result || row.pic));
         if (!rows.length) return;
         const rowHeights = rows.map((row) => pdfRowHeight(pdf, layout, row));
-        const spans = buildPdfSpans(rows);
         const dateText = formatDayDate(group.date);
+        let rowStart = 0;
 
-        if (y + layout.dateHeight > layout.bottomLimit) {
-          pdf.addPage();
-          setPdfBaseStyle(pdf, layout);
-          y = drawPdfPageHeader(pdf, data, layout);
-          y = drawPdfTableHeader(pdf, layout, y);
-        }
-        y = drawPdfDateRow(pdf, layout, y, dateText);
-
-        rows.forEach((row, index) => {
-          const blockEnd = Math.max(
-            index + spans.activity.lengths[index],
-            index + spans.result.lengths[index],
-            index + spans.pic.lengths[index],
-            index + 1
-          );
-          const blockHeight = sumRange(rowHeights, index, blockEnd);
-          if (y + blockHeight > layout.bottomLimit) {
+        while (rowStart < rows.length) {
+          if (y + layout.dateHeight > layout.bottomLimit) {
             pdf.addPage();
             setPdfBaseStyle(pdf, layout);
             y = drawPdfPageHeader(pdf, data, layout);
             y = drawPdfTableHeader(pdf, layout, y);
-            y = drawPdfDateRow(pdf, layout, y, dateText);
           }
-          y = drawPdfActivityRow(pdf, layout, row, index, rows, rowHeights, spans, y);
-        });
+          y = drawPdfDateRow(pdf, layout, y, dateText);
+
+          const pageRows = [];
+          const pageRowHeights = [];
+          while (rowStart + pageRows.length < rows.length) {
+            const sourceIndex = rowStart + pageRows.length;
+            const nextHeight = rowHeights[sourceIndex];
+            if (pageRows.length === 0 && y + nextHeight > layout.bottomLimit && y > layout.top + 57 + layout.tableHeaderHeight + layout.dateHeight) {
+              pdf.addPage();
+              setPdfBaseStyle(pdf, layout);
+              y = drawPdfPageHeader(pdf, data, layout);
+              y = drawPdfTableHeader(pdf, layout, y);
+              y = drawPdfDateRow(pdf, layout, y, dateText);
+              continue;
+            }
+            if (pageRows.length > 0 && y + sumRange(pageRowHeights, 0, pageRowHeights.length) + nextHeight > layout.bottomLimit) {
+              break;
+            }
+            pageRows.push(rows[sourceIndex]);
+            pageRowHeights.push(nextHeight);
+            if (y + sumRange(pageRowHeights, 0, pageRowHeights.length) > layout.bottomLimit) break;
+          }
+
+          const pageSpans = buildPdfSpans(pageRows);
+          pageRows.forEach((row, localIndex) => {
+            y = drawPdfActivityRow(pdf, layout, row, localIndex, pageRows, pageRowHeights, pageSpans, y, rowStart + localIndex);
+          });
+          rowStart += pageRows.length;
+
+          if (rowStart < rows.length) {
+            pdf.addPage();
+            setPdfBaseStyle(pdf, layout);
+            y = drawPdfPageHeader(pdf, data, layout);
+            y = drawPdfTableHeader(pdf, layout, y);
+          }
+        }
       });
 
       y += 18;
@@ -1514,7 +2235,7 @@
       pdf.setFont(layout.fontFamily, "bold");
       pdf.setFontSize(12);
       pdf.text(buildHeaderLineOne(data), layout.pageWidth / 2, layout.top + 12, { align: "center" });
-      pdf.text(buildHeaderLineTwo(data), layout.pageWidth / 2, layout.top + 27, { align: "center" });
+      pdf.text(buildHeaderLineTwo(data), layout.pageWidth / 2, layout.top + 29.5, { align: "center" });
       return layout.top + 57;
     }
 
@@ -1578,12 +2299,13 @@
       return { lengths, hidden };
     }
 
-    function drawPdfActivityRow(pdf, layout, row, index, rows, rowHeights, spans, y) {
+    function drawPdfActivityRow(pdf, layout, row, index, rows, rowHeights, spans, y, displayIndex = index) {
       const rowHeight = rowHeights[index];
       let x = layout.left;
       pdf.setFont(layout.fontFamily, "normal");
       pdf.setFontSize(layout.bodySize);
-      drawPdfCell(pdf, layout, x, y, layout.columns[0], rowHeight, [String(index + 1)], "center");
+      const rowNumber = (row.originalIndex ?? displayIndex) + 1;
+      drawPdfCell(pdf, layout, x, y, layout.columns[0], rowHeight, [row.continued ? "" : String(rowNumber)], "center");
       x += layout.columns[0];
 
       ["activity", "result", "pic"].forEach((key, offset) => {
@@ -1611,6 +2333,27 @@
 
     function sumRange(values, start, end) {
       return values.slice(start, end).reduce((total, value) => total + value, 0);
+    }
+
+    function splitPdfRows(pdf, layout, rows) {
+      const maxLines = Math.max(1, Math.floor((layout.bottomLimit - drawPdfPageHeaderHeight(layout) - layout.tableHeaderHeight - layout.dateHeight - layout.padY * 2) / layout.bodyLine));
+      return rows.flatMap((row, index) => {
+        const values = ["activity", "result", "pic"].map((key, offset) =>
+          splitPdfText(pdf, row[key], layout.columns[offset + 1] - layout.padX * 2)
+        );
+        const chunkCount = Math.max(...values.map((lines) => Math.ceil(lines.length / maxLines)));
+        return Array.from({ length: chunkCount }, (_, chunkIndex) => ({
+          activity: values[0].slice(chunkIndex * maxLines, (chunkIndex + 1) * maxLines).join("\n"),
+          result: values[1].slice(chunkIndex * maxLines, (chunkIndex + 1) * maxLines).join("\n"),
+          pic: values[2].slice(chunkIndex * maxLines, (chunkIndex + 1) * maxLines).join("\n"),
+          continued: chunkIndex > 0,
+          originalIndex: index
+        }));
+      });
+    }
+
+    function drawPdfPageHeaderHeight(layout) {
+      return layout.top + 57;
     }
 
     function drawPdfClosing(pdf, data, layout, y) {
@@ -1670,6 +2413,8 @@
         featureName: "",
         branchName: "",
         implementationDate: "",
+        implementationStartDate: "",
+        implementationEndDate: "",
         autoMerge: true,
         groups: [{
           date: "",
@@ -1681,8 +2426,8 @@
             }
           ]
         }],
-        bureau: "A",
-        city: "",
+        bureau: "",
+        city: "Jakarta",
         signDate: "",
         makers: [{ name: "", role: "" }],
         approverName: "",
@@ -1690,8 +2435,62 @@
       };
     }
 
+    document.addEventListener("click", (event) => {
+      if (event.target.closest("#roleMenu")) {
+        const option = event.target.closest("[data-role-value]");
+        if (option) chooseRole(option.dataset.roleValue);
+        return;
+      }
+      const roleToggle = event.target.closest("[data-role-toggle]");
+      if (roleToggle) {
+        openRoleMenu(roleToggle.closest(".role-combobox").querySelector("[data-role-input]"));
+        return;
+      }
+      if (event.target.closest("#datePicker")) {
+        handleDatePickerClick(event);
+        closeRoleMenu();
+        return;
+      }
+      const dateInput = event.target.closest(".date-input");
+      if (dateInput) {
+        closeRoleMenu();
+        openDatePicker(dateInput);
+        return;
+      }
+      if (!event.target.closest("[data-role-input]")) closeRoleMenu();
+      closeDatePicker();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !els.roleMenu.hidden) {
+        closeRoleMenu();
+        return;
+      }
+      if (event.key === "Escape" && !els.datePicker.hidden) {
+        closeDatePicker();
+        return;
+      }
+      if (event.target.matches("[data-role-input]") && (event.key === "ArrowDown" || event.key === "Enter")) {
+        event.preventDefault();
+        openRoleMenu(event.target);
+        return;
+      }
+      if (!event.target.matches(".date-input")) return;
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openDatePicker(event.target);
+      }
+    });
+
     document.addEventListener("input", (event) => {
       if (event.target.matches("input, textarea, select")) {
+        setGenerateMessage("", "");
+        if (event.target.matches("[data-role-input]")) {
+          activeRoleInput = event.target;
+          renderRoleMenu();
+          positionRoleMenu(event.target);
+          els.roleMenu.hidden = false;
+        }
         refreshNumbers();
         renderPreview();
         autosave();
@@ -1700,8 +2499,12 @@
 
     document.addEventListener("change", (event) => {
       if (event.target.matches("input, textarea, select")) {
+        setGenerateMessage("", "");
         renderPreview();
         autosave();
+        if (event.target.matches(".date-input")) {
+          event.target.value = formatDateInput(event.target.value);
+        }
       }
     });
 
@@ -1796,7 +2599,7 @@
     enableSplitter();
     applyData(defaultData());
     if (!window.jspdf?.jsPDF) {
-      setMessage("error", "Library PDF belum termuat. Refresh jika tombol generate gagal.");
+      setGenerateMessage("error", "Library PDF belum termuat. Refresh jika tombol generate gagal.");
     }
   </script>
 </body>
