@@ -580,9 +580,29 @@
     }
 
     .date-picker-title {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
       text-align: center;
       color: #005bac;
       font-weight: 700;
+    }
+
+    .date-picker-title button {
+      border: 0;
+      border-radius: 8px;
+      padding: 5px 6px;
+      background: transparent;
+      color: #005bac;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+    }
+
+    .date-picker-title button:hover,
+    .date-picker-title button:focus-visible {
+      background: #eef2f6;
+      outline: none;
     }
 
     .date-picker-grid {
@@ -590,6 +610,18 @@
       grid-template-columns: repeat(7, 1fr);
       gap: 6px;
       text-align: center;
+    }
+
+    .date-picker-grid.month-grid {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px 8px;
+      padding: 8px 0 4px;
+    }
+
+    .date-picker-grid.year-grid {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px 8px;
+      padding: 8px 0 4px;
     }
 
     .date-picker-weekday {
@@ -604,6 +636,27 @@
       border-radius: 8px;
       font-weight: 500;
       cursor: pointer;
+    }
+
+    .date-picker-choice {
+      min-width: 0;
+      height: 34px;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: #8fa4bf;
+      box-shadow: none;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .date-picker-choice.is-current {
+      color: #001b3a;
+    }
+
+    .date-picker-choice.is-selected {
+      background: #0067bd;
+      color: #fff;
     }
 
     .date-picker-day.is-muted {
@@ -1276,6 +1329,7 @@
     const datePickerState = {
       target: null,
       mode: "single",
+      panel: "day",
       viewDate: new Date(),
       rangeStart: null,
       rangeEnd: null
@@ -1639,6 +1693,7 @@
       datePickerState.rangeEnd = parseDate(fields.implementationEndDate.value);
       const base = datePickerState.rangeStart || parseDate(input.value) || new Date();
       datePickerState.viewDate = new Date(base.getFullYear(), base.getMonth(), 1);
+      datePickerState.panel = "day";
       renderDatePicker();
       positionDatePicker(input);
       els.datePicker.hidden = false;
@@ -1664,6 +1719,14 @@
       const view = datePickerState.viewDate;
       const month = view.getMonth();
       const year = view.getFullYear();
+      if (datePickerState.panel === "month") {
+        renderMonthPicker(year, month);
+        return;
+      }
+      if (datePickerState.panel === "year") {
+        renderYearPicker(year);
+        return;
+      }
       const first = new Date(year, month, 1);
       const start = new Date(year, month, 1 - first.getDay());
       const weekdays = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
@@ -1686,7 +1749,10 @@
       els.datePicker.innerHTML = `
         <div class="date-picker-header">
           <button class="date-picker-nav" type="button" data-date-nav="-1" aria-label="Bulan sebelumnya">&lsaquo;</button>
-          <div class="date-picker-title">${monthNames[month]} ${year}</div>
+          <div class="date-picker-title">
+            <button type="button" data-date-panel="month">${monthNames[month]}</button>
+            <button type="button" data-date-panel="year">${year}</button>
+          </div>
           <button class="date-picker-nav" type="button" data-date-nav="1" aria-label="Bulan berikutnya">&rsaquo;</button>
         </div>
         <div class="date-picker-grid">
@@ -1699,9 +1765,95 @@
         </div>`;
     }
 
+    function renderMonthPicker(year, selectedMonth) {
+      const monthLabels = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+      ];
+      els.datePicker.innerHTML = `
+        <div class="date-picker-header">
+          <button class="date-picker-nav" type="button" data-date-year-nav="-1" aria-label="Tahun sebelumnya">&lsaquo;</button>
+          <div class="date-picker-title">
+            <button type="button" data-date-panel="year">${year}</button>
+          </div>
+          <button class="date-picker-nav" type="button" data-date-year-nav="1" aria-label="Tahun berikutnya">&rsaquo;</button>
+        </div>
+        <div class="date-picker-grid month-grid">
+          ${monthLabels.map((label, index) => {
+            const classes = ["date-picker-choice", index === selectedMonth ? "is-selected" : ""].filter(Boolean).join(" ");
+            return `<button class="${classes}" type="button" data-date-month="${index}">${label}</button>`;
+          }).join("")}
+        </div>`;
+    }
+
+    function renderYearPicker(year) {
+      const startYear = year - 7;
+      const years = Array.from({ length: 16 }, (_, index) => startYear + index);
+      els.datePicker.innerHTML = `
+        <div class="date-picker-header">
+          <button class="date-picker-nav" type="button" data-date-year-block="-16" aria-label="Rentang tahun sebelumnya">&lsaquo;</button>
+          <div class="date-picker-title">${startYear} - ${startYear + 15}</div>
+          <button class="date-picker-nav" type="button" data-date-year-block="16" aria-label="Rentang tahun berikutnya">&rsaquo;</button>
+        </div>
+        <div class="date-picker-grid year-grid">
+          ${years.map((itemYear) => {
+            const classes = ["date-picker-choice", itemYear === year ? "is-selected" : ""].filter(Boolean).join(" ");
+            return `<button class="${classes}" type="button" data-date-year="${itemYear}">${itemYear}</button>`;
+          }).join("")}
+        </div>`;
+    }
+
     function handleDatePickerClick(event) {
       const nav = event.target.closest("[data-date-nav]");
+      const panel = event.target.closest("[data-date-panel]");
+      const yearNav = event.target.closest("[data-date-year-nav]");
+      const yearBlock = event.target.closest("[data-date-year-block]");
+      const monthChoice = event.target.closest("[data-date-month]");
+      const yearChoice = event.target.closest("[data-date-year]");
       const day = event.target.closest("[data-date-day]");
+      if (panel) {
+        datePickerState.panel = panel.dataset.datePanel;
+        renderDatePicker();
+        return;
+      }
+      if (yearNav) {
+        datePickerState.viewDate = new Date(
+          datePickerState.viewDate.getFullYear() + Number(yearNav.dataset.dateYearNav),
+          datePickerState.viewDate.getMonth(),
+          1
+        );
+        renderDatePicker();
+        return;
+      }
+      if (yearBlock) {
+        datePickerState.viewDate = new Date(
+          datePickerState.viewDate.getFullYear() + Number(yearBlock.dataset.dateYearBlock),
+          datePickerState.viewDate.getMonth(),
+          1
+        );
+        renderDatePicker();
+        return;
+      }
+      if (monthChoice) {
+        datePickerState.viewDate = new Date(
+          datePickerState.viewDate.getFullYear(),
+          Number(monthChoice.dataset.dateMonth),
+          1
+        );
+        datePickerState.panel = "day";
+        renderDatePicker();
+        return;
+      }
+      if (yearChoice) {
+        datePickerState.viewDate = new Date(
+          Number(yearChoice.dataset.dateYear),
+          datePickerState.viewDate.getMonth(),
+          1
+        );
+        datePickerState.panel = "month";
+        renderDatePicker();
+        return;
+      }
       if (nav) {
         datePickerState.viewDate = new Date(
           datePickerState.viewDate.getFullYear(),
