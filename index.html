@@ -887,6 +887,17 @@
       word-break: break-word;
     }
 
+    .doc-table ol,
+    .doc-table ul {
+      margin: 0 0 0 15px;
+      padding-left: 13px;
+      white-space: normal;
+    }
+
+    .doc-table li {
+      padding-left: 2px;
+    }
+
     .doc-table th:first-child,
     .doc-table td:first-child {
       padding-left: 2px;
@@ -1105,6 +1116,10 @@
               </div>
               <div class="activity-groups" id="groups"></div>
               <div class="section-actions">
+                <button class="btn btn-secondary" id="maskSelectionBtn" type="button" title="Masking teks yang dipilih">
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="M9 12h6"/></svg>
+                  Masking
+                </button>
                 <button class="btn btn-secondary btn-icon" id="addGroupBtn" type="button" aria-label="Tambah tanggal" title="Tambah tanggal">
                   <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
                 </button>
@@ -1118,8 +1133,7 @@
               <div class="grid-3">
                 <label>Bureau <span class="required-mark">*</span>
                   <select id="bureau">
-                    <option value="" selected disabled hidden>A</option>
-                    <option>A</option>
+                    <option selected>A</option>
                     <option>B</option>
                     <option>C</option>
                     <option>D</option>
@@ -1288,7 +1302,9 @@
     const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
     const pdfFontSources = {
       regular: "https://raw.githubusercontent.com/googlefonts/carlito/main/fonts/ttf/Carlito-Regular.ttf",
-      bold: "https://raw.githubusercontent.com/googlefonts/carlito/main/fonts/ttf/Carlito-Bold.ttf"
+      bold: "https://raw.githubusercontent.com/googlefonts/carlito/main/fonts/ttf/Carlito-Bold.ttf",
+      italic: "https://raw.githubusercontent.com/googlefonts/carlito/main/fonts/ttf/Carlito-Italic.ttf",
+      boldItalic: "https://raw.githubusercontent.com/googlefonts/carlito/main/fonts/ttf/Carlito-BoldItalic.ttf"
     };
     const roleOptions = [
       "Staff",
@@ -1336,6 +1352,7 @@
     };
 
     let activeRoleInput = null;
+    let activeActivityTextarea = null;
 
     function toUpper(value) {
       return String(value || "").trim().toLocaleUpperCase("id-ID");
@@ -1445,6 +1462,185 @@
         .replace(/\n{3,}/g, "\n\n");
     }
 
+    function readRichFormats(textarea) {
+      try {
+        return sanitizeRichFormats(JSON.parse(textarea.dataset.formats || "[]"), textarea.value.length);
+      } catch {
+        return [];
+      }
+    }
+
+    function writeRichFormats(textarea, formats) {
+      textarea.dataset.formats = JSON.stringify(sanitizeRichFormats(formats, textarea.value.length));
+    }
+
+    function sanitizeRichFormats(formats, length) {
+      return (Array.isArray(formats) ? formats : [])
+        .map((format) => ({
+          start: Math.max(0, Math.min(length, Number(format.start) || 0)),
+          end: Math.max(0, Math.min(length, Number(format.end) || 0)),
+          bold: Boolean(format.bold),
+          italic: Boolean(format.italic),
+          underline: Boolean(format.underline)
+        }))
+        .filter((format) => format.end > format.start && (format.bold || format.italic || format.underline));
+    }
+
+    function sliceRichFormats(formats, start, end) {
+      return sanitizeRichFormats(formats, end)
+        .filter((format) => format.start < end && format.end > start)
+        .map((format) => ({
+          ...format,
+          start: Math.max(format.start, start) - start,
+          end: Math.min(format.end, end) - start
+        }));
+    }
+
+    function richSliceToHtml(text, start, end, formats = []) {
+      const chars = String(text || "").slice(start, end);
+      if (!chars) return "";
+      let html = "";
+      let cursor = 0;
+      while (cursor < chars.length) {
+        const absolute = start + cursor;
+        const state = formats.reduce((acc, format) => {
+          if (absolute >= format.start && absolute < format.end) {
+            acc.bold = acc.bold || format.bold;
+            acc.italic = acc.italic || format.italic;
+            acc.underline = acc.underline || format.underline;
+          }
+          return acc;
+        }, { bold: false, italic: false, underline: false });
+
+        let next = cursor + 1;
+        while (next < chars.length) {
+          const nextAbsolute = start + next;
+          const nextState = formats.reduce((acc, format) => {
+            if (nextAbsolute >= format.start && nextAbsolute < format.end) {
+              acc.bold = acc.bold || format.bold;
+              acc.italic = acc.italic || format.italic;
+              acc.underline = acc.underline || format.underline;
+            }
+            return acc;
+          }, { bold: false, italic: false, underline: false });
+          if (nextState.bold !== state.bold || nextState.italic !== state.italic || nextState.underline !== state.underline) break;
+          next += 1;
+        }
+
+        let piece = escapeHtml(chars.slice(cursor, next));
+        if (state.underline) piece = `<u>${piece}</u>`;
+        if (state.italic) piece = `<em>${piece}</em>`;
+        if (state.bold) piece = `<strong>${piece}</strong>`;
+        html += piece;
+        cursor = next;
+      }
+      return html;
+    }
+
+    function richTextToHtml(value, formats = []) {
+      const text = normalizeText(value);
+      const lines = text.split("\n");
+      const html = [];
+      let listOpen = false;
+      let listType = "";
+      let listNumber = 1;
+      let offset = 0;
+
+      lines.forEach((line) => {
+        const listItem = line.match(/^\s*(?:(\d+)[.)]|-)\s+(.*)$/);
+        if (listItem) {
+          const nextType = listItem[1] ? "ol" : "ul";
+          if (listOpen && listType !== nextType) {
+            html.push(`</${listType}>`);
+            listOpen = false;
+          }
+          if (!listOpen) {
+            listNumber = listItem[1] ? Number(listItem[1]) : 1;
+            html.push(nextType === "ol" ? `<ol start="${listNumber}">` : "<ul>");
+            listOpen = true;
+            listType = nextType;
+          }
+          const contentStart = line.indexOf(listItem[2]);
+          html.push(`<li>${richSliceToHtml(text, offset + contentStart, offset + line.length, formats)}</li>`);
+          listNumber += 1;
+          offset += line.length + 1;
+          return;
+        }
+        if (listOpen) {
+          html.push(`</${listType}>`);
+          listOpen = false;
+          listType = "";
+        }
+        html.push(line ? richSliceToHtml(text, offset, offset + line.length, formats) : "<br>");
+        offset += line.length + 1;
+      });
+
+      if (listOpen) html.push(`</${listType}>`);
+      return html.join("");
+    }
+
+    function legacyRichToPlainAndFormats(value) {
+      const source = String(value || "");
+      const formats = [];
+      let text = "";
+      let index = 0;
+      const pattern = /(<u>[\s\S]+?<\/u>|\*\*[^*\n]+?\*\*|\*[^*\n]+?\*)/g;
+      let match;
+      while ((match = pattern.exec(source))) {
+        text += source.slice(index, match.index);
+        const marker = match[0];
+        const start = text.length;
+        let inner = marker;
+        const format = { start, end: start, bold: false, italic: false, underline: false };
+        if (marker.startsWith("**")) {
+          inner = marker.slice(2, -2);
+          format.bold = true;
+        } else if (marker.startsWith("*")) {
+          inner = marker.slice(1, -1);
+          format.italic = true;
+        } else {
+          inner = marker.slice(3, -4);
+          format.underline = true;
+        }
+        text += inner;
+        format.end = text.length;
+        formats.push(format);
+        index = match.index + marker.length;
+      }
+      text += source.slice(index);
+      return { text, formats };
+    }
+
+    function readRichCell(textarea) {
+      let text = normalizeCellText(textarea.value);
+      let formats = readRichFormats(textarea);
+      if (!formats.length && /<u>[\s\S]+?<\/u>|\*\*[^*\n]+?\*\*|\*[^*\n]+?\*/.test(text)) {
+        const migrated = legacyRichToPlainAndFormats(text);
+        text = migrated.text;
+        formats = migrated.formats;
+        textarea.value = text;
+        writeRichFormats(textarea, formats);
+      }
+      return {
+        text,
+        formats: sanitizeRichFormats(formats, text.length)
+      };
+    }
+
+    function maskToken(token) {
+      const text = String(token || "");
+      const length = text.length;
+      if (length <= 1) return "*";
+      if (length === 2) return `*${text.slice(-1)}`;
+      if (length <= 4) return `${"*".repeat(length - 2)}${text.slice(-2)}`;
+      if (length <= 7) return `${"*".repeat(length - 3)}${text.slice(-3)}`;
+      return `${text.slice(0, 4)}${"*".repeat(length - 6)}${text.slice(-2)}`;
+    }
+
+    function maskConfidentialText(value) {
+      return String(value || "").replace(/[A-Za-z0-9]+/g, (token) => maskToken(token));
+    }
+
     function downloadBlob(blob, filename) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -1513,7 +1709,7 @@
 
     function createGroup(groupData = {}) {
       const node = document.getElementById("groupTemplate").content.firstElementChild.cloneNode(true);
-      node.querySelector("[data-field='date']").value = formatDateInput(groupData.date || fields.implementationStartDate.value || "");
+      node.querySelector("[data-field='date']").value = formatDateInput(groupData.date || "");
       els.groups.appendChild(node);
       const rows = groupData.rows?.length ? groupData.rows : [{ activity: "", result: "", pic: "" }];
       rows.forEach((row) => createActivityRow(node, row));
@@ -1523,9 +1719,15 @@
 
     function createActivityRow(groupNode, rowData = {}) {
       const node = document.getElementById("rowTemplate").content.firstElementChild.cloneNode(true);
-      node.querySelector("[data-field='activity']").value = rowData.activity || "";
-      node.querySelector("[data-field='result']").value = rowData.result || "";
-      node.querySelector("[data-field='pic']").value = rowData.pic || "";
+      const activity = node.querySelector("[data-field='activity']");
+      const result = node.querySelector("[data-field='result']");
+      const pic = node.querySelector("[data-field='pic']");
+      activity.value = rowData.activity || "";
+      result.value = rowData.result || "";
+      pic.value = rowData.pic || "";
+      writeRichFormats(activity, rowData.activityFormats || []);
+      writeRichFormats(result, rowData.resultFormats || []);
+      writeRichFormats(pic, rowData.picFormats || []);
       groupNode.querySelector("[data-rows]").appendChild(node);
       refreshNumbers();
       return node;
@@ -1582,11 +1784,19 @@
     function collectData() {
       const groups = [...els.groups.querySelectorAll("[data-group]")].map((group) => ({
         date: group.querySelector("[data-field='date']").value,
-        rows: [...group.querySelectorAll("[data-row]")].map((row) => ({
-          activity: normalizeCellText(row.querySelector("[data-field='activity']").value),
-          result: normalizeCellText(row.querySelector("[data-field='result']").value),
-          pic: normalizeCellText(row.querySelector("[data-field='pic']").value)
-        }))
+        rows: [...group.querySelectorAll("[data-row]")].map((row) => {
+          const activity = readRichCell(row.querySelector("[data-field='activity']"));
+          const result = readRichCell(row.querySelector("[data-field='result']"));
+          const pic = readRichCell(row.querySelector("[data-field='pic']"));
+          return {
+            activity: activity.text,
+            activityFormats: activity.formats,
+            result: result.text,
+            resultFormats: result.formats,
+            pic: pic.text,
+            picFormats: pic.formats
+          };
+        })
       }));
 
       const makers = [...els.makers.querySelectorAll("[data-maker]")].map((maker) => ({
@@ -1620,7 +1830,7 @@
       fields.implementationStartDate.value = formatDateInput(data.implementationStartDate || data.implementationDate || "");
       fields.implementationEndDate.value = formatDateInput(data.implementationEndDate || data.implementationDate || "");
       syncImplementationDateDisplay();
-      fields.bureau.value = data.bureau || "";
+      fields.bureau.value = data.bureau || "A";
       fields.city.value = data.city || "Jakarta";
       fields.signDate.value = formatDateInput(data.signDate || "");
       fields.approverName.value = data.approverName || "";
@@ -2060,7 +2270,7 @@
           const span = spans[key];
           if (span.hidden[localIndex]) return "";
           const rowspan = span.lengths[localIndex] > 1 ? ` rowspan="${span.lengths[localIndex]}"` : "";
-          return `<td${rowspan} style="width:${width}; text-align:${align};">${escapeHtml(rows[localIndex][key])}</td>`;
+          return `<td${rowspan} style="width:${width}; text-align:${align};">${richTextToHtml(rows[localIndex][key], rows[localIndex][`${key}Formats`])}</td>`;
         };
         row.innerHTML = `
           <td style="width:6%; text-align:center;">${rowData.continued ? "" : rowNumber}</td>
@@ -2074,9 +2284,9 @@
         const rowNumber = (rowData.originalIndex ?? displayIndex) + 1;
         row.innerHTML = `
           <td style="width:6%; text-align:center;">${rowData.continued ? "" : rowNumber}</td>
-          <td style="width:42%;">${escapeHtml(rowData.activity)}</td>
-          <td style="width:38%;">${escapeHtml(rowData.result)}</td>
-          <td style="width:14%; text-align:center;">${escapeHtml(rowData.pic)}</td>`;
+          <td style="width:42%;">${richTextToHtml(rowData.activity, rowData.activityFormats)}</td>
+          <td style="width:38%;">${richTextToHtml(rowData.result, rowData.resultFormats)}</td>
+          <td style="width:14%; text-align:center;">${richTextToHtml(rowData.pic, rowData.picFormats)}</td>`;
         return row;
       };
 
@@ -2168,35 +2378,42 @@
 
     function splitPreviewRows(rows) {
       return rows.flatMap((row, index) => {
-        const activity = splitPreviewCell(row.activity);
-        const result = splitPreviewCell(row.result);
-        const pic = splitPreviewCell(row.pic);
+        const activity = splitPreviewCell(row.activity, row.activityFormats);
+        const result = splitPreviewCell(row.result, row.resultFormats);
+        const pic = splitPreviewCell(row.pic, row.picFormats);
         const count = Math.max(activity.length, result.length, pic.length);
         return Array.from({ length: count }, (_, chunkIndex) => ({
-          activity: activity[chunkIndex] || "",
-          result: result[chunkIndex] || "",
-          pic: pic[chunkIndex] || "",
+          activity: activity[chunkIndex]?.text || "",
+          activityFormats: activity[chunkIndex]?.formats || [],
+          result: result[chunkIndex]?.text || "",
+          resultFormats: result[chunkIndex]?.formats || [],
+          pic: pic[chunkIndex]?.text || "",
+          picFormats: pic[chunkIndex]?.formats || [],
           continued: chunkIndex > 0,
           originalIndex: index
         }));
       });
     }
 
-    function splitPreviewCell(value) {
+    function splitPreviewCell(value, formats = []) {
       const maxChars = 850;
       const text = normalizeText(value);
-      if (text.length <= maxChars) return [text];
+      const safeFormats = sanitizeRichFormats(formats, text.length);
+      if (text.length <= maxChars) return [{ text, formats: safeFormats }];
       const chunks = [];
+      let offset = 0;
       let remaining = text;
       while (remaining.length > maxChars) {
         let cut = remaining.lastIndexOf("\n", maxChars);
         if (cut < maxChars * 0.45) cut = remaining.lastIndexOf(" ", maxChars);
         if (cut < maxChars * 0.45) cut = maxChars;
-        chunks.push(remaining.slice(0, cut).trim());
+        const chunkText = remaining.slice(0, cut).trim();
+        chunks.push({ text: chunkText, formats: sliceRichFormats(safeFormats, offset, offset + chunkText.length) });
         remaining = remaining.slice(cut).trim();
+        offset += cut;
       }
-      if (remaining) chunks.push(remaining);
-      return chunks.length ? chunks : [""];
+      if (remaining) chunks.push({ text: remaining, formats: sliceRichFormats(safeFormats, offset, offset + remaining.length) });
+      return chunks.length ? chunks : [{ text: "", formats: [] }];
     }
 
     function escapeHtml(value) {
@@ -2254,14 +2471,20 @@
 
     async function registerPdfFonts(pdf) {
       try {
-        const [regular, bold] = await Promise.all([
+        const [regular, bold, italic, boldItalic] = await Promise.all([
           fetchFontAsBase64(pdfFontSources.regular),
-          fetchFontAsBase64(pdfFontSources.bold)
+          fetchFontAsBase64(pdfFontSources.bold),
+          fetchFontAsBase64(pdfFontSources.italic),
+          fetchFontAsBase64(pdfFontSources.boldItalic)
         ]);
         pdf.addFileToVFS("Carlito-Regular.ttf", regular);
         pdf.addFileToVFS("Carlito-Bold.ttf", bold);
+        pdf.addFileToVFS("Carlito-Italic.ttf", italic);
+        pdf.addFileToVFS("Carlito-BoldItalic.ttf", boldItalic);
         pdf.addFont("Carlito-Regular.ttf", "Carlito", "normal");
         pdf.addFont("Carlito-Bold.ttf", "Carlito", "bold");
+        pdf.addFont("Carlito-Italic.ttf", "Carlito", "italic");
+        pdf.addFont("Carlito-BoldItalic.ttf", "Carlito", "bolditalic");
         return "Carlito";
       } catch {
         return "helvetica";
@@ -2417,8 +2640,12 @@
       pdf.setFont(layout.fontFamily, "normal");
       pdf.setFontSize(layout.bodySize);
       const widths = [layout.columns[1], layout.columns[2], layout.columns[3]];
-      const values = [row.activity, row.result, row.pic];
-      const lineCounts = values.map((value, index) => splitPdfText(pdf, value, widths[index] - layout.padX * 2).length);
+      const values = [
+        { text: row.activity, formats: row.activityFormats },
+        { text: row.result, formats: row.resultFormats },
+        { text: row.pic, formats: row.picFormats }
+      ];
+      const lineCounts = values.map((value, index) => splitPdfRichText(pdf, value.text, widths[index] - layout.padX * 2, layout, value.formats).length);
       return Math.max(28, Math.max(...lineCounts) * layout.bodyLine + layout.padY * 2);
     }
 
@@ -2426,6 +2653,102 @@
       return String(value || "")
         .split("\n")
         .flatMap((line) => pdf.splitTextToSize(line || " ", Math.max(8, width)));
+    }
+
+    function pdfSegmentsForRange(text, start, end, formats = []) {
+      const value = String(text || "");
+      const safeFormats = sanitizeRichFormats(formats, value.length);
+      const segments = [];
+      let cursor = start;
+      while (cursor < end) {
+        const state = safeFormats.reduce((acc, format) => {
+          if (cursor >= format.start && cursor < format.end) {
+            acc.bold = acc.bold || format.bold;
+            acc.italic = acc.italic || format.italic;
+            acc.underline = acc.underline || format.underline;
+          }
+          return acc;
+        }, { bold: false, italic: false, underline: false });
+
+        let next = cursor + 1;
+        while (next < end) {
+          const nextState = safeFormats.reduce((acc, format) => {
+            if (next >= format.start && next < format.end) {
+              acc.bold = acc.bold || format.bold;
+              acc.italic = acc.italic || format.italic;
+              acc.underline = acc.underline || format.underline;
+            }
+            return acc;
+          }, { bold: false, italic: false, underline: false });
+          if (nextState.bold !== state.bold || nextState.italic !== state.italic || nextState.underline !== state.underline) break;
+          next += 1;
+        }
+
+        segments.push({ text: value.slice(cursor, next), ...state });
+        cursor = next;
+      }
+      return segments.length ? segments : [{ text: " ", bold: false, italic: false, underline: false }];
+    }
+
+    function pdfFontStyle(segment) {
+      if (segment.bold && segment.italic) return "bolditalic";
+      if (segment.bold) return "bold";
+      if (segment.italic) return "italic";
+      return "normal";
+    }
+
+    function measurePdfSegments(pdf, layout, segments) {
+      return segments.reduce((total, segment) => {
+        pdf.setFont(layout.fontFamily, pdfFontStyle(segment));
+        pdf.setFontSize(layout.bodySize);
+        return total + pdf.getTextWidth(segment.text);
+      }, 0);
+    }
+
+    function splitPdfRichText(pdf, value, width, layoutOverride = null, formats = []) {
+      const layout = layoutOverride || { fontFamily: "helvetica", bodySize: 10.5 };
+      const rawText = normalizeText(value);
+      const rawLines = rawText.split("\n");
+      const output = [];
+      let listNumber = 1;
+      let offset = 0;
+      rawLines.forEach((rawLine) => {
+        const listItem = rawLine.match(/^\s*(?:(\d+)[.)]|-)\s+(.*)$/);
+        if (listItem?.[1]) listNumber = Number(listItem[1]);
+        const prefix = listItem ? (listItem[1] ? `${listNumber}. ` : "\u2022 ") : "";
+        const contentStart = listItem ? rawLine.indexOf(listItem[2]) : 0;
+        const tokens = pdfSegmentsForRange(rawText, offset + contentStart, offset + rawLine.length, formats);
+        const prefixSegment = prefix ? [{ text: prefix, bold: false, italic: false, underline: false }] : [];
+        let segments = [...prefixSegment];
+        let hasText = false;
+
+        tokens.forEach((token) => {
+          token.text.split(/(\s+)/).forEach((part) => {
+            if (!part) return;
+            const next = { ...token, text: part };
+            const isSpace = /^\s+$/.test(part);
+            if (!hasText && isSpace) return;
+            const testSegments = [...segments, next];
+            if (hasText && measurePdfSegments(pdf, layout, testSegments) > Math.max(8, width)) {
+              output.push(segments);
+              segments = [...prefixSegment];
+              if (!isSpace) {
+                segments.push(next);
+                hasText = true;
+              }
+            } else {
+              segments.push(next);
+              if (!isSpace) hasText = true;
+            }
+          });
+        });
+
+        if (!segments.length || (!hasText && !prefix)) segments = [{ text: " ", bold: false, italic: false, underline: false }];
+        output.push(segments);
+        if (listItem) listNumber += 1;
+        offset += rawLine.length + 1;
+      });
+      return output.length ? output : [[{ text: " ", bold: false, italic: false, underline: false }]];
     }
 
     function buildPdfSpans(rows) {
@@ -2466,20 +2789,31 @@
         const width = layout.columns[colIndex];
         if (!span.hidden[index]) {
           const height = sumRange(rowHeights, index, index + span.lengths[index]);
-          const lines = splitPdfText(pdf, rows[index][key], width - layout.padX * 2);
-          drawPdfCell(pdf, layout, x, y, width, height, lines, key === "pic" ? "center" : "left");
+          drawPdfCell(pdf, layout, x, y, width, height, rows[index][key], key === "pic" ? "center" : "left", rows[index][`${key}Formats`]);
         }
         x += width;
       });
       return y + rowHeight;
     }
 
-    function drawPdfCell(pdf, layout, x, y, width, height, lines, align = "left") {
+    function drawPdfCell(pdf, layout, x, y, width, height, value, align = "left", formats = []) {
       pdf.rect(x, y, width, height);
-      const textX = align === "center" ? x + width / 2 : x + layout.padX;
-      const options = align === "center" ? { align: "center" } : {};
-      lines.forEach((line, index) => {
-        pdf.text(line, textX, y + layout.padY + layout.bodySize + index * layout.bodyLine, options);
+      const lines = splitPdfRichText(pdf, value, width - layout.padX * 2, layout, formats);
+      lines.forEach((segments, index) => {
+        const textY = y + layout.padY + layout.bodySize + index * layout.bodyLine;
+        let textX = align === "center"
+          ? x + width / 2 - measurePdfSegments(pdf, layout, segments) / 2
+          : x + layout.padX;
+        segments.forEach((segment) => {
+          pdf.setFont(layout.fontFamily, pdfFontStyle(segment));
+          pdf.setFontSize(layout.bodySize);
+          pdf.text(segment.text, textX, textY);
+          const segmentWidth = pdf.getTextWidth(segment.text);
+          if (segment.underline) {
+            pdf.line(textX, textY + 1.4, textX + segmentWidth, textY + 1.4);
+          }
+          textX += segmentWidth;
+        });
       });
     }
 
@@ -2491,17 +2825,63 @@
       const maxLines = Math.max(1, Math.floor((layout.bottomLimit - drawPdfPageHeaderHeight(layout) - layout.tableHeaderHeight - layout.dateHeight - layout.padY * 2) / layout.bodyLine));
       return rows.flatMap((row, index) => {
         const values = ["activity", "result", "pic"].map((key, offset) =>
-          splitPdfText(pdf, row[key], layout.columns[offset + 1] - layout.padX * 2)
+          splitPdfRichChunks(pdf, layout, row[key], row[`${key}Formats`], layout.columns[offset + 1] - layout.padX * 2, maxLines)
         );
-        const chunkCount = Math.max(...values.map((lines) => Math.ceil(lines.length / maxLines)));
+        const chunkCount = Math.max(...values.map((chunks) => chunks.length));
         return Array.from({ length: chunkCount }, (_, chunkIndex) => ({
-          activity: values[0].slice(chunkIndex * maxLines, (chunkIndex + 1) * maxLines).join("\n"),
-          result: values[1].slice(chunkIndex * maxLines, (chunkIndex + 1) * maxLines).join("\n"),
-          pic: values[2].slice(chunkIndex * maxLines, (chunkIndex + 1) * maxLines).join("\n"),
+          activity: values[0][chunkIndex]?.text || "",
+          activityFormats: values[0][chunkIndex]?.formats || [],
+          result: values[1][chunkIndex]?.text || "",
+          resultFormats: values[1][chunkIndex]?.formats || [],
+          pic: values[2][chunkIndex]?.text || "",
+          picFormats: values[2][chunkIndex]?.formats || [],
           continued: chunkIndex > 0,
           originalIndex: index
         }));
       });
+    }
+
+    function splitPdfRichChunks(pdf, layout, value, formats = [], width, maxLines) {
+      const raw = normalizeText(value);
+      const safeFormats = sanitizeRichFormats(formats, raw.length);
+      if (!raw) return [{ text: "", formats: [] }];
+      const chunks = [];
+      let current = [];
+      let currentCount = 0;
+      let offset = 0;
+
+      raw.split("\n").forEach((line) => {
+        const lineFormats = sliceRichFormats(safeFormats, offset, offset + line.length);
+        const lineCount = splitPdfRichText(pdf, line, width, layout, lineFormats).length;
+        if (current.length && currentCount + lineCount > maxLines) {
+          const text = current.join("\n");
+          chunks.push({ text, formats: sliceRichFormats(safeFormats, offset - text.length, offset) });
+          current = [];
+          currentCount = 0;
+        }
+        if (lineCount > maxLines) {
+          splitPdfText(pdf, line, width).forEach((plainLine) => {
+            if (currentCount >= maxLines) {
+              chunks.push({ text: current.join("\n"), formats: [] });
+              current = [];
+              currentCount = 0;
+            }
+            current.push(plainLine);
+            currentCount += 1;
+          });
+          offset += line.length + 1;
+          return;
+        }
+        current.push(line);
+        currentCount += lineCount;
+        offset += line.length + 1;
+      });
+
+      if (current.length) {
+        const text = current.join("\n");
+        chunks.push({ text, formats: sliceRichFormats(safeFormats, raw.length - text.length, raw.length) });
+      }
+      return chunks.length ? chunks : [{ text: "", formats: [] }];
     }
 
     function drawPdfPageHeaderHeight(layout) {
@@ -2578,7 +2958,7 @@
             }
           ]
         }],
-        bureau: "",
+        bureau: "A",
         city: "Jakarta",
         signDate: "",
         makers: [{ name: "", role: "" }],
@@ -2627,6 +3007,16 @@
         openRoleMenu(event.target);
         return;
       }
+      if (event.target.matches("#groups textarea") && (event.ctrlKey || event.metaKey)) {
+        const shortcut = event.key.toLowerCase();
+        const formatMap = { b: "bold", i: "italic", u: "underline" };
+        if (formatMap[shortcut]) {
+          event.preventDefault();
+          activeActivityTextarea = event.target;
+          applyTextareaFormat(event.target, formatMap[shortcut]);
+          return;
+        }
+      }
       if (!event.target.matches(".date-input")) return;
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
@@ -2642,6 +3032,10 @@
           renderRoleMenu();
           positionRoleMenu(event.target);
           els.roleMenu.hidden = false;
+        }
+        if (event.target.matches("#groups textarea")) {
+          activeActivityTextarea = event.target;
+          writeRichFormats(event.target, readRichFormats(event.target));
         }
         refreshNumbers();
         renderPreview();
@@ -2672,6 +3066,60 @@
       autosave();
     });
 
+    function getTextRange(textarea, tokenOnly = false) {
+      const start = textarea.selectionStart ?? textarea.value.length;
+      const end = textarea.selectionEnd ?? textarea.value.length;
+      if (start !== end) return { start, end, text: textarea.value.slice(start, end) };
+
+      const value = textarea.value;
+      const test = tokenOnly ? /[A-Za-z0-9]/ : /\S/;
+      let from = start;
+      let to = end;
+      while (from > 0 && test.test(value[from - 1])) from -= 1;
+      while (to < value.length && test.test(value[to])) to += 1;
+      return { start: from, end: to, text: value.slice(from, to) };
+    }
+
+    function replaceTextareaRange(textarea, range, replacement) {
+      textarea.setSelectionRange(range.start, range.end);
+      textarea.setRangeText(replacement, range.start, range.end, "select");
+      textarea.focus();
+      textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+
+    function applyTextareaFormat(textarea, type) {
+      const range = getTextRange(textarea);
+      if (!range.text) return;
+      const nextFormat = {
+        start: range.start,
+        end: range.end,
+        bold: type === "bold",
+        italic: type === "italic",
+        underline: type === "underline"
+      };
+      writeRichFormats(textarea, [...readRichFormats(textarea), nextFormat]);
+      textarea.focus();
+      textarea.setSelectionRange(range.start, range.end);
+      textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+
+    function applyMasking() {
+      const textarea = document.activeElement?.matches?.("#groups textarea")
+        ? document.activeElement
+        : activeActivityTextarea;
+      if (!textarea) {
+        setMessage("error", "Klik field tabel aktivitas lalu pilih teks yang ingin dimasking.");
+        return;
+      }
+      const range = getTextRange(textarea, true);
+      if (!range.text) {
+        setMessage("error", "Pilih teks confidential atau letakkan cursor pada kata yang ingin dimasking.");
+        return;
+      }
+      replaceTextareaRange(textarea, range, maskConfidentialText(range.text));
+      setMessage("ok", "Teks confidential sudah dimasking.");
+    }
+
     els.makers.addEventListener("click", (event) => {
       const removeMaker = event.target.closest("[data-remove-maker]");
       if (!removeMaker) return;
@@ -2688,6 +3136,11 @@
     document.getElementById("generateBtn").addEventListener("click", generatePdf);
     document.getElementById("resetBtn").addEventListener("click", resetForm);
     els.importDraftInput.addEventListener("change", (event) => importDraft(event.target.files[0]));
+    document.getElementById("maskSelectionBtn").addEventListener("click", applyMasking);
+
+    els.groups.addEventListener("focusin", (event) => {
+      if (event.target.matches("textarea")) activeActivityTextarea = event.target;
+    });
 
     els.groups.addEventListener("click", (event) => {
       const addRow = event.target.closest("[data-add-row]");
