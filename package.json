@@ -1,0 +1,16 @@
+{
+  "name": "generate-berita-acara",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:worker": "wrangler dev",
+    "deploy:worker": "wrangler deploy"
+  },
+  "dependencies": {
+    "yjs": "^13.6.27"
+  },
+  "devDependencies": {
+    "wrangler": "^4.16.1"
+  }
+}
