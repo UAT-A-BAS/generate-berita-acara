@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="ba-collab-worker-url" content="https://generate-berita-acara-collab.alex-marcello08.workers.dev">
   <title>Generator Berita Acara</title>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <style>
@@ -101,6 +102,79 @@
       color: var(--muted);
       font-size: 13px;
       text-align: right;
+    }
+
+    .collab-panel {
+      display: flex;
+      min-width: 320px;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 8px;
+      border-radius: 8px;
+      background: var(--brand-2);
+    }
+
+    .sync-pill {
+      display: inline-flex;
+      min-height: 36px;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border: 1px solid rgba(214, 226, 240, 0.35);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .sync-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+
+    .sync-pill.is-connected .sync-dot,
+    .sync-pill.is-live .sync-dot,
+    .sync-pill.is-saved .sync-dot {
+      background: var(--ok);
+    }
+
+    .sync-pill.is-syncing .sync-dot {
+      background: #b7791f;
+      animation: pulse-sync 900ms ease-in-out infinite;
+    }
+
+    .sync-pill.is-offline .sync-dot {
+      background: var(--danger);
+    }
+
+    .sync-pill.is-draft .sync-dot,
+    .sync-pill.is-neutral .sync-dot {
+      background: #94a3b8;
+    }
+
+    @keyframes pulse-sync {
+      0%, 100% { opacity: 0.45; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.1); }
+    }
+
+    .collab-button {
+      min-height: 36px;
+      padding: 6px 10px;
+      border-color: rgba(214, 226, 240, 0.45);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      font-size: 12px;
+    }
+
+    .collab-button:hover {
+      background: rgba(255, 255, 255, 0.18);
     }
 
     .layout {
@@ -1024,6 +1098,15 @@
         text-align: left;
       }
 
+      .collab-panel {
+        min-width: 0;
+        justify-content: flex-start;
+      }
+
+      .presence-list {
+        justify-content: flex-start;
+      }
+
       .paper {
         width: 794px;
       }
@@ -1054,6 +1137,26 @@
   <main class="app">
     <header class="topbar">
       <h1>Generator Berita Acara</h1>
+      <div class="collab-panel" aria-label="Kolaborasi realtime">
+        <button class="btn btn-secondary collab-button" id="collabToggleBtn" type="button">Start Collab</button>
+        <button class="btn btn-secondary collab-button" id="copyShareLinkBtn" type="button" hidden>Copy Share Link</button>
+        <div class="sync-pill is-draft" id="modeStatus" role="status" aria-live="polite">
+          <span class="sync-dot" aria-hidden="true"></span>
+          <span id="modeStatusText">Personal Draft</span>
+        </div>
+        <div class="sync-pill is-offline" id="syncStatus" role="status" aria-live="polite">
+          <span class="sync-dot" aria-hidden="true"></span>
+          <span id="syncStatusText">Offline</span>
+        </div>
+        <div class="sync-pill is-neutral" id="userCountStatus">
+          <span class="sync-dot" aria-hidden="true"></span>
+          <span id="userCountText">Users: 1</span>
+        </div>
+        <div class="sync-pill is-neutral" id="lastSyncedStatus">
+          <span class="sync-dot" aria-hidden="true"></span>
+          <span id="lastSyncedText">Last synced: -</span>
+        </div>
+      </div>
     </header>
     <div class="status sr-only" id="status" aria-live="polite"></div>
 
@@ -1301,6 +1404,11 @@
 
   <script>
     const AUTOSAVE_KEY = "ba-generator-autosave-v1";
+    const AUTOSAVE_META_KEY = "ba-generator-autosave-meta-v1";
+    const USER_KEY = "ba-generator-collab-user-v1";
+    const WORKER_BASE_URL = window.BA_COLLAB_WORKER_URL || document.querySelector("meta[name='ba-collab-worker-url']")?.content || "";
+    const LOCAL_ORIGIN = "local-form";
+    const REMOTE_ORIGIN = "remote-form";
     const monthNames = [
       "Januari", "Februari", "Maret", "April", "Mei", "Juni",
       "Juli", "Agustus", "September", "Oktober", "November", "Desember"
@@ -1337,7 +1445,15 @@
       preview: document.getElementById("preview"),
       splitter: document.getElementById("splitter"),
       generateBtn: document.getElementById("generateBtn"),
-      importDraftInput: document.getElementById("importDraftInput")
+      importDraftInput: document.getElementById("importDraftInput"),
+      collabToggleBtn: document.getElementById("collabToggleBtn"),
+      copyShareLinkBtn: document.getElementById("copyShareLinkBtn"),
+      modeStatus: document.getElementById("modeStatus"),
+      modeStatusText: document.getElementById("modeStatusText"),
+      syncStatus: document.getElementById("syncStatus"),
+      syncStatusText: document.getElementById("syncStatusText"),
+      userCountText: document.getElementById("userCountText"),
+      lastSyncedText: document.getElementById("lastSyncedText")
     };
 
     const fields = {
@@ -1364,6 +1480,73 @@
 
     let activeRoleInput = null;
     let activeActivityTextarea = null;
+    let Y = null;
+    let sharedDoc = null;
+    let sharedState = null;
+    let sharedSocket = null;
+    let sharedUpdateTimer = null;
+    let reconnectTimer = null;
+    let firstServerSync = false;
+    let applyingRemoteData = false;
+    let suppressSharedUpdate = false;
+    const clientId = crypto.randomUUID();
+    const collaboration = {
+      docId: getDocIdFromUrl(),
+      user: loadCollabUser(),
+      users: new Map(),
+      active: false,
+      connected: false,
+      ready: false,
+      localUpdatedAt: Number(localStorage.getItem(AUTOSAVE_META_KEY) || "0")
+    };
+
+    function randomId(length = 10) {
+      const alphabet = "abcdefghijkmnopqrstuvwxyz23456789";
+      const bytes = new Uint8Array(length);
+      crypto.getRandomValues(bytes);
+      return [...bytes].map((byte) => alphabet[byte % alphabet.length]).join("");
+    }
+
+    function getDocIdFromUrl() {
+      const url = new URL(window.location.href);
+      return url.searchParams.get("doc") || "";
+    }
+
+    function createCollabDocId() {
+      const next = randomId(12);
+      setDocIdInUrl(next);
+      return next;
+    }
+
+    function setDocIdInUrl(docId) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("doc", docId);
+      window.history.replaceState({}, "", url);
+    }
+
+    function loadCollabUser() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(USER_KEY) || "null");
+        if (saved?.name && saved?.color) return { ...saved, id: clientId };
+      } catch {
+        // Ignore bad local profile; fresh identity is safer.
+      }
+      const colors = ["#1b4d78", "#1f7a4d", "#9f580a", "#7c3aed", "#be123c", "#0f766e"];
+      const user = {
+        id: clientId,
+        name: `User ${randomId(4).toUpperCase()}`,
+        color: colors[Math.floor(Math.random() * colors.length)]
+      };
+      localStorage.setItem(USER_KEY, JSON.stringify({ name: user.name, color: user.color }));
+      return user;
+    }
+
+    function saveCollabUser() {
+      localStorage.setItem(USER_KEY, JSON.stringify({
+        name: collaboration.user.name,
+        color: collaboration.user.color
+      }));
+    }
 
     function toUpper(value) {
       return String(value || "").trim().toLocaleUpperCase("id-ID");
@@ -1765,6 +1948,221 @@
       els.status.textContent = message;
     }
 
+    function formatSyncTime(date = new Date()) {
+      return date.toLocaleTimeString("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+      }).replace(/:/g, ".");
+    }
+
+    function setModeStatus(mode) {
+      const live = mode === "live";
+      els.modeStatus.className = `sync-pill ${live ? "is-live" : "is-draft"}`;
+      els.modeStatusText.textContent = live ? "Live" : "Personal Draft";
+      els.collabToggleBtn.textContent = live ? "Restart Collab" : "Start Collab";
+      els.copyShareLinkBtn.hidden = !live;
+    }
+
+    function setSyncStatus(status) {
+      const labels = {
+        connected: "Connected",
+        syncing: "Syncing",
+        saved: "Saved",
+        offline: "Offline"
+      };
+      els.syncStatus.className = `sync-pill is-${status}`;
+      els.syncStatusText.textContent = labels[status] || status;
+      setStatus(labels[status] || status);
+    }
+
+    function renderPresence(users = collaboration.users) {
+      const total = collaboration.active ? Math.max(1, users.size) : 1;
+      els.userCountText.textContent = `Users: ${total}`;
+    }
+
+    function setLastSynced(value = "-") {
+      els.lastSyncedText.textContent = `Last synced: ${value}`;
+    }
+
+    function getWorkerWebSocketUrl() {
+      const base = WORKER_BASE_URL || window.location.origin;
+      const url = new URL(`/collab/${encodeURIComponent(collaboration.docId)}`, base);
+      url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+      return url.toString();
+    }
+
+    function sendPresence() {
+      if (!sharedSocket || sharedSocket.readyState !== WebSocket.OPEN) return;
+      sharedSocket.send(JSON.stringify({
+        type: "presence",
+        user: collaboration.user
+      }));
+    }
+
+    function handlePresenceMessage(message) {
+      if (message.type !== "presence") return;
+      collaboration.users = new Map((message.users || []).map((user) => [user.id, user]));
+      renderPresence();
+    }
+
+    function persistAutosave(data, updatedAt = Date.now()) {
+      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(data));
+      localStorage.setItem(AUTOSAVE_META_KEY, String(updatedAt));
+      collaboration.localUpdatedAt = updatedAt;
+    }
+
+    function commitSharedData(data = collectData()) {
+      if (!collaboration.active || !sharedState || !Y || applyingRemoteData) return;
+      const updatedAt = Date.now();
+      persistAutosave(data, updatedAt);
+      sharedDoc.transact(() => {
+        sharedState.set("data", data);
+        sharedState.set("updatedAt", updatedAt);
+        sharedState.set("updatedBy", clientId);
+      }, LOCAL_ORIGIN);
+      setSyncStatus(sharedSocket?.readyState === WebSocket.OPEN ? "syncing" : "offline");
+    }
+
+    function queueSharedUpdate() {
+      if (!collaboration.active || !sharedState || suppressSharedUpdate || applyingRemoteData) return;
+      clearTimeout(sharedUpdateTimer);
+      sharedUpdateTimer = setTimeout(() => commitSharedData(), 180);
+    }
+
+    function applySharedDataIfNewer() {
+      const data = sharedState?.get("data");
+      if (!data) return false;
+      const remoteUpdatedAt = Number(sharedState.get("updatedAt") || "0");
+      if (remoteUpdatedAt && collaboration.localUpdatedAt > remoteUpdatedAt && sharedSocket?.readyState === WebSocket.OPEN) {
+        commitSharedData(collectData());
+        return true;
+      }
+      applyingRemoteData = true;
+      applyData(data, { fromShared: true });
+      applyingRemoteData = false;
+      persistAutosave(data, remoteUpdatedAt || Date.now());
+      if (remoteUpdatedAt) setLastSynced(formatSyncTime(new Date(remoteUpdatedAt)));
+      return true;
+    }
+
+    function sendYUpdate(update) {
+      if (!sharedSocket || sharedSocket.readyState !== WebSocket.OPEN) return;
+      sharedSocket.send(update);
+      setSyncStatus("syncing");
+    }
+
+    async function startCollaboration(restart = false) {
+      if (restart || !collaboration.docId) {
+        collaboration.docId = createCollabDocId();
+      } else {
+        setDocIdInUrl(collaboration.docId);
+      }
+      stopCollaboration(false);
+      collaboration.active = true;
+      collaboration.users.set(clientId, collaboration.user);
+      renderPresence();
+      setModeStatus("live");
+      setSyncStatus("syncing");
+
+      try {
+        Y = await import("https://esm.sh/yjs@13.6.27");
+        sharedDoc = new Y.Doc();
+        sharedState = sharedDoc.getMap("form");
+        sharedState.observe((event) => {
+          if (event.transaction.origin === LOCAL_ORIGIN) return;
+          applySharedDataIfNewer();
+        });
+        sharedDoc.on("update", (update, origin) => {
+          if (origin === REMOTE_ORIGIN) return;
+          sendYUpdate(update);
+        });
+        collaboration.ready = true;
+        connectCollaborationSocket();
+      } catch (error) {
+        setSyncStatus("offline");
+        setStatus(`Kolaborasi offline: ${error.message}`);
+      }
+    }
+
+    function stopCollaboration(resetUi = true) {
+      clearTimeout(reconnectTimer);
+      clearTimeout(sharedUpdateTimer);
+      if (sharedSocket) {
+        sharedSocket.onclose = null;
+        sharedSocket.close();
+      }
+      sharedSocket = null;
+      sharedDoc = null;
+      sharedState = null;
+      firstServerSync = false;
+      collaboration.connected = false;
+      collaboration.ready = false;
+      collaboration.users = new Map();
+      if (resetUi) {
+        collaboration.active = false;
+        setModeStatus("draft");
+        setSyncStatus("offline");
+        renderPresence();
+        setLastSynced("-");
+      }
+    }
+
+    function connectCollaborationSocket() {
+      clearTimeout(reconnectTimer);
+      setSyncStatus("syncing");
+      firstServerSync = false;
+      try {
+        sharedSocket = new WebSocket(getWorkerWebSocketUrl());
+        sharedSocket.binaryType = "arraybuffer";
+      } catch {
+        setSyncStatus("offline");
+        return;
+      }
+      const socket = sharedSocket;
+
+      socket.addEventListener("open", () => {
+        if (socket !== sharedSocket) return;
+        collaboration.connected = true;
+        setSyncStatus("connected");
+        sendPresence();
+      });
+
+      socket.addEventListener("message", async (event) => {
+        if (socket !== sharedSocket) return;
+        if (typeof event.data === "string") {
+          const message = JSON.parse(event.data || "{}");
+          if (message.type === "saved") {
+            setSyncStatus("saved");
+            setLastSynced(formatSyncTime());
+          }
+          handlePresenceMessage(message);
+          return;
+        }
+
+        const buffer = event.data instanceof ArrayBuffer ? event.data : await event.data.arrayBuffer();
+        Y.applyUpdate(sharedDoc, new Uint8Array(buffer), REMOTE_ORIGIN);
+        if (!firstServerSync) {
+          firstServerSync = true;
+          if (!applySharedDataIfNewer()) commitSharedData(collectData());
+          sendYUpdate(Y.encodeStateAsUpdate(sharedDoc));
+        }
+      });
+
+      socket.addEventListener("close", () => {
+        if (socket !== sharedSocket) return;
+        collaboration.connected = false;
+        setSyncStatus("offline");
+        reconnectTimer = setTimeout(connectCollaborationSocket, 1800);
+      });
+
+      socket.addEventListener("error", () => {
+        if (socket !== sharedSocket) return;
+        setSyncStatus("offline");
+      });
+    }
+
     function setGenerateMessage(type, message) {
       els.generateMessage.className = "generate-message";
       els.generateMessage.textContent = message || "";
@@ -1906,7 +2304,8 @@
       };
     }
 
-    function applyData(data) {
+    function applyData(data, options = {}) {
+      const fromShared = Boolean(options.fromShared);
       document.querySelector(`input[name='baType'][value='${data.baType || "pilot"}']`).checked = true;
       fields.featureName.value = data.featureName || "";
       fields.branchName.value = data.branchName || "";
@@ -1929,6 +2328,7 @@
       refreshNumbers();
       renderPreview();
       autosave();
+      if (!fromShared) queueSharedUpdate();
     }
 
     function validateData(data) {
@@ -2287,8 +2687,11 @@
     let autosaveTimer = null;
     function autosave() {
       clearTimeout(autosaveTimer);
+      const shouldSync = !applyingRemoteData && !suppressSharedUpdate;
+      const updatedAt = applyingRemoteData ? Number(sharedState?.get("updatedAt") || Date.now()) : Date.now();
       autosaveTimer = setTimeout(() => {
-        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(collectData()));
+        persistAutosave(collectData(), updatedAt);
+        if (shouldSync) queueSharedUpdate();
       }, 250);
     }
 
@@ -3018,6 +3421,7 @@
     function resetForm() {
       applyData(defaultData());
       localStorage.removeItem(AUTOSAVE_KEY);
+      localStorage.removeItem(AUTOSAVE_META_KEY);
       setMessage("ok", "Form reset.");
       setStatus("Form reset.");
     }
@@ -3232,6 +3636,16 @@
     document.getElementById("loadDraftBtn").addEventListener("click", loadDraft);
     document.getElementById("generateBtn").addEventListener("click", generatePdf);
     document.getElementById("resetBtn").addEventListener("click", resetForm);
+    els.collabToggleBtn.addEventListener("click", () => {
+      startCollaboration(collaboration.active);
+    });
+    els.copyShareLinkBtn.addEventListener("click", async () => {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(window.location.href);
+      }
+      setMessage("ok", "Share link disalin.");
+      setStatus("Share link disalin.");
+    });
     els.importDraftInput.addEventListener("change", (event) => importDraft(event.target.files[0]));
     document.getElementById("maskSelectionBtn").addEventListener("click", applyMasking);
 
@@ -3299,7 +3713,12 @@
     }
 
     enableSplitter();
-    applyData(defaultData());
+    applyData(maybeLoadAutosave() || defaultData());
+    setModeStatus("draft");
+    setSyncStatus("offline");
+    renderPresence();
+    setLastSynced("-");
+    if (collaboration.docId) startCollaboration(false);
     if (!window.jspdf?.jsPDF) {
       setGenerateMessage("error", "Library PDF belum termuat. Refresh jika tombol generate gagal.");
     }
