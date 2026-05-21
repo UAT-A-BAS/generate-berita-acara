@@ -111,21 +111,24 @@
       gap: 8px;
       align-items: center;
       justify-content: flex-end;
-      padding: 8px;
+      padding: 6px;
+      border: 1px solid var(--line);
       border-radius: 8px;
-      background: var(--brand-2);
+      background: rgba(255, 255, 255, 0.78);
+      box-shadow: 0 10px 26px rgba(31, 45, 61, 0.08);
+      backdrop-filter: blur(8px);
     }
 
     .sync-pill {
       display: inline-flex;
-      min-height: 36px;
+      min-height: 34px;
       align-items: center;
       gap: 8px;
       padding: 6px 10px;
-      border: 1px solid rgba(214, 226, 240, 0.35);
+      border: 1px solid var(--line);
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.08);
-      color: #fff;
+      background: var(--surface-muted);
+      color: var(--muted);
       font-size: 13px;
       font-weight: 700;
       white-space: nowrap;
@@ -144,13 +147,33 @@
       background: var(--ok);
     }
 
+    .sync-pill.is-connected,
+    .sync-pill.is-live,
+    .sync-pill.is-saved {
+      border-color: #b9ddca;
+      background: #eefaf3;
+      color: #17623d;
+    }
+
     .sync-pill.is-syncing .sync-dot {
       background: #b7791f;
       animation: pulse-sync 900ms ease-in-out infinite;
     }
 
+    .sync-pill.is-syncing {
+      border-color: #ead29b;
+      background: #fff8e6;
+      color: #7a4a09;
+    }
+
     .sync-pill.is-offline .sync-dot {
       background: var(--danger);
+    }
+
+    .sync-pill.is-offline {
+      border-color: #efc9c3;
+      background: #fff6f4;
+      color: var(--danger);
     }
 
     .sync-pill.is-draft .sync-dot,
@@ -164,17 +187,19 @@
     }
 
     .collab-button {
-      min-height: 36px;
+      min-height: 34px;
       padding: 6px 10px;
-      border-color: rgba(214, 226, 240, 0.45);
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.1);
-      color: #fff;
+      border-color: var(--line);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--brand-2);
       font-size: 12px;
+      box-shadow: 0 1px 2px rgba(31, 45, 61, 0.06);
     }
 
     .collab-button:hover {
-      background: rgba(255, 255, 255, 0.18);
+      background: var(--accent-soft);
+      border-color: #a8c4da;
     }
 
     .layout {
