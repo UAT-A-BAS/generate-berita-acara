@@ -527,11 +527,7 @@
       align-items: start;
     }
 
-    .maker-row:has([data-remove-maker][hidden]) {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .maker-row > .btn {
+    .maker-actions {
       margin-top: 28px;
     }
 
@@ -1047,7 +1043,7 @@
         grid-template-columns: 1fr;
       }
 
-      .maker-row > .btn {
+      .maker-actions {
         margin-top: 0;
         justify-self: start;
       }
@@ -1287,9 +1283,19 @@
           </button>
         </span>
       </label>
-      <button class="btn btn-danger btn-icon" data-remove-maker type="button" aria-label="Hapus pembuat" title="Hapus pembuat">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
-      </button>
+      <div class="maker-actions">
+        <div class="move-stack">
+          <button class="btn btn-secondary btn-icon" data-move-maker="up" type="button" aria-label="Pindah pembuat ke atas" title="Pindah pembuat ke atas">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>
+          </button>
+          <button class="btn btn-secondary btn-icon" data-move-maker="down" type="button" aria-label="Pindah pembuat ke bawah" title="Pindah pembuat ke bawah">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+        </div>
+        <button class="btn btn-danger btn-icon" data-remove-maker type="button" aria-label="Hapus pembuat" title="Hapus pembuat">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        </button>
+      </div>
     </div>
   </template>
 
@@ -1314,6 +1320,11 @@
       "Senior Officer",
       "Adviser"
     ];
+    const previewWrapChars = {
+      activity: 39,
+      result: 37,
+      pic: 10
+    };
     const els = {
       status: document.getElementById("status"),
       errorBox: document.getElementById("errorBox"),
@@ -1442,7 +1453,7 @@
         return `${start.day} ${start.month} ${start.year}`;
       }
       if (start.monthIndex === end.monthIndex && start.year === end.year) {
-        return `${start.day} ${start.month} - ${end.day} ${end.month} ${end.year}`;
+        return `${start.day} - ${end.day} ${end.month} ${end.year}`;
       }
       if (start.year === end.year) {
         return `${start.day} ${start.month} - ${end.day} ${end.month} ${end.year}`;
@@ -1546,7 +1557,7 @@
       let listNumber = 1;
       let offset = 0;
 
-      lines.forEach((line) => {
+      lines.forEach((line, lineIndex) => {
         const listItem = line.match(/^\s*(?:(\d+)[.)]|-)\s+(.*)$/);
         if (listItem) {
           const nextType = listItem[1] ? "ol" : "ul";
@@ -1572,6 +1583,74 @@
           listType = "";
         }
         html.push(line ? richSliceToHtml(text, offset, offset + line.length, formats) : "<br>");
+        if (lineIndex < lines.length - 1) html.push("<br>");
+        offset += line.length + 1;
+      });
+
+      if (listOpen) html.push(`</${listType}>`);
+      return html.join("");
+    }
+
+    function wrapPreviewRanges(text, start, end, maxChars) {
+      const ranges = [];
+      let cursor = start;
+      while (cursor < end) {
+        const remaining = end - cursor;
+        if (remaining <= maxChars) {
+          ranges.push([cursor, end]);
+          break;
+        }
+        const limit = cursor + maxChars;
+        let cut = text.lastIndexOf(" ", limit);
+        if (cut < cursor + Math.floor(maxChars * 0.45)) cut = limit;
+        ranges.push([cursor, cut]);
+        cursor = cut;
+        while (cursor < end && text[cursor] === " ") cursor += 1;
+      }
+      return ranges.length ? ranges : [[start, end]];
+    }
+
+    function richTextToPreviewHtml(value, formats = [], key = "activity") {
+      const text = normalizeText(value);
+      const lines = text.split("\n");
+      const maxChars = previewWrapChars[key] || 39;
+      const html = [];
+      let listOpen = false;
+      let listType = "";
+      let listNumber = 1;
+      let offset = 0;
+
+      const renderWrapped = (start, end) => wrapPreviewRanges(text, start, end, maxChars)
+        .map(([from, to]) => richSliceToHtml(text, from, to, formats))
+        .join("<br>");
+
+      lines.forEach((line, lineIndex) => {
+        const listItem = line.match(/^\s*(?:(\d+)[.)]|-)\s+(.*)$/);
+        if (listItem) {
+          const nextType = listItem[1] ? "ol" : "ul";
+          if (listOpen && listType !== nextType) {
+            html.push(`</${listType}>`);
+            listOpen = false;
+          }
+          if (!listOpen) {
+            listNumber = listItem[1] ? Number(listItem[1]) : 1;
+            html.push(nextType === "ol" ? `<ol start="${listNumber}">` : "<ul>");
+            listOpen = true;
+            listType = nextType;
+          }
+          const contentStart = line.indexOf(listItem[2]);
+          html.push(`<li>${renderWrapped(offset + contentStart, offset + line.length)}</li>`);
+          listNumber += 1;
+          offset += line.length + 1;
+          return;
+        }
+        if (listOpen) {
+          html.push(`</${listType}>`);
+          listOpen = false;
+          listType = "";
+        }
+        html.push(line ? renderWrapped(offset, offset + line.length) : "<br>");
+        if (lineIndex < lines.length - 1) html.push("<br>");
         offset += line.length + 1;
       });
 
@@ -1654,7 +1733,7 @@
 
     function sanitizeFilename(value) {
       return String(value || "berita-acara")
-        .replace(/[\\/:*?"<>|]+/g, " ")
+        .replace(/[\\/:*?"<>|.]+/g, " ")
         .replace(/\s+/g, " ")
         .trim()
         .slice(0, 120) || "berita-acara";
@@ -1744,8 +1823,12 @@
 
     function refreshMakerControls() {
       const makers = [...els.makers.querySelectorAll("[data-maker]")];
-      makers.forEach((maker) => {
+      makers.forEach((maker, index) => {
+        const upButton = maker.querySelector("[data-move-maker='up']");
+        const downButton = maker.querySelector("[data-move-maker='down']");
         const removeButton = maker.querySelector("[data-remove-maker]");
+        if (upButton) upButton.hidden = index === 0;
+        if (downButton) downButton.hidden = index === makers.length - 1;
         if (removeButton) removeButton.hidden = makers.length <= 1;
       });
     }
@@ -2270,7 +2353,7 @@
           const span = spans[key];
           if (span.hidden[localIndex]) return "";
           const rowspan = span.lengths[localIndex] > 1 ? ` rowspan="${span.lengths[localIndex]}"` : "";
-          return `<td${rowspan} style="width:${width}; text-align:${align};">${richTextToHtml(rows[localIndex][key], rows[localIndex][`${key}Formats`])}</td>`;
+          return `<td${rowspan} style="width:${width}; text-align:${align};">${richTextToPreviewHtml(rows[localIndex][key], rows[localIndex][`${key}Formats`], key)}</td>`;
         };
         row.innerHTML = `
           <td style="width:6%; text-align:center;">${rowData.continued ? "" : rowNumber}</td>
@@ -2284,9 +2367,9 @@
         const rowNumber = (rowData.originalIndex ?? displayIndex) + 1;
         row.innerHTML = `
           <td style="width:6%; text-align:center;">${rowData.continued ? "" : rowNumber}</td>
-          <td style="width:42%;">${richTextToHtml(rowData.activity, rowData.activityFormats)}</td>
-          <td style="width:38%;">${richTextToHtml(rowData.result, rowData.resultFormats)}</td>
-          <td style="width:14%; text-align:center;">${richTextToHtml(rowData.pic, rowData.picFormats)}</td>`;
+          <td style="width:42%;">${richTextToPreviewHtml(rowData.activity, rowData.activityFormats, "activity")}</td>
+          <td style="width:38%;">${richTextToPreviewHtml(rowData.result, rowData.resultFormats, "result")}</td>
+          <td style="width:14%; text-align:center;">${richTextToPreviewHtml(rowData.pic, rowData.picFormats, "pic")}</td>`;
         return row;
       };
 
@@ -3122,6 +3205,20 @@
 
     els.makers.addEventListener("click", (event) => {
       const removeMaker = event.target.closest("[data-remove-maker]");
+      const moveMaker = event.target.closest("[data-move-maker]");
+      if (moveMaker) {
+        const maker = moveMaker.closest("[data-maker]");
+        if (moveMaker.dataset.moveMaker === "up" && maker.previousElementSibling) {
+          maker.parentElement.insertBefore(maker, maker.previousElementSibling);
+        }
+        if (moveMaker.dataset.moveMaker === "down" && maker.nextElementSibling) {
+          maker.parentElement.insertBefore(maker.nextElementSibling, maker);
+        }
+        refreshMakerControls();
+        renderPreview();
+        autosave();
+        return;
+      }
       if (!removeMaker) return;
       if (els.makers.querySelectorAll("[data-maker]").length > 1) {
         removeMaker.closest("[data-maker]").remove();
