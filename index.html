@@ -1465,6 +1465,7 @@
       result: 37,
       pic: 10
     };
+    const PREVIEW_MAX_LINES_PER_PAGE_ROW = 44;
     const els = {
       status: document.getElementById("status"),
       errorBox: document.getElementById("errorBox"),
@@ -2918,9 +2919,9 @@
 
     function splitPreviewRows(rows) {
       return rows.flatMap((row, index) => {
-        const activity = splitPreviewCell(row.activity, row.activityFormats);
-        const result = splitPreviewCell(row.result, row.resultFormats);
-        const pic = splitPreviewCell(row.pic, row.picFormats);
+        const activity = splitPreviewCell(row.activity, row.activityFormats, "activity");
+        const result = splitPreviewCell(row.result, row.resultFormats, "result");
+        const pic = splitPreviewCell(row.pic, row.picFormats, "pic");
         const count = Math.max(activity.length, result.length, pic.length);
         return Array.from({ length: count }, (_, chunkIndex) => ({
           activity: activity[chunkIndex]?.text || "",
@@ -2935,24 +2936,69 @@
       });
     }
 
-    function splitPreviewCell(value, formats = []) {
-      const maxChars = 850;
+    function previewLineRanges(text, start, end, key) {
+      if (start >= end) return [[start, end]];
+      return wrapPreviewRanges(text, start, end, previewWrapChars[key] || 39);
+    }
+
+    function pushPreviewChunk(chunks, text, formats, start, end) {
+      if (end < start) return;
+      chunks.push({
+        text: text.slice(start, end),
+        formats: sliceRichFormats(formats, start, end)
+      });
+    }
+
+    function splitLongPreviewLine(chunks, text, formats, ranges) {
+      for (let index = 0; index < ranges.length; index += PREVIEW_MAX_LINES_PER_PAGE_ROW) {
+        const group = ranges.slice(index, index + PREVIEW_MAX_LINES_PER_PAGE_ROW);
+        pushPreviewChunk(chunks, text, formats, group[0][0], group[group.length - 1][1]);
+      }
+    }
+
+    function splitPreviewCell(value, formats = [], key = "activity") {
       const text = normalizeText(value);
       const safeFormats = sanitizeRichFormats(formats, text.length);
-      if (text.length <= maxChars) return [{ text, formats: safeFormats }];
+      if (!text) return [{ text: "", formats: [] }];
       const chunks = [];
+      const lines = text.split("\n");
       let offset = 0;
-      let remaining = text;
-      while (remaining.length > maxChars) {
-        let cut = remaining.lastIndexOf("\n", maxChars);
-        if (cut < maxChars * 0.45) cut = remaining.lastIndexOf(" ", maxChars);
-        if (cut < maxChars * 0.45) cut = maxChars;
-        const chunkText = remaining.slice(0, cut).trim();
-        chunks.push({ text: chunkText, formats: sliceRichFormats(safeFormats, offset, offset + chunkText.length) });
-        remaining = remaining.slice(cut).trim();
-        offset += cut;
-      }
-      if (remaining) chunks.push({ text: remaining, formats: sliceRichFormats(safeFormats, offset, offset + remaining.length) });
+      let chunkStart = 0;
+      let chunkEnd = 0;
+      let chunkLineCount = 0;
+
+      lines.forEach((line) => {
+        const lineStart = offset;
+        const lineEnd = offset + line.length;
+        const ranges = line
+          ? previewLineRanges(text, lineStart, lineEnd, key)
+          : [[lineStart, lineEnd]];
+        const lineCount = Math.max(1, ranges.length);
+
+        if (lineCount > PREVIEW_MAX_LINES_PER_PAGE_ROW) {
+          if (chunkLineCount > 0) {
+            pushPreviewChunk(chunks, text, safeFormats, chunkStart, chunkEnd);
+            chunkLineCount = 0;
+          }
+          splitLongPreviewLine(chunks, text, safeFormats, ranges);
+          chunkStart = lineEnd + 1;
+          chunkEnd = lineEnd + 1;
+          offset += line.length + 1;
+          return;
+        }
+
+        if (chunkLineCount > 0 && chunkLineCount + lineCount > PREVIEW_MAX_LINES_PER_PAGE_ROW) {
+          pushPreviewChunk(chunks, text, safeFormats, chunkStart, chunkEnd);
+          chunkStart = lineStart;
+          chunkLineCount = 0;
+        }
+
+        chunkEnd = lineEnd;
+        chunkLineCount += lineCount;
+        offset += line.length + 1;
+      });
+
+      if (chunkLineCount > 0) pushPreviewChunk(chunks, text, safeFormats, chunkStart, chunkEnd);
       return chunks.length ? chunks : [{ text: "", formats: [] }];
     }
 
