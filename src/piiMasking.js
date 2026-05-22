@@ -30,7 +30,6 @@
 
     if (direct) {
       const [, core, punctuation] = direct;
-      if (Array.from(core).length === 2 && punctuation === ".") return `*${punctuation}`;
       return `${maskNameCore(core)}${punctuation}`;
     }
 
