@@ -2035,6 +2035,14 @@
       collaboration.localUpdatedAt = updatedAt;
     }
 
+    function clearAutosave() {
+      clearTimeout(autosaveTimer);
+      autosaveTimer = null;
+      localStorage.removeItem(AUTOSAVE_KEY);
+      localStorage.removeItem(AUTOSAVE_META_KEY);
+      collaboration.localUpdatedAt = 0;
+    }
+
     function commitSharedData(data = collectData()) {
       if (!collaboration.active || !sharedState || !Y || applyingRemoteData) return;
       const updatedAt = Date.now();
@@ -2723,6 +2731,10 @@
     }
 
     function maybeLoadAutosave() {
+      if (!collaboration.docId) {
+        clearAutosave();
+        return null;
+      }
       try {
         const data = JSON.parse(localStorage.getItem(AUTOSAVE_KEY) || "null");
         if (data) return data;
@@ -3447,8 +3459,7 @@
 
     function resetForm() {
       applyData(defaultData());
-      localStorage.removeItem(AUTOSAVE_KEY);
-      localStorage.removeItem(AUTOSAVE_META_KEY);
+      clearAutosave();
       setMessage("ok", "Form reset.");
       setStatus("Form reset.");
     }
