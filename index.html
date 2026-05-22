@@ -633,12 +633,17 @@
     .date-range-picker {
       position: fixed !important;
       z-index: 60;
+      inset: auto;
       width: 294px;
       border: 1px solid rgba(201, 211, 223, 0.92);
       border-radius: 18px;
       padding: 16px;
       background: #fff;
       box-shadow: 0 24px 56px rgba(28, 39, 52, 0.2);
+    }
+
+    .date-range-picker.is-sticky {
+      position: fixed !important;
     }
 
     .date-range-picker[hidden] {
@@ -2405,6 +2410,7 @@
     function openDatePicker(input) {
       if (els.datePicker.parentElement !== document.body) document.body.appendChild(els.datePicker);
       els.datePicker.style.position = "fixed";
+      els.datePicker.classList.add("is-sticky");
       const isRange = input.matches("[data-date-range]");
       datePickerState.target = input;
       datePickerState.mode = isRange ? "range" : "single";
@@ -2420,18 +2426,36 @@
 
     function closeDatePicker() {
       els.datePicker.hidden = true;
+      els.datePicker.classList.remove("is-sticky");
       datePickerState.target = null;
     }
 
     function positionDatePicker(input) {
       const rect = input.getBoundingClientRect();
-      const pickerWidth = 294;
-      const left = Math.min(window.innerWidth - pickerWidth - 12, Math.max(12, rect.left));
+      const margin = 12;
+      const wasHidden = els.datePicker.hidden;
+
+      if (wasHidden) {
+        els.datePicker.style.visibility = "hidden";
+        els.datePicker.hidden = false;
+      }
+
+      const pickerRect = els.datePicker.getBoundingClientRect();
+      const pickerWidth = pickerRect.width || 294;
+      const pickerHeight = pickerRect.height || 360;
+      const left = Math.min(window.innerWidth - pickerWidth - margin, Math.max(margin, rect.left));
       const below = rect.bottom + 8;
-      const above = rect.top - 372;
-      const top = below + 360 > window.innerHeight && above > 12 ? above : below;
-      els.datePicker.style.left = `${left}px`;
-      els.datePicker.style.top = `${Math.max(12, top)}px`;
+      const above = rect.top - pickerHeight - 8;
+      const preferredTop = below + pickerHeight > window.innerHeight && above > margin ? above : below;
+      const top = Math.min(window.innerHeight - pickerHeight - margin, Math.max(margin, preferredTop));
+
+      els.datePicker.style.left = `${Math.max(margin, left)}px`;
+      els.datePicker.style.top = `${Math.max(margin, top)}px`;
+
+      if (wasHidden) {
+        els.datePicker.hidden = true;
+        els.datePicker.style.visibility = "";
+      }
     }
 
     function renderDatePicker() {
