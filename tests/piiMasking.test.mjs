@@ -19,7 +19,7 @@ const cases = [
   ["margaretha", "marg****ha"],
   ["alex surya marcelo", "**ex **rya ****elo"],
   ["margaretha cindy", "marg****ha **ndy"],
-  ["Dr. Ir. Prof. Floretta Maria", "*. *. **of. Flor***ta **ria"]
+  ["Dr. Ir. Prof. Floretta Maria", "*r. *r. **of. Flor***ta **ria"]
 ];
 
 for (const [input, expected] of cases) {
