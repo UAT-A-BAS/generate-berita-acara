@@ -1515,13 +1515,15 @@
     let applyingRemoteData = false;
     let suppressSharedUpdate = false;
     const clientId = crypto.randomUUID();
+    const initialSharedDocId = getDocIdFromUrl();
     const collaboration = {
-      docId: getDocIdFromUrl(),
+      docId: initialSharedDocId,
       user: loadCollabUser(),
       users: new Map(),
       active: false,
       connected: false,
       ready: false,
+      remoteWinsInitialSync: Boolean(initialSharedDocId),
       localUpdatedAt: Number(localStorage.getItem(AUTOSAVE_META_KEY) || "0")
     };
 
@@ -1921,7 +1923,7 @@
       if (length === 2) return `*${text.slice(-1)}`;
       if (length <= 4) return `${"*".repeat(length - 2)}${text.slice(-2)}`;
       if (length <= 7) return `${"*".repeat(length - 3)}${text.slice(-3)}`;
-      return `${text.slice(0, 4)}${"*".repeat(length - 6)}${text.slice(-2)}`;
+      return `${"*".repeat(length - 3)}${text.slice(-3)}`;
     }
 
     function maskConfidentialText(value) {
@@ -2060,7 +2062,9 @@
       const data = sharedState?.get("data");
       if (!data) return false;
       const remoteUpdatedAt = Number(sharedState.get("updatedAt") || "0");
-      if (remoteUpdatedAt && collaboration.localUpdatedAt > remoteUpdatedAt && sharedSocket?.readyState === WebSocket.OPEN) {
+      if (collaboration.remoteWinsInitialSync) {
+        collaboration.remoteWinsInitialSync = false;
+      } else if (remoteUpdatedAt && collaboration.localUpdatedAt > remoteUpdatedAt && sharedSocket?.readyState === WebSocket.OPEN) {
         commitSharedData(collectData());
         return true;
       }
@@ -2081,8 +2085,10 @@
     async function startCollaboration(restart = false) {
       if (restart || !collaboration.docId) {
         collaboration.docId = createCollabDocId();
+        collaboration.remoteWinsInitialSync = false;
       } else {
         setDocIdInUrl(collaboration.docId);
+        collaboration.remoteWinsInitialSync = true;
       }
       stopCollaboration(false);
       collaboration.active = true;
@@ -2404,6 +2410,7 @@
     }
 
     function openDatePicker(input) {
+      if (els.datePicker.parentElement !== document.body) document.body.appendChild(els.datePicker);
       const isRange = input.matches("[data-date-range]");
       datePickerState.target = input;
       datePickerState.mode = isRange ? "range" : "single";
