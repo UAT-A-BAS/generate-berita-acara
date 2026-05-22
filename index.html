@@ -328,6 +328,7 @@
     label > textarea,
     label > .date-range,
     label > .date-field,
+    label > .date-field-wrapper,
     label > .role-combobox {
       margin-top: 6px;
     }
@@ -367,9 +368,11 @@
       padding-right: 42px;
     }
 
-    .date-field {
+    .date-field,
+    .date-field-wrapper {
       position: relative;
       display: block;
+      overflow: visible;
     }
 
     .date-field::after {
@@ -631,10 +634,12 @@
     }
 
     .date-range-picker {
-      position: fixed !important;
-      z-index: 60;
-      inset: auto;
-      width: 294px;
+      position: absolute !important;
+      top: calc(100% + 6px);
+      left: 0;
+      z-index: 9999;
+      width: min(294px, 100%);
+      max-width: calc(100vw - 24px);
       border: 1px solid rgba(201, 211, 223, 0.92);
       border-radius: 18px;
       padding: 16px;
@@ -642,8 +647,13 @@
       box-shadow: 0 24px 56px rgba(28, 39, 52, 0.2);
     }
 
-    .date-range-picker.is-sticky {
-      position: fixed !important;
+    .date-field-wrapper.date-picker-host-open,
+    .date-field.date-picker-host-open {
+      z-index: 9998;
+    }
+
+    .date-picker-overflow-visible {
+      overflow: visible !important;
     }
 
     .date-range-picker[hidden] {
@@ -1230,11 +1240,11 @@
                   <input id="branchName" autocomplete="off" placeholder="Cabang">
                 </label>
                 <label>Tanggal implementasi <span class="required-mark">*</span>
-                  <span class="date-range date-field">
+                  <div class="date-field-wrapper date-range date-field">
                     <input class="date-input" id="implementationDate" autocomplete="off" placeholder="DD/MM/YYYY" readonly data-date-range>
                     <input id="implementationStartDate" type="hidden">
                     <input id="implementationEndDate" type="hidden">
-                  </span>
+                  </div>
                 </label>
               </div>
             </section>
@@ -1272,9 +1282,9 @@
                   <input id="city" placeholder="Kota" value="Jakarta">
                 </label>
                 <label>Tanggal sign-off <span class="required-mark">*</span>
-                  <span class="date-field">
+                  <div class="date-field-wrapper date-field">
                     <input class="date-input" id="signDate" autocomplete="off" placeholder="DD/MM/YYYY" readonly data-date-single>
-                  </span>
+                  </div>
                 </label>
               </div>
             </section>
@@ -1346,9 +1356,9 @@
     <section class="group" data-group>
       <div class="group-head">
         <label>Tanggal aktivitas <span class="required-mark">*</span>
-          <span class="date-field">
-          <input class="date-input" data-field="date" autocomplete="off" placeholder="DD/MM/YYYY" readonly data-date-single>
-          </span>
+          <div class="date-field-wrapper date-field">
+            <input class="date-input" data-field="date" autocomplete="off" placeholder="DD/MM/YYYY" readonly data-date-single>
+          </div>
         </label>
         <div class="actions">
           <div class="move-stack">
@@ -1507,7 +1517,9 @@
       panel: "day",
       viewDate: new Date(),
       rangeStart: null,
-      rangeEnd: null
+      rangeEnd: null,
+      host: null,
+      overflowAncestors: []
     };
 
     let activeRoleInput = null;
@@ -2407,10 +2419,46 @@
       return errors;
     }
 
+    function findDatePickerHost(input) {
+      return input.closest(".date-field-wrapper") || input.closest(".date-field") || input.parentElement;
+    }
+
+    function hasClippedOverflow(element) {
+      const style = window.getComputedStyle(element);
+      return [style.overflow, style.overflowX, style.overflowY]
+        .some((value) => ["hidden", "auto", "scroll", "clip"].includes(value));
+    }
+
+    function clearDatePickerHost() {
+      datePickerState.host?.classList.remove("date-picker-host-open");
+      datePickerState.overflowAncestors.forEach((element) => {
+        element.classList.remove("date-picker-overflow-visible");
+      });
+      datePickerState.host = null;
+      datePickerState.overflowAncestors = [];
+    }
+
+    function attachDatePicker(input) {
+      const host = findDatePickerHost(input);
+      if (!host) return;
+
+      clearDatePickerHost();
+      host.appendChild(els.datePicker);
+      host.classList.add("date-picker-host-open");
+      datePickerState.host = host;
+
+      let ancestor = host.parentElement;
+      while (ancestor && ancestor !== document.body && ancestor !== document.documentElement) {
+        if (hasClippedOverflow(ancestor)) {
+          ancestor.classList.add("date-picker-overflow-visible");
+          datePickerState.overflowAncestors.push(ancestor);
+        }
+        ancestor = ancestor.parentElement;
+      }
+    }
+
     function openDatePicker(input) {
-      if (els.datePicker.parentElement !== document.body) document.body.appendChild(els.datePicker);
-      els.datePicker.style.position = "fixed";
-      els.datePicker.classList.add("is-sticky");
+      attachDatePicker(input);
       const isRange = input.matches("[data-date-range]");
       datePickerState.target = input;
       datePickerState.mode = isRange ? "range" : "single";
@@ -2420,42 +2468,13 @@
       datePickerState.viewDate = new Date(base.getFullYear(), base.getMonth(), 1);
       datePickerState.panel = "day";
       renderDatePicker();
-      positionDatePicker(input);
       els.datePicker.hidden = false;
     }
 
     function closeDatePicker() {
       els.datePicker.hidden = true;
-      els.datePicker.classList.remove("is-sticky");
+      clearDatePickerHost();
       datePickerState.target = null;
-    }
-
-    function positionDatePicker(input) {
-      const rect = input.getBoundingClientRect();
-      const margin = 12;
-      const wasHidden = els.datePicker.hidden;
-
-      if (wasHidden) {
-        els.datePicker.style.visibility = "hidden";
-        els.datePicker.hidden = false;
-      }
-
-      const pickerRect = els.datePicker.getBoundingClientRect();
-      const pickerWidth = pickerRect.width || 294;
-      const pickerHeight = pickerRect.height || 360;
-      const left = Math.min(window.innerWidth - pickerWidth - margin, Math.max(margin, rect.left));
-      const below = rect.bottom + 8;
-      const above = rect.top - pickerHeight - 8;
-      const preferredTop = below + pickerHeight > window.innerHeight && above > margin ? above : below;
-      const top = Math.min(window.innerHeight - pickerHeight - margin, Math.max(margin, preferredTop));
-
-      els.datePicker.style.left = `${Math.max(margin, left)}px`;
-      els.datePicker.style.top = `${Math.max(margin, top)}px`;
-
-      if (wasHidden) {
-        els.datePicker.hidden = true;
-        els.datePicker.style.visibility = "";
-      }
     }
 
     function renderDatePicker() {
