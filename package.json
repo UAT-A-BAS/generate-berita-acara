@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test": "node tests/piiMasking.test.mjs",
     "dev:worker": "wrangler dev",
     "deploy:worker": "wrangler deploy"
   },

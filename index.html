@@ -42,6 +42,11 @@
       line-height: 1.45;
     }
 
+    html.date-picker-open,
+    body.date-picker-open {
+      overflow: hidden;
+    }
+
     button,
     input,
     select,
@@ -1427,6 +1432,7 @@
     </div>
   </template>
 
+  <script src="./src/piiMasking.js"></script>
   <script>
     const AUTOSAVE_KEY = "ba-generator-autosave-v1";
     const AUTOSAVE_META_KEY = "ba-generator-autosave-meta-v1";
@@ -1434,6 +1440,7 @@
     const WORKER_BASE_URL = window.BA_COLLAB_WORKER_URL || document.querySelector("meta[name='ba-collab-worker-url']")?.content || "";
     const LOCAL_ORIGIN = "local-form";
     const REMOTE_ORIGIN = "remote-form";
+    const { hasMaskedToken, maskConfidentialText, maskName } = window.PiiMasking;
     const monthNames = [
       "Januari", "Februari", "Maret", "April", "Mei", "Juni",
       "Juli", "Agustus", "September", "Oktober", "November", "Desember"
@@ -1505,6 +1512,7 @@
 
     let activeRoleInput = null;
     let activeActivityTextarea = null;
+    let activeMaskTarget = null;
     let Y = null;
     let sharedDoc = null;
     let sharedState = null;
@@ -1915,24 +1923,6 @@
         text,
         formats: sanitizeRichFormats(formats, text.length)
       };
-    }
-
-    function hasMaskedToken(value) {
-      return /(^|[\s([{])\*{1,}[A-Za-z0-9]{1,3}\b/.test(String(value || ""));
-    }
-
-    function maskToken(token) {
-      const text = String(token || "");
-      const length = text.length;
-      if (length <= 1) return "*";
-      if (length === 2) return `*${text.slice(-1)}`;
-      if (length <= 4) return `${"*".repeat(length - 2)}${text.slice(-2)}`;
-      if (length <= 7) return `${"*".repeat(length - 3)}${text.slice(-3)}`;
-      return `${"*".repeat(length - 3)}${text.slice(-3)}`;
-    }
-
-    function maskConfidentialText(value) {
-      return String(value || "").replace(/[A-Za-z0-9]+/g, (token) => maskToken(token));
     }
 
     function downloadBlob(blob, filename) {
@@ -2423,10 +2413,14 @@
       renderDatePicker();
       positionDatePicker(input);
       els.datePicker.hidden = false;
+      document.documentElement.classList.add("date-picker-open");
+      document.body.classList.add("date-picker-open");
     }
 
     function closeDatePicker() {
       els.datePicker.hidden = true;
+      document.documentElement.classList.remove("date-picker-open");
+      document.body.classList.remove("date-picker-open");
       datePickerState.target = null;
     }
 
@@ -3487,6 +3481,11 @@
       };
     }
 
+    function blockDocumentScrollWhileDatePickerOpen(event) {
+      if (els.datePicker.hidden || event.target.closest("#datePicker")) return;
+      event.preventDefault();
+    }
+
     document.addEventListener("click", (event) => {
       if (event.target.closest("#roleMenu")) {
         const option = event.target.closest("[data-role-value]");
@@ -3544,6 +3543,13 @@
       }
     });
 
+    document.addEventListener("wheel", blockDocumentScrollWhileDatePickerOpen, { passive: false });
+    document.addEventListener("touchmove", blockDocumentScrollWhileDatePickerOpen, { passive: false });
+
+    document.addEventListener("focusin", (event) => {
+      if (isMaskableField(event.target)) activeMaskTarget = event.target;
+    });
+
     document.addEventListener("input", (event) => {
       if (event.target.matches("input, textarea, select")) {
         setGenerateMessage("", "");
@@ -3557,6 +3563,7 @@
           activeActivityTextarea = event.target;
           writeRichFormats(event.target, readRichFormats(event.target));
         }
+        if (isMaskableField(event.target)) activeMaskTarget = event.target;
         refreshNumbers();
         renderPreview();
         autosave();
@@ -3586,13 +3593,25 @@
       autosave();
     });
 
+    function isMaskableField(element) {
+      return Boolean(element?.matches?.("#groups textarea, #approverName, #makers [data-field='name']"));
+    }
+
+    function isNameMaskField(element) {
+      return Boolean(element?.matches?.("#groups textarea[data-field='pic'], #approverName, #makers [data-field='name']"));
+    }
+
+    function getMaskerForField(element) {
+      return isNameMaskField(element) ? maskName : maskConfidentialText;
+    }
+
     function getTextRange(textarea, tokenOnly = false) {
       const start = textarea.selectionStart ?? textarea.value.length;
       const end = textarea.selectionEnd ?? textarea.value.length;
       if (start !== end) return { start, end, text: textarea.value.slice(start, end) };
 
       const value = textarea.value;
-      const test = tokenOnly ? /[A-Za-z0-9]/ : /\S/;
+      const test = tokenOnly && !isNameMaskField(textarea) ? /[A-Za-z0-9]/ : /\S/;
       let from = start;
       let to = end;
       while (from > 0 && test.test(value[from - 1])) from -= 1;
@@ -3624,11 +3643,11 @@
     }
 
     function applyMasking() {
-      const textarea = document.activeElement?.matches?.("#groups textarea")
+      const textarea = isMaskableField(document.activeElement)
         ? document.activeElement
-        : activeActivityTextarea;
+        : activeMaskTarget || activeActivityTextarea;
       if (!textarea) {
-        setMessage("error", "Klik field tabel aktivitas lalu pilih teks yang ingin dimasking.");
+        setMessage("error", "Klik field yang ingin dimasking lalu pilih teksnya.");
         return;
       }
       const range = getTextRange(textarea, true);
@@ -3636,7 +3655,7 @@
         setMessage("error", "Pilih teks confidential atau letakkan cursor pada kata yang ingin dimasking.");
         return;
       }
-      replaceTextareaRange(textarea, range, maskConfidentialText(range.text));
+      replaceTextareaRange(textarea, range, getMaskerForField(textarea)(range.text));
       setMessage("ok", "Teks confidential sudah dimasking.");
     }
 
