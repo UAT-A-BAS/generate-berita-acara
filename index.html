@@ -42,11 +42,6 @@
       line-height: 1.45;
     }
 
-    html.date-picker-open,
-    body.date-picker-open {
-      overflow: hidden;
-    }
-
     button,
     input,
     select,
@@ -2421,14 +2416,10 @@
       renderDatePicker();
       positionDatePicker(input);
       els.datePicker.hidden = false;
-      document.documentElement.classList.add("date-picker-open");
-      document.body.classList.add("date-picker-open");
     }
 
     function closeDatePicker() {
       els.datePicker.hidden = true;
-      document.documentElement.classList.remove("date-picker-open");
-      document.body.classList.remove("date-picker-open");
       datePickerState.target = null;
     }
 
@@ -3492,11 +3483,6 @@
       };
     }
 
-    function blockDocumentScrollWhileDatePickerOpen(event) {
-      if (els.datePicker.hidden || event.target.closest("#datePicker")) return;
-      event.preventDefault();
-    }
-
     document.addEventListener("click", (event) => {
       if (event.target.closest("#roleMenu")) {
         const option = event.target.closest("[data-role-value]");
@@ -3553,9 +3539,6 @@
         openDatePicker(event.target);
       }
     });
-
-    document.addEventListener("wheel", blockDocumentScrollWhileDatePickerOpen, { passive: false });
-    document.addEventListener("touchmove", blockDocumentScrollWhileDatePickerOpen, { passive: false });
 
     document.addEventListener("focusin", (event) => {
       if (isMaskableField(event.target)) activeMaskTarget = event.target;
