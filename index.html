@@ -631,7 +631,7 @@
     }
 
     .date-range-picker {
-      position: fixed;
+      position: fixed !important;
       z-index: 60;
       width: 294px;
       border: 1px solid rgba(201, 211, 223, 0.92);
@@ -1536,7 +1536,7 @@
 
     function getDocIdFromUrl() {
       const url = new URL(window.location.href);
-      return url.searchParams.get("doc") || "";
+      return url.searchParams.get("session") || url.searchParams.get("doc") || "";
     }
 
     function createCollabDocId() {
@@ -1547,7 +1547,8 @@
 
     function setDocIdInUrl(docId) {
       const url = new URL(window.location.href);
-      url.searchParams.set("doc", docId);
+      url.searchParams.set("session", docId);
+      url.searchParams.delete("doc");
       window.history.replaceState({}, "", url);
     }
 
@@ -1903,7 +1904,7 @@
     function readRichCell(textarea) {
       let text = normalizeCellText(textarea.value);
       let formats = readRichFormats(textarea);
-      if (!formats.length && /<u>[\s\S]+?<\/u>|\*\*[^*\n]+?\*\*|\*[^*\n]+?\*/.test(text)) {
+      if (!formats.length && !hasMaskedToken(text) && /<u>[\s\S]+?<\/u>|\*\*[^*\n]+?\*\*|\*[^*\n]+?\*/.test(text)) {
         const migrated = legacyRichToPlainAndFormats(text);
         text = migrated.text;
         formats = migrated.formats;
@@ -1914,6 +1915,10 @@
         text,
         formats: sanitizeRichFormats(formats, text.length)
       };
+    }
+
+    function hasMaskedToken(value) {
+      return /(^|[\s([{])\*{1,}[A-Za-z0-9]{1,3}\b/.test(String(value || ""));
     }
 
     function maskToken(token) {
@@ -2062,12 +2067,7 @@
       const data = sharedState?.get("data");
       if (!data) return false;
       const remoteUpdatedAt = Number(sharedState.get("updatedAt") || "0");
-      if (collaboration.remoteWinsInitialSync) {
-        collaboration.remoteWinsInitialSync = false;
-      } else if (remoteUpdatedAt && collaboration.localUpdatedAt > remoteUpdatedAt && sharedSocket?.readyState === WebSocket.OPEN) {
-        commitSharedData(collectData());
-        return true;
-      }
+      collaboration.remoteWinsInitialSync = false;
       applyingRemoteData = true;
       applyData(data, { fromShared: true });
       applyingRemoteData = false;
@@ -2411,6 +2411,7 @@
 
     function openDatePicker(input) {
       if (els.datePicker.parentElement !== document.body) document.body.appendChild(els.datePicker);
+      els.datePicker.style.position = "fixed";
       const isRange = input.matches("[data-date-range]");
       datePickerState.target = input;
       datePickerState.mode = isRange ? "range" : "single";
