@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="ba-collab-worker-url" content="https://generate-berita-acara-collab.alex-marcello08.workers.dev">
+  <link rel="icon" href="data:,">
   <title>Generator Berita Acara</title>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <style>
@@ -24,6 +25,10 @@
       --focus: #0067bd;
       --shadow: 0 18px 40px rgba(31, 45, 61, 0.08);
       --radius: 8px;
+      --doc-font-family: Calibri, Arial, sans-serif;
+      --doc-body-size: 14px;
+      --doc-header-size: 18px;
+      --doc-line-height: 1.2;
     }
 
     * {
@@ -526,6 +531,40 @@
       border-color: #f0c8c2;
     }
 
+    .btn.is-active {
+      background: var(--brand);
+      color: #fff;
+      border-color: var(--brand);
+    }
+
+    .floating-tools {
+      position: fixed;
+      bottom: 18px;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 8px;
+      border: 1px solid rgba(201, 211, 223, 0.9);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: 0 16px 34px rgba(23, 32, 42, 0.16);
+      backdrop-filter: blur(8px);
+    }
+
+    .floating-tools-left {
+      left: 18px;
+    }
+
+    .floating-tools-right {
+      right: 18px;
+    }
+
+    .floating-tools .btn {
+      width: 100%;
+      min-width: 128px;
+    }
+
     .activity-groups {
       display: grid;
       gap: 12px;
@@ -619,6 +658,10 @@
       gap: 4px;
     }
 
+    .maker-actions .move-stack {
+      flex-direction: row;
+    }
+
     .maker-row {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
@@ -631,9 +674,8 @@
     }
 
     .date-range-picker {
-      position: fixed !important;
+      position: fixed;
       z-index: 60;
-      inset: auto;
       width: 294px;
       border: 1px solid rgba(201, 211, 223, 0.92);
       border-radius: 18px;
@@ -642,12 +684,15 @@
       box-shadow: 0 24px 56px rgba(28, 39, 52, 0.2);
     }
 
-    .date-range-picker.is-sticky {
-      position: fixed !important;
-    }
-
     .date-range-picker[hidden] {
       display: none;
+    }
+
+    .date-picker-hint {
+      margin: -4px 0 10px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
     }
 
     .date-picker-header {
@@ -945,10 +990,10 @@
       border: 1px solid var(--line);
       box-shadow: 0 20px 50px rgba(23, 32, 42, 0.12);
       padding: 92px 57px 58px 96px;
-      font-family: Calibri, Arial, sans-serif;
-      font-size: 14px;
+      font-family: var(--doc-font-family);
+      font-size: var(--doc-body-size);
       color: #111;
-      line-height: 1.2;
+      line-height: var(--doc-line-height);
       overflow: hidden;
       position: relative;
       break-after: page;
@@ -963,9 +1008,9 @@
     .doc-header {
       margin-bottom: 10px;
       text-align: center;
-      font-size: 18px;
+      font-size: var(--doc-header-size);
       font-weight: 700;
-      line-height: 1.2;
+      line-height: var(--doc-line-height);
       text-transform: uppercase;
     }
 
@@ -973,7 +1018,7 @@
       width: 100%;
       border-collapse: collapse;
       table-layout: fixed;
-      font-family: Calibri, Arial, sans-serif;
+      font-family: var(--doc-font-family);
       font-size: 10.5pt;
       line-height: 1.24;
     }
@@ -1031,7 +1076,7 @@
 
     .signature p {
       margin: 0 0 4px;
-      font-family: Calibri, Arial, sans-serif;
+      font-family: var(--doc-font-family);
     }
 
     .signature .role {
@@ -1078,6 +1123,189 @@
       color: var(--muted);
       text-align: center;
       padding: 18px;
+    }
+
+    .comment-panel {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+    }
+
+    .comment-panel-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .comment-panel-head h3 {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .comment-list {
+      display: grid;
+      gap: 8px;
+      max-height: 280px;
+      overflow: auto;
+    }
+
+    .comment-card {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid #b9c9dc;
+      border-left: 5px solid var(--focus);
+      border-radius: 8px;
+      background: linear-gradient(180deg, #fff 0%, #f8fbff 100%);
+      box-shadow: 0 12px 28px rgba(27, 77, 120, 0.14);
+      animation: comment-pop 180ms ease-out;
+    }
+
+    .comment-card.is-resolved {
+      border-left-color: var(--ok);
+      opacity: 0.76;
+      background: #f7f9fc;
+      box-shadow: 0 6px 16px rgba(31, 45, 61, 0.08);
+    }
+
+    .comment-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      color: var(--brand-2);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .comment-target-link {
+      width: fit-content;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 0;
+      border-radius: 999px;
+      padding: 3px 9px;
+      background: var(--accent-soft);
+      color: var(--brand-2);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .comment-target-link:hover {
+      background: #c8deef;
+    }
+
+    .comment-status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      border-radius: 999px;
+      padding: 2px 8px;
+      background: #fff200;
+      color: #5c4300;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .comment-card.is-resolved .comment-status {
+      background: #e7f6ee;
+      color: var(--ok);
+    }
+
+    .comment-text {
+      margin: 0;
+      color: var(--ink);
+      font-size: 13px;
+      line-height: 1.35;
+      white-space: pre-wrap;
+    }
+
+    .comment-empty {
+      padding: 12px;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .comment-dialog,
+    .confirm-dialog {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: rgba(15, 23, 42, 0.42);
+    }
+
+    .comment-dialog[hidden],
+    .confirm-dialog[hidden] {
+      display: none;
+    }
+
+    .dialog-box {
+      width: min(460px, 100%);
+      display: grid;
+      gap: 12px;
+      padding: 18px;
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 22px 54px rgba(23, 32, 42, 0.24);
+    }
+
+    .dialog-box h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .dialog-box p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .comment-target {
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: var(--surface-muted);
+      color: var(--brand-2);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    @keyframes comment-pop {
+      from {
+        opacity: 0;
+        transform: translateY(6px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .is-commenting input,
+    .is-commenting textarea,
+    .is-commenting select,
+    .is-commenting #preview {
+      cursor: crosshair;
+    }
+
+    .annotation-hit {
+      outline: 4px solid #fff200 !important;
+      outline-offset: 3px !important;
+      background-image: linear-gradient(rgba(255, 242, 0, 0.34), rgba(255, 242, 0, 0.34)) !important;
+      box-shadow: 0 0 0 9px rgba(255, 242, 0, 0.5), 0 12px 28px rgba(92, 67, 0, 0.18) !important;
+      transition: outline-color 160ms ease, box-shadow 160ms ease;
     }
 
     .sr-only {
@@ -1147,6 +1375,23 @@
 
       .date-range span {
         display: none;
+      }
+
+      .floating-tools {
+        bottom: 12px;
+        flex-direction: row;
+      }
+
+      .floating-tools-left {
+        left: 12px;
+      }
+
+      .floating-tools-right {
+        right: 12px;
+      }
+
+      .floating-tools .btn {
+        min-width: 0;
       }
     }
 
@@ -1231,7 +1476,7 @@
                 </label>
                 <label>Tanggal implementasi <span class="required-mark">*</span>
                   <span class="date-range date-field">
-                    <input class="date-input" id="implementationDate" autocomplete="off" placeholder="DD/MM/YYYY" readonly data-date-range>
+                    <input class="date-input" id="implementationDate" autocomplete="off" placeholder="Pilih tanggal" readonly data-date-range data-date-multi>
                     <input id="implementationStartDate" type="hidden">
                     <input id="implementationEndDate" type="hidden">
                   </span>
@@ -1259,15 +1504,15 @@
               <div class="section-title">
                 <h3 id="closing-section">Penutup & Sign-off</h3>
               </div>
-              <div class="grid-3">
-                <label>Bureau <span class="required-mark">*</span>
-                  <select id="bureau">
-                    <option selected>A</option>
-                    <option>B</option>
-                    <option>C</option>
-                    <option>D</option>
-                  </select>
+              <div class="grid-2">
+                <label>Divisi GPOL <span class="required-mark">*</span>
+                  <input id="divisionLine" autocomplete="off" placeholder="OPERATION STRATEGY & DEVELOPMENT GROUP (POL)">
                 </label>
+                <label>Application line <span class="required-mark">*</span>
+                  <input id="applicationLine" autocomplete="off" placeholder="Application & User Acceptance Test Bureau A">
+                </label>
+              </div>
+              <div class="grid-2">
                 <label>Kota <span class="required-mark">*</span>
                   <input id="city" placeholder="Kota" value="Jakarta">
                 </label>
@@ -1334,10 +1579,54 @@
         </div>
         <div class="panel-body">
           <div id="preview"></div>
+          <section class="comment-panel" aria-labelledby="comments-title">
+            <div class="comment-panel-head">
+              <h3 id="comments-title">Komentar Review</h3>
+              <button class="btn btn-secondary" id="commentModeBtn" type="button">Add Comment</button>
+            </div>
+            <div class="comment-list" id="commentList"></div>
+          </section>
         </div>
       </aside>
     </div>
     <footer class="app-credit">Developed by Alex Surya Marcelo (UAT - A) &bull; Generator Berita Acara</footer>
+    <div class="floating-tools floating-tools-left" aria-label="Akses cepat masking">
+      <button class="btn btn-secondary" id="floatingMaskBtn" type="button" title="Masking teks yang dipilih (Ctrl+M)">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="M9 12h6"/></svg>
+        Masking
+      </button>
+    </div>
+    <div class="floating-tools floating-tools-right" aria-label="Akses cepat komentar">
+      <button class="btn btn-secondary" id="floatingCommentBtn" type="button" title="Tambah komentar">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
+        Comment
+      </button>
+    </div>
+    <div class="comment-dialog" id="commentDialog" role="dialog" aria-modal="true" aria-labelledby="commentDialogTitle" hidden>
+      <div class="dialog-box">
+        <h3 id="commentDialogTitle">Tambah komentar</h3>
+        <label>Nama Reviewer <span class="required-mark">*</span>
+          <input id="commentAuthor" autocomplete="off" placeholder="Nama reviewer" required>
+        </label>
+        <label>Komentar <span class="required-mark">*</span>
+          <textarea id="commentText" rows="4" placeholder="Tulis catatan reviewer" required></textarea>
+        </label>
+        <div class="actions">
+          <button class="btn btn-secondary" id="cancelCommentBtn" type="button">Batal</button>
+          <button class="btn btn-primary" id="saveCommentBtn" type="button">Simpan</button>
+        </div>
+      </div>
+    </div>
+    <div class="confirm-dialog" id="resetConfirmDialog" role="dialog" aria-modal="true" aria-labelledby="resetDialogTitle" hidden>
+      <div class="dialog-box">
+        <h3 id="resetDialogTitle">Reset form aktif?</h3>
+        <p>Form aktif dikosongkan. File JSON tidak dihapus. Reset bisa di-undo dengan Ctrl+Z.</p>
+        <div class="actions">
+          <button class="btn btn-secondary" id="cancelResetBtn" type="button">Batal</button>
+          <button class="btn btn-danger" id="confirmResetBtn" type="button">Reset</button>
+        </div>
+      </div>
+    </div>
     <div class="date-range-picker" id="datePicker" hidden></div>
     <div class="role-menu" id="roleMenu" hidden></div>
   </main>
@@ -1347,7 +1636,7 @@
       <div class="group-head">
         <label>Tanggal aktivitas <span class="required-mark">*</span>
           <span class="date-field">
-          <input class="date-input" data-field="date" autocomplete="off" placeholder="DD/MM/YYYY" readonly data-date-single>
+          <input class="date-input" data-field="date" autocomplete="off" placeholder="Pilih tanggal/range" readonly data-date-multi>
           </span>
         </label>
         <div class="actions">
@@ -1432,20 +1721,29 @@
     </div>
   </template>
 
-  <script src="./src/piiMasking.js"></script>
   <script>
     const AUTOSAVE_KEY = "ba-generator-autosave-v1";
     const AUTOSAVE_META_KEY = "ba-generator-autosave-meta-v1";
     const USER_KEY = "ba-generator-collab-user-v1";
+    const USER_SETTINGS_KEY = "ba-generator-user-settings-v1";
     const WORKER_BASE_URL = window.BA_COLLAB_WORKER_URL || document.querySelector("meta[name='ba-collab-worker-url']")?.content || "";
     const LOCAL_ORIGIN = "local-form";
     const REMOTE_ORIGIN = "remote-form";
-    const { hasMaskedToken, maskConfidentialText, maskName } = window.PiiMasking;
     const monthNames = [
       "Januari", "Februari", "Maret", "April", "Mei", "Juni",
       "Juli", "Agustus", "September", "Oktober", "November", "Desember"
     ];
     const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+    const DOC_STYLE = {
+      fontFamilyCss: "Calibri, Arial, sans-serif",
+      fontFamilyPdf: "Carlito",
+      headerSizePx: 18,
+      headerSizePt: 13.5,
+      headerLinePt: 16.2,
+      bodySizePt: 10.5,
+      bodyLinePt: 13,
+      tableHeaderSizePt: 11
+    };
     const pdfFontSources = {
       regular: "https://raw.githubusercontent.com/googlefonts/carlito/main/fonts/ttf/Carlito-Regular.ttf",
       bold: "https://raw.githubusercontent.com/googlefonts/carlito/main/fonts/ttf/Carlito-Bold.ttf",
@@ -1486,7 +1784,20 @@
       syncStatus: document.getElementById("syncStatus"),
       syncStatusText: document.getElementById("syncStatusText"),
       userCountText: document.getElementById("userCountText"),
-      lastSyncedText: document.getElementById("lastSyncedText")
+      lastSyncedText: document.getElementById("lastSyncedText"),
+      commentList: document.getElementById("commentList"),
+      commentModeBtn: document.getElementById("commentModeBtn"),
+      floatingCommentBtn: document.getElementById("floatingCommentBtn"),
+      floatingMaskBtn: document.getElementById("floatingMaskBtn"),
+      commentDialog: document.getElementById("commentDialog"),
+      commentTargetLabel: document.getElementById("commentTargetLabel"),
+      commentAuthor: document.getElementById("commentAuthor"),
+      commentText: document.getElementById("commentText"),
+      saveCommentBtn: document.getElementById("saveCommentBtn"),
+      cancelCommentBtn: document.getElementById("cancelCommentBtn"),
+      resetConfirmDialog: document.getElementById("resetConfirmDialog"),
+      confirmResetBtn: document.getElementById("confirmResetBtn"),
+      cancelResetBtn: document.getElementById("cancelResetBtn")
     };
 
     const fields = {
@@ -1495,6 +1806,8 @@
       implementationDate: document.getElementById("implementationDate"),
       implementationStartDate: document.getElementById("implementationStartDate"),
       implementationEndDate: document.getElementById("implementationEndDate"),
+      divisionLine: document.getElementById("divisionLine"),
+      applicationLine: document.getElementById("applicationLine"),
       bureau: document.getElementById("bureau"),
       city: document.getElementById("city"),
       signDate: document.getElementById("signDate"),
@@ -1508,12 +1821,24 @@
       panel: "day",
       viewDate: new Date(),
       rangeStart: null,
-      rangeEnd: null
+      rangeEnd: null,
+      selectedDates: []
+    };
+
+    const appState = {
+      comments: [],
+      annotationMode: false,
+      pendingCommentTarget: null,
+      history: [],
+      redo: [],
+      restoringHistory: false,
+      historyTimer: null,
+      lastHistoryReason: "",
+      editingCommentId: null
     };
 
     let activeRoleInput = null;
     let activeActivityTextarea = null;
-    let activeMaskTarget = null;
     let Y = null;
     let sharedDoc = null;
     let sharedState = null;
@@ -1523,17 +1848,17 @@
     let firstServerSync = false;
     let applyingRemoteData = false;
     let suppressSharedUpdate = false;
+    let pendingCollabSeed = null;
+    let pendingCollabSeedMustWin = false;
     const clientId = crypto.randomUUID();
-    const initialSharedDocId = getDocIdFromUrl();
     const collaboration = {
-      docId: initialSharedDocId,
+      docId: getDocIdFromUrl(),
       user: loadCollabUser(),
       users: new Map(),
       active: false,
       connected: false,
       ready: false,
-      remoteWinsInitialSync: Boolean(initialSharedDocId),
-      localUpdatedAt: Number(localStorage.getItem(AUTOSAVE_META_KEY) || "0")
+      localUpdatedAt: 0
     };
 
     function randomId(length = 10) {
@@ -1545,7 +1870,7 @@
 
     function getDocIdFromUrl() {
       const url = new URL(window.location.href);
-      return url.searchParams.get("session") || url.searchParams.get("doc") || "";
+      return url.searchParams.get("doc") || "";
     }
 
     function createCollabDocId() {
@@ -1556,8 +1881,7 @@
 
     function setDocIdInUrl(docId) {
       const url = new URL(window.location.href);
-      url.searchParams.set("session", docId);
-      url.searchParams.delete("doc");
+      url.searchParams.set("doc", docId);
       window.history.replaceState({}, "", url);
     }
 
@@ -1583,6 +1907,29 @@
         name: collaboration.user.name,
         color: collaboration.user.color
       }));
+    }
+
+    function loadUserSettings() {
+      try {
+        return JSON.parse(localStorage.getItem(USER_SETTINGS_KEY) || "{}") || {};
+      } catch {
+        return {};
+      }
+    }
+
+    function saveUserSettings(data = collectData()) {
+      localStorage.setItem(USER_SETTINGS_KEY, JSON.stringify({
+        divisionLine: normalizeText(data.divisionLine) || defaultDivisionLine(),
+        applicationLine: normalizeText(data.applicationLine) || defaultApplicationLine()
+      }));
+    }
+
+    function defaultDivisionLine() {
+      return "OPERATION STRATEGY & DEVELOPMENT GROUP (POL)";
+    }
+
+    function defaultApplicationLine() {
+      return "Application & User Acceptance Test Bureau A";
     }
 
     function toUpper(value) {
@@ -1635,6 +1982,52 @@
       return formatDateInput(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`);
     }
 
+    function dateKey(value) {
+      const d = parseDate(value);
+      if (!d) return "";
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    }
+
+    function normalizeDateList(values) {
+      return [...new Set((Array.isArray(values) ? values : [values])
+        .flatMap((value) => String(value || "").split("|"))
+        .map((value) => formatDateInput(value.trim()))
+        .filter((value) => parseDate(value)))]
+        .sort((a, b) => compareDates(parseDate(a), parseDate(b)));
+    }
+
+    function datesBetween(start, end) {
+      const from = parseDate(start);
+      const to = parseDate(end);
+      if (!from || !to) return [];
+      const first = compareDates(from, to) <= 0 ? from : to;
+      const last = compareDates(from, to) <= 0 ? to : from;
+      const dates = [];
+      for (let day = new Date(first); compareDates(day, last) <= 0; day.setDate(day.getDate() + 1)) {
+        dates.push(dateToInput(day));
+      }
+      return dates;
+    }
+
+    function readDateList(input) {
+      try {
+        const saved = JSON.parse(input.dataset.dates || "[]");
+        const normalized = normalizeDateList(saved);
+        if (normalized.length) return normalized;
+      } catch {
+        // Fall through to legacy value parsing.
+      }
+      return normalizeDateList(input.value);
+    }
+
+    function writeDateList(input, dates) {
+      const normalized = normalizeDateList(dates);
+      input.dataset.dates = JSON.stringify(normalized);
+      input.value = formatMultiDateRange(normalized);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
     function sameDate(a, b) {
       return a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
     }
@@ -1650,10 +2043,9 @@
     }
 
     function syncImplementationDateDisplay() {
-      fields.implementationDate.value = formatImplementationDateRange({
-        implementationStartDate: fields.implementationStartDate.value,
-        implementationEndDate: fields.implementationEndDate.value
-      });
+      const dates = normalizeDateList(fields.implementationDate.dataset.dates ? readDateList(fields.implementationDate) : datesBetween(fields.implementationStartDate.value, fields.implementationEndDate.value));
+      fields.implementationDate.dataset.dates = JSON.stringify(dates);
+      fields.implementationDate.value = formatMultiDateRange(dates);
     }
 
     function formatDayDate(value) {
@@ -1663,8 +2055,13 @@
     }
 
     function formatImplementationDateRange(data, upper = false) {
-      const startValue = data.implementationStartDate || data.implementationDate;
-      const endValue = data.implementationEndDate || data.implementationDate;
+      const dates = normalizeDateList(data.implementationDates?.length
+        ? data.implementationDates
+        : datesBetween(data.implementationStartDate || data.implementationDate, data.implementationEndDate || data.implementationDate));
+      return formatMultiDateRange(dates, upper);
+    }
+
+    function formatDateRangeSegment(startValue, endValue, upper = false) {
       const start = formatDateParts(startValue, upper);
       const end = formatDateParts(endValue, upper);
       if (!start && !end) return "";
@@ -1679,6 +2076,36 @@
         return `${start.day} ${start.month} - ${end.day} ${end.month} ${end.year}`;
       }
       return `${start.day} ${start.month} ${start.year} - ${end.day} ${end.month} ${end.year}`;
+    }
+
+    function formatMultiDateRange(values, upper = false) {
+      const dates = normalizeDateList(values);
+      if (!dates.length) return "";
+      const groups = [];
+      let start = dates[0];
+      let prev = dates[0];
+      dates.slice(1).forEach((value) => {
+        const prevDate = parseDate(prev);
+        const current = parseDate(value);
+        const nextExpected = new Date(prevDate.getFullYear(), prevDate.getMonth(), prevDate.getDate() + 1);
+        if (sameDate(current, nextExpected)) {
+          prev = value;
+          return;
+        }
+        groups.push([start, prev]);
+        start = value;
+        prev = value;
+      });
+      groups.push([start, prev]);
+      return groups.map(([from, to]) => formatDateRangeSegment(from, to, upper)).join(", ");
+    }
+
+    function formatActivityDate(value, dates = []) {
+      const selected = normalizeDateList(dates?.length ? dates : value);
+      if (!selected.length) return "";
+      const first = parseDate(selected[0]);
+      const prefix = selected.length === 1 ? `${dayNames[first.getDay()]},\u00a0` : "";
+      return `${prefix}${formatMultiDateRange(selected)}`;
     }
 
     function normalizeText(value) {
@@ -1913,7 +2340,7 @@
     function readRichCell(textarea) {
       let text = normalizeCellText(textarea.value);
       let formats = readRichFormats(textarea);
-      if (!formats.length && !hasMaskedToken(text) && /<u>[\s\S]+?<\/u>|\*\*[^*\n]+?\*\*|\*[^*\n]+?\*/.test(text)) {
+      if (!formats.length && /<u>[\s\S]+?<\/u>|\*\*[^*\n]+?\*\*|\*[^*\n]+?\*/.test(text)) {
         const migrated = legacyRichToPlainAndFormats(text);
         text = migrated.text;
         formats = migrated.formats;
@@ -1924,6 +2351,20 @@
         text,
         formats: sanitizeRichFormats(formats, text.length)
       };
+    }
+
+    function maskToken(token) {
+      const text = String(token || "");
+      const length = text.length;
+      if (length <= 1) return "*";
+      if (length === 2) return `*${text.slice(-1)}`;
+      if (length <= 4) return `${"*".repeat(length - 2)}${text.slice(-2)}`;
+      if (length <= 7) return `${"*".repeat(length - 3)}${text.slice(-3)}`;
+      return `${text.slice(0, 4)}${"*".repeat(length - 6)}${text.slice(-2)}`;
+    }
+
+    function maskConfidentialText(value) {
+      return String(value || "").replace(/[A-Za-z0-9]+/g, (token) => maskToken(token));
     }
 
     function downloadBlob(blob, filename) {
@@ -2031,17 +2472,10 @@
     }
 
     function persistAutosave(data, updatedAt = Date.now()) {
+      if (!collaboration.active) return;
       localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(data));
       localStorage.setItem(AUTOSAVE_META_KEY, String(updatedAt));
       collaboration.localUpdatedAt = updatedAt;
-    }
-
-    function clearAutosave() {
-      clearTimeout(autosaveTimer);
-      autosaveTimer = null;
-      localStorage.removeItem(AUTOSAVE_KEY);
-      localStorage.removeItem(AUTOSAVE_META_KEY);
-      collaboration.localUpdatedAt = 0;
     }
 
     function commitSharedData(data = collectData()) {
@@ -2066,7 +2500,10 @@
       const data = sharedState?.get("data");
       if (!data) return false;
       const remoteUpdatedAt = Number(sharedState.get("updatedAt") || "0");
-      collaboration.remoteWinsInitialSync = false;
+      if (remoteUpdatedAt && collaboration.localUpdatedAt > remoteUpdatedAt && sharedSocket?.readyState === WebSocket.OPEN) {
+        commitSharedData(collectData());
+        return true;
+      }
       applyingRemoteData = true;
       applyData(data, { fromShared: true });
       applyingRemoteData = false;
@@ -2081,15 +2518,17 @@
       setSyncStatus("syncing");
     }
 
-    async function startCollaboration(restart = false) {
-      if (restart || !collaboration.docId) {
+    async function startCollaboration(restart = false, seedCurrent = false) {
+      const seedData = seedCurrent ? collectData() : null;
+      const shouldCreateDoc = restart || !collaboration.docId;
+      if (shouldCreateDoc) {
         collaboration.docId = createCollabDocId();
-        collaboration.remoteWinsInitialSync = false;
       } else {
         setDocIdInUrl(collaboration.docId);
-        collaboration.remoteWinsInitialSync = true;
       }
       stopCollaboration(false);
+      pendingCollabSeed = seedData;
+      pendingCollabSeedMustWin = Boolean(seedData && shouldCreateDoc);
       collaboration.active = true;
       collaboration.users.set(clientId, collaboration.user);
       renderPresence();
@@ -2127,6 +2566,8 @@
       sharedDoc = null;
       sharedState = null;
       firstServerSync = false;
+      pendingCollabSeed = null;
+      pendingCollabSeedMustWin = false;
       collaboration.connected = false;
       collaboration.ready = false;
       collaboration.users = new Map();
@@ -2175,7 +2616,16 @@
         Y.applyUpdate(sharedDoc, new Uint8Array(buffer), REMOTE_ORIGIN);
         if (!firstServerSync) {
           firstServerSync = true;
-          if (!applySharedDataIfNewer()) commitSharedData(collectData());
+          const hasRemoteData = Boolean(sharedState?.get("data"));
+          if (pendingCollabSeed && (!hasRemoteData || pendingCollabSeedMustWin)) {
+            commitSharedData(pendingCollabSeed);
+          } else if (!applySharedDataIfNewer() && pendingCollabSeed) {
+            commitSharedData(pendingCollabSeed);
+          } else if (hasRemoteData) {
+            applySharedDataIfNewer();
+          }
+          pendingCollabSeed = null;
+          pendingCollabSeedMustWin = false;
           sendYUpdate(Y.encodeStateAsUpdate(sharedDoc));
         }
       });
@@ -2216,7 +2666,7 @@
 
     function createGroup(groupData = {}) {
       const node = document.getElementById("groupTemplate").content.firstElementChild.cloneNode(true);
-      node.querySelector("[data-field='date']").value = formatDateInput(groupData.date || "");
+      writeDateList(node.querySelector("[data-field='date']"), groupData.dates?.length ? groupData.dates : groupData.date || "");
       els.groups.appendChild(node);
       const rows = groupData.rows?.length ? groupData.rows : [{ activity: "", result: "", pic: "" }];
       rows.forEach((row) => createActivityRow(node, row));
@@ -2294,7 +2744,8 @@
 
     function collectData() {
       const groups = [...els.groups.querySelectorAll("[data-group]")].map((group) => ({
-        date: group.querySelector("[data-field='date']").value,
+        date: readDateList(group.querySelector("[data-field='date']"))[0] || "",
+        dates: readDateList(group.querySelector("[data-field='date']")),
         rows: [...group.querySelectorAll("[data-row]")].map((row) => {
           const activity = readRichCell(row.querySelector("[data-field='activity']"));
           const result = readRichCell(row.querySelector("[data-field='result']"));
@@ -2316,40 +2767,49 @@
       }));
 
       return {
-        schema: 1,
+        schema: 2,
         baType: getType(),
         featureName: normalizeText(fields.featureName.value),
         branchName: normalizeText(fields.branchName.value),
-        implementationDate: fields.implementationStartDate.value,
-        implementationStartDate: fields.implementationStartDate.value,
-        implementationEndDate: fields.implementationEndDate.value,
+        implementationDate: readDateList(fields.implementationDate)[0] || "",
+        implementationDates: readDateList(fields.implementationDate),
+        implementationStartDate: readDateList(fields.implementationDate)[0] || "",
+        implementationEndDate: readDateList(fields.implementationDate).slice(-1)[0] || "",
+        divisionLine: normalizeText(fields.divisionLine.value),
+        applicationLine: normalizeText(fields.applicationLine.value),
         autoMerge: true,
         groups,
-        bureau: fields.bureau.value,
+        bureau: "",
         city: normalizeText(fields.city.value),
         signDate: fields.signDate.value,
         makers,
         approverName: normalizeText(fields.approverName.value),
-        approverRole: normalizeText(fields.approverRole.value)
+        approverRole: normalizeText(fields.approverRole.value),
+        comments: appState.comments.map((comment) => ({ ...comment }))
       };
     }
 
     function applyData(data, options = {}) {
       const fromShared = Boolean(options.fromShared);
+      const settings = loadUserSettings();
       document.querySelector(`input[name='baType'][value='${data.baType || "pilot"}']`).checked = true;
       fields.featureName.value = data.featureName || "";
       fields.branchName.value = data.branchName || "";
-      fields.implementationStartDate.value = formatDateInput(data.implementationStartDate || data.implementationDate || "");
-      fields.implementationEndDate.value = formatDateInput(data.implementationEndDate || data.implementationDate || "");
+      const implementationDates = normalizeDateList(data.implementationDates?.length ? data.implementationDates : datesBetween(data.implementationStartDate || data.implementationDate, data.implementationEndDate || data.implementationDate));
+      fields.implementationStartDate.value = implementationDates[0] || "";
+      fields.implementationEndDate.value = implementationDates.slice(-1)[0] || "";
+      writeDateList(fields.implementationDate, implementationDates);
       syncImplementationDateDisplay();
-      fields.bureau.value = data.bureau || "A";
+      fields.divisionLine.value = data.divisionLine || settings.divisionLine || defaultDivisionLine();
+      fields.applicationLine.value = data.applicationLine || settings.applicationLine || defaultApplicationLine();
       fields.city.value = data.city || "Jakarta";
       fields.signDate.value = formatDateInput(data.signDate || "");
       fields.approverName.value = data.approverName || "";
       fields.approverRole.value = data.approverRole || "";
+      appState.comments = normalizeComments(data.comments);
 
       els.groups.innerHTML = "";
-      (data.groups?.length ? data.groups : [{ date: fields.implementationStartDate.value || "", rows: [{}] }])
+      (data.groups?.length ? data.groups : [{ dates: implementationDates, rows: [{}] }])
         .forEach(createGroup);
 
       els.makers.innerHTML = "";
@@ -2357,6 +2817,7 @@
       refreshMakerControls();
       refreshNumbers();
       renderPreview();
+      renderComments();
       autosave();
       if (!fromShared) queueSharedUpdate();
     }
@@ -2365,16 +2826,12 @@
       const errors = [];
       if (!data.featureName) errors.push("Nama Project wajib diisi.");
       if (!data.branchName) errors.push("Cabang wajib diisi.");
-      if (!data.implementationStartDate) errors.push("Tanggal awal implementasi wajib diisi.");
-      if (!data.implementationEndDate) errors.push("Tanggal akhir implementasi wajib diisi.");
-      if (data.implementationStartDate && !parseDate(data.implementationStartDate)) errors.push("Tanggal awal implementasi harus format DD/MM/YYYY.");
-      if (data.implementationEndDate && !parseDate(data.implementationEndDate)) errors.push("Tanggal akhir implementasi harus format DD/MM/YYYY.");
-      const implementationStart = parseDate(data.implementationStartDate);
-      const implementationEnd = parseDate(data.implementationEndDate);
-      if (implementationStart && implementationEnd && implementationStart > implementationEnd) {
-        errors.push("Tanggal awal implementasi tidak boleh setelah tanggal akhir.");
-      }
-      if (!data.bureau) errors.push("Bureau wajib diisi.");
+      if (!data.divisionLine) errors.push("Divisi GPOL wajib diisi.");
+      if (!data.applicationLine) errors.push("Application line wajib diisi.");
+      if (!data.implementationDates?.length) errors.push("Tanggal implementasi wajib diisi.");
+      data.implementationDates?.forEach((date, index) => {
+        if (!parseDate(date)) errors.push(`Tanggal implementasi #${index + 1} harus format DD/MM/YYYY.`);
+      });
       if (!data.city) errors.push("Kota wajib diisi.");
       if (!data.signDate) errors.push("Tanggal sign-off wajib diisi.");
       if (data.signDate && !parseDate(data.signDate)) errors.push("Tanggal sign-off harus format DD/MM/YYYY.");
@@ -2386,8 +2843,10 @@
       if (!filledRows.length) errors.push("Minimal 1 aktivitas wajib diisi.");
 
       data.groups.forEach((group, groupIndex) => {
-        if (!group.date) errors.push(`Tanggal aktivitas #${groupIndex + 1} wajib diisi.`);
-        if (group.date && !parseDate(group.date)) errors.push(`Tanggal aktivitas #${groupIndex + 1} harus format DD/MM/YYYY.`);
+        if (!group.dates?.length) errors.push(`Tanggal aktivitas #${groupIndex + 1} wajib diisi.`);
+        group.dates?.forEach((date, dateIndex) => {
+          if (!parseDate(date)) errors.push(`Tanggal aktivitas #${groupIndex + 1}.${dateIndex + 1} harus format DD/MM/YYYY.`);
+        });
         group.rows.forEach((row, rowIndex) => {
           const hasAny = row.activity || row.result || row.pic;
           if (hasAny && !row.activity) errors.push(`Aktivitas ${groupIndex + 1}.${rowIndex + 1} wajib diisi.`);
@@ -2409,15 +2868,14 @@
     }
 
     function openDatePicker(input) {
-      if (els.datePicker.parentElement !== document.body) document.body.appendChild(els.datePicker);
-      els.datePicker.style.position = "fixed";
-      els.datePicker.classList.add("is-sticky");
+      const isMulti = input.matches("[data-date-multi]");
       const isRange = input.matches("[data-date-range]");
       datePickerState.target = input;
-      datePickerState.mode = isRange ? "range" : "single";
-      datePickerState.rangeStart = parseDate(fields.implementationStartDate.value);
-      datePickerState.rangeEnd = parseDate(fields.implementationEndDate.value);
-      const base = datePickerState.rangeStart || parseDate(input.value) || new Date();
+      datePickerState.mode = isMulti ? (isRange ? "multi" : "multiRange") : "single";
+      datePickerState.selectedDates = readDateList(input);
+      datePickerState.rangeStart = datePickerState.mode === "range" ? parseDate(fields.implementationStartDate.value) : null;
+      datePickerState.rangeEnd = datePickerState.mode === "range" ? parseDate(fields.implementationEndDate.value) : null;
+      const base = parseDate(datePickerState.selectedDates[0]) || datePickerState.rangeStart || parseDate(input.value) || new Date();
       datePickerState.viewDate = new Date(base.getFullYear(), base.getMonth(), 1);
       datePickerState.panel = "day";
       renderDatePicker();
@@ -2427,36 +2885,18 @@
 
     function closeDatePicker() {
       els.datePicker.hidden = true;
-      els.datePicker.classList.remove("is-sticky");
       datePickerState.target = null;
     }
 
     function positionDatePicker(input) {
       const rect = input.getBoundingClientRect();
-      const margin = 12;
-      const wasHidden = els.datePicker.hidden;
-
-      if (wasHidden) {
-        els.datePicker.style.visibility = "hidden";
-        els.datePicker.hidden = false;
-      }
-
-      const pickerRect = els.datePicker.getBoundingClientRect();
-      const pickerWidth = pickerRect.width || 294;
-      const pickerHeight = pickerRect.height || 360;
-      const left = Math.min(window.innerWidth - pickerWidth - margin, Math.max(margin, rect.left));
+      const pickerWidth = 294;
+      const left = Math.min(window.innerWidth - pickerWidth - 12, Math.max(12, rect.left));
       const below = rect.bottom + 8;
-      const above = rect.top - pickerHeight - 8;
-      const preferredTop = below + pickerHeight > window.innerHeight && above > margin ? above : below;
-      const top = Math.min(window.innerHeight - pickerHeight - margin, Math.max(margin, preferredTop));
-
-      els.datePicker.style.left = `${Math.max(margin, left)}px`;
-      els.datePicker.style.top = `${Math.max(margin, top)}px`;
-
-      if (wasHidden) {
-        els.datePicker.hidden = true;
-        els.datePicker.style.visibility = "";
-      }
+      const above = rect.top - 372;
+      const top = below + 360 > window.innerHeight && above > 12 ? above : below;
+      els.datePicker.style.left = `${left}px`;
+      els.datePicker.style.top = `${Math.max(12, top)}px`;
     }
 
     function renderDatePicker() {
@@ -2476,7 +2916,10 @@
       const weekdays = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
       const days = Array.from({ length: 42 }, (_, index) => {
         const day = new Date(start.getFullYear(), start.getMonth(), start.getDate() + index);
-        const selected = datePickerState.mode === "range"
+        const value = dateToInput(day);
+        const selected = datePickerState.mode === "multi" || datePickerState.mode === "multiRange"
+          ? datePickerState.selectedDates.includes(value)
+          : datePickerState.mode === "range"
           ? sameDate(day, datePickerState.rangeStart) || sameDate(day, datePickerState.rangeEnd)
           : sameDate(day, parseDate(datePickerState.target?.value));
         const inRange = datePickerState.mode === "range" && datePickerState.rangeStart && datePickerState.rangeEnd
@@ -2487,7 +2930,7 @@
           selected ? "is-selected" : "",
           inRange ? "is-in-range" : ""
         ].filter(Boolean).join(" ");
-        return `<button class="${classes}" type="button" data-date-day="${dateToInput(day)}">${day.getDate()}</button>`;
+        return `<button class="${classes}" type="button" data-date-day="${value}">${day.getDate()}</button>`;
       }).join("");
 
       els.datePicker.innerHTML = `
@@ -2505,7 +2948,8 @@
         </div>
         <div class="date-picker-footer">
           <button class="btn btn-secondary" type="button" data-date-clear>Clear</button>
-          <button class="btn btn-primary" type="button" data-date-today>Today</button>
+          <button class="btn btn-secondary" type="button" data-date-today>Today</button>
+          ${(datePickerState.mode === "multi" || datePickerState.mode === "multiRange") ? `<button class="btn btn-primary" type="button" data-date-done>Done</button>` : ""}
         </div>`;
     }
 
@@ -2608,6 +3052,18 @@
         return;
       }
       if (event.target.closest("[data-date-clear]")) {
+        if (datePickerState.mode === "multi" || datePickerState.mode === "multiRange") {
+          datePickerState.selectedDates = [];
+          writeDateList(datePickerState.target, []);
+          if (datePickerState.target === fields.implementationDate) {
+            fields.implementationStartDate.value = "";
+            fields.implementationEndDate.value = "";
+          }
+          datePickerState.rangeStart = null;
+          datePickerState.rangeEnd = null;
+          renderDatePicker();
+          return;
+        }
         if (datePickerState.mode === "range") {
           fields.implementationStartDate.value = "";
           fields.implementationEndDate.value = "";
@@ -2624,6 +3080,16 @@
       if (event.target.closest("[data-date-today]")) {
         const today = new Date();
         const value = dateToInput(today);
+        if (datePickerState.mode === "multi" || datePickerState.mode === "multiRange") {
+          datePickerState.selectedDates = normalizeDateList([...datePickerState.selectedDates, value]);
+          writeDateList(datePickerState.target, datePickerState.selectedDates);
+          if (datePickerState.target === fields.implementationDate) {
+            fields.implementationStartDate.value = datePickerState.selectedDates[0] || "";
+            fields.implementationEndDate.value = datePickerState.selectedDates.slice(-1)[0] || "";
+          }
+          renderDatePicker();
+          return;
+        }
         if (datePickerState.mode === "range") {
           fields.implementationStartDate.value = value;
           fields.implementationEndDate.value = value;
@@ -2635,8 +3101,47 @@
         closeDatePicker();
         return;
       }
+      if (event.target.closest("[data-date-done]")) {
+        closeDatePicker();
+        return;
+      }
       if (!day) return;
-      const selected = parseDate(day.dataset.dateDay);
+      const selectedValue = day.dataset.dateDay;
+      const selected = parseDate(selectedValue);
+      if (datePickerState.mode === "multi") {
+        datePickerState.selectedDates = datePickerState.selectedDates.includes(selectedValue)
+          ? datePickerState.selectedDates.filter((value) => value !== selectedValue)
+          : normalizeDateList([...datePickerState.selectedDates, selectedValue]);
+        writeDateList(datePickerState.target, datePickerState.selectedDates);
+        fields.implementationStartDate.value = datePickerState.selectedDates[0] || "";
+        fields.implementationEndDate.value = datePickerState.selectedDates.slice(-1)[0] || "";
+        renderDatePicker();
+        return;
+      }
+      if (datePickerState.mode === "multiRange") {
+        if (datePickerState.selectedDates.includes(selectedValue)) {
+          datePickerState.selectedDates = datePickerState.selectedDates.filter((value) => value !== selectedValue);
+          writeDateList(datePickerState.target, datePickerState.selectedDates);
+          datePickerState.rangeStart = null;
+          renderDatePicker();
+          return;
+        }
+        if (!datePickerState.rangeStart) {
+          datePickerState.rangeStart = selected;
+          datePickerState.selectedDates = normalizeDateList([...datePickerState.selectedDates, selectedValue]);
+          writeDateList(datePickerState.target, datePickerState.selectedDates);
+          renderDatePicker();
+          return;
+        }
+        datePickerState.selectedDates = normalizeDateList([
+          ...datePickerState.selectedDates,
+          ...datesBetween(dateToInput(datePickerState.rangeStart), selectedValue)
+        ]);
+        writeDateList(datePickerState.target, datePickerState.selectedDates);
+        datePickerState.rangeStart = null;
+        renderDatePicker();
+        return;
+      }
       if (datePickerState.mode === "range") {
         if (!datePickerState.rangeStart || datePickerState.rangeEnd || compareDates(selected, datePickerState.rangeStart) < 0) {
           datePickerState.rangeStart = selected;
@@ -2705,8 +3210,303 @@
       closeRoleMenu();
     }
 
+    function commitHistory(reason = "change") {
+      if (appState.restoringHistory) return;
+      clearTimeout(appState.historyTimer);
+      const data = collectData();
+      const encoded = JSON.stringify(data);
+      const previous = appState.history[appState.history.length - 1];
+      if (previous && JSON.stringify(previous) === encoded) return;
+      appState.history.push(data);
+      if (appState.history.length > 80) appState.history.shift();
+      appState.redo = [];
+      appState.lastHistoryReason = reason;
+    }
+
+    function queueHistory(reason = "input") {
+      if (appState.restoringHistory) return;
+      clearTimeout(appState.historyTimer);
+      appState.historyTimer = setTimeout(() => commitHistory(reason), 350);
+    }
+
+    function restoreHistoryData(data) {
+      appState.restoringHistory = true;
+      applyData(data);
+      appState.restoringHistory = false;
+    }
+
+    function undoHistory() {
+      clearTimeout(appState.historyTimer);
+      if (appState.history.length < 2) {
+        setStatus("Tidak ada perubahan untuk undo.");
+        return;
+      }
+      const current = appState.history.pop();
+      appState.redo.push(current);
+      restoreHistoryData(appState.history[appState.history.length - 1]);
+      setStatus("Undo.");
+    }
+
+    function redoHistory() {
+      clearTimeout(appState.historyTimer);
+      const next = appState.redo.pop();
+      if (!next) {
+        setStatus("Tidak ada perubahan untuk redo.");
+        return;
+      }
+      appState.history.push(next);
+      restoreHistoryData(next);
+      setStatus("Redo.");
+    }
+
+    function setAnnotationMode(active) {
+      appState.annotationMode = Boolean(active);
+      document.body.classList.toggle("is-commenting", appState.annotationMode);
+      [els.commentModeBtn, els.floatingCommentBtn].forEach((button) => {
+        button.classList.toggle("is-active", appState.annotationMode);
+        button.setAttribute("aria-pressed", String(appState.annotationMode));
+      });
+      setStatus(appState.annotationMode ? "Mode komentar aktif. Klik field atau preview." : "Mode komentar nonaktif.");
+    }
+
+    function targetLabelFromElement(element) {
+      const label = element.closest("label")?.textContent?.replace(/\s+/g, " ").trim();
+      if (label) return label.replace("*", "").trim();
+      if (element.id) return element.id;
+      const previewText = element.textContent?.replace(/\s+/g, " ").trim();
+      return previewText ? `Preview: ${previewText.slice(0, 64)}` : "Area preview";
+    }
+
+    function elementPathFrom(root, element) {
+      const path = [];
+      let node = element;
+      while (node && node !== root) {
+        const parent = node.parentElement;
+        if (!parent) return [];
+        path.unshift([...parent.children].indexOf(node));
+        node = parent;
+      }
+      return node === root ? path : [];
+    }
+
+    function elementFromPath(root, path = []) {
+      return path.reduce((node, index) => node?.children?.[index] || null, root);
+    }
+
+    function normalizeComment(comment = {}) {
+      const cid = String(comment.cid || "");
+      return {
+        ...comment,
+        cid: /^[a-z0-9_-]{6,64}$/i.test(cid) ? cid : randomId(12),
+        resolved: Boolean(comment.resolved)
+      };
+    }
+
+    function normalizeComments(comments = []) {
+      const used = new Set();
+      return (Array.isArray(comments) ? comments : []).map((comment) => {
+        const normalized = normalizeComment(comment);
+        while (used.has(normalized.cid)) normalized.cid = randomId(12);
+        used.add(normalized.cid);
+        return normalized;
+      });
+    }
+
+    function findCommentById(commentId) {
+      return appState.comments.find((comment) => comment.cid === commentId);
+    }
+
+    function updateCommentById(commentId, updater) {
+      let changed = false;
+      appState.comments = appState.comments.map((comment) => {
+        if (comment.cid !== commentId) return comment;
+        changed = true;
+        return updater(comment);
+      });
+      return changed;
+    }
+
+    function getCommentTarget(event) {
+      const field = event.target.closest("input, textarea, select");
+      if (field && !field.closest(".comment-dialog") && !field.closest(".confirm-dialog")) {
+        return {
+          type: "field",
+          id: field.id || "",
+          field: field.dataset.field || "",
+          path: elementPathFrom(document.querySelector(".app"), field),
+          label: targetLabelFromElement(field)
+        };
+      }
+      const previewTarget = event.target.closest("#preview .paper, #preview td, #preview th, #preview .doc-header, #preview .doc-body, #preview .signature");
+      if (previewTarget) {
+        const rect = els.preview.getBoundingClientRect();
+        return {
+          type: "preview",
+          id: randomId(8),
+          field: "",
+          path: elementPathFrom(els.preview, previewTarget),
+          label: targetLabelFromElement(previewTarget),
+          x: Math.round(((event.clientX - rect.left) / Math.max(1, rect.width)) * 1000) / 10,
+          y: Math.round(((event.clientY - rect.top) / Math.max(1, rect.height)) * 1000) / 10
+        };
+      }
+      return null;
+    }
+
+    function findCommentTargetElement(comment) {
+      if (comment.type === "preview" && comment.path?.length) {
+        const previewElement = elementFromPath(els.preview, comment.path);
+        if (previewElement) return previewElement;
+      }
+      if (comment.type === "field" && comment.path?.length) {
+        const fieldElement = elementFromPath(document.querySelector(".app"), comment.path);
+        if (fieldElement) return fieldElement;
+      }
+      if (comment.type === "field") {
+        if (comment.id) {
+          const byId = document.getElementById(comment.id);
+          if (byId) return byId;
+        }
+        if (comment.field) return document.querySelector(`[data-field="${CSS.escape(comment.field)}"]`);
+      }
+      return els.preview;
+    }
+
+    function focusCommentTarget(commentId) {
+      const comment = findCommentById(commentId);
+      if (!comment) return;
+      const target = findCommentTargetElement(comment);
+      if (!target) return;
+      target.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+      target.classList.add("annotation-hit");
+      if (target.matches("input, textarea, select")) target.focus({ preventScroll: true });
+      setTimeout(() => target.classList.remove("annotation-hit"), 4500);
+    }
+
+    function openCommentDialog(target) {
+      appState.editingCommentId = null;
+      appState.pendingCommentTarget = target;
+      if (els.commentTargetLabel) els.commentTargetLabel.textContent = target.label;
+      els.commentAuthor.value = "";
+      els.commentText.value = "";
+      document.getElementById("commentDialogTitle").textContent = "Tambah komentar";
+      els.commentDialog.hidden = false;
+      els.commentAuthor.focus();
+    }
+
+    function openEditComment(commentId) {
+      const comment = findCommentById(commentId);
+      if (!comment) return;
+      appState.editingCommentId = comment.cid;
+      appState.pendingCommentTarget = {
+        type: comment.type,
+        id: comment.id || "",
+        field: comment.field || "",
+        path: comment.path || [],
+        label: comment.label || "Area terkait",
+        x: comment.x,
+        y: comment.y
+      };
+      els.commentAuthor.value = comment.author || "";
+      els.commentText.value = comment.text || "";
+      document.getElementById("commentDialogTitle").textContent = comment.resolved ? "Follow up komentar" : "Edit komentar";
+      els.commentDialog.hidden = false;
+      els.commentText.focus();
+    }
+
+    function closeCommentDialog() {
+      els.commentDialog.hidden = true;
+      appState.pendingCommentTarget = null;
+      appState.editingCommentId = null;
+    }
+
+    function saveComment() {
+      const text = normalizeText(els.commentText.value);
+      const author = normalizeText(els.commentAuthor.value);
+      if (!author) {
+        els.commentAuthor.focus();
+        setMessage("error", "Nama Reviewer wajib diisi.");
+        return;
+      }
+      if (!text) {
+        els.commentText.focus();
+        setMessage("error", "Komentar wajib diisi.");
+        return;
+      }
+      if (!appState.pendingCommentTarget) return;
+      if (appState.editingCommentId) {
+        const commentId = appState.editingCommentId;
+        updateCommentById(commentId, (comment) => ({
+          ...comment,
+          ...appState.pendingCommentTarget,
+          text,
+          author,
+          resolved: false,
+          updatedAt: new Date().toISOString()
+        }));
+      } else {
+        appState.comments = [
+          ...appState.comments,
+          {
+            cid: randomId(12),
+            ...appState.pendingCommentTarget,
+            text,
+            author,
+            createdAt: new Date().toISOString(),
+            resolved: false
+          }
+        ];
+      }
+      closeCommentDialog();
+      setAnnotationMode(false);
+      renderComments();
+      autosave();
+      if (collaboration.active) commitSharedData();
+      else queueSharedUpdate();
+      commitHistory("comment");
+      setMessage("ok", "Komentar tersimpan.");
+    }
+
+    function formatCommentTime(value) {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "-";
+      return date.toLocaleString("id-ID", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    function renderComments() {
+      const comments = appState.comments || [];
+      if (!comments.length) {
+        els.commentList.innerHTML = `<div class="comment-empty">Belum ada komentar review.</div>`;
+        return;
+      }
+      appState.comments = normalizeComments(comments);
+      els.commentList.innerHTML = appState.comments.map((comment) => `
+        <article class="comment-card ${comment.resolved ? "is-resolved" : ""}" data-comment-id="${escapeHtml(comment.cid)}">
+          <div class="comment-meta">
+            <span class="comment-status">${escapeHtml(comment.resolved ? "Resolved" : "Unresolved")}</span>
+            <span>${escapeHtml(comment.author || "Reviewer")}</span>
+            <span>${escapeHtml(formatCommentTime(comment.updatedAt || comment.createdAt))}</span>
+          </div>
+          <button class="comment-target-link" type="button" data-focus-comment="${escapeHtml(comment.cid)}">Lihat field: ${escapeHtml(comment.label || "Area terkait")}</button>
+          <p class="comment-text">${escapeHtml(comment.text)}</p>
+          <div class="actions">
+            <button class="btn btn-secondary" type="button" data-toggle-comment="${escapeHtml(comment.cid)}">${comment.resolved ? "Reopen" : "Resolve"}</button>
+            <button class="btn btn-secondary" type="button" data-edit-comment="${escapeHtml(comment.cid)}">${comment.resolved ? "Follow up" : "Edit"}</button>
+            <button class="btn btn-danger" type="button" data-delete-comment="${escapeHtml(comment.cid)}">Hapus</button>
+          </div>
+        </article>
+      `).join("");
+    }
+
     function saveDraft() {
       const data = collectData();
+      saveUserSettings(data);
       const base = [data.featureName, data.branchName].filter(Boolean).join(" ") || "draft-berita-acara";
       const name = sanitizeFilename(`${base} ${timestampForFilename()}`);
       const blob = new Blob([JSON.stringify({ ...data, exportedAt: new Date().toISOString() }, null, 2)], { type: "application/json" });
@@ -2716,6 +3516,7 @@
     }
 
     function loadDraft() {
+      els.importDraftInput.value = "";
       els.importDraftInput.click();
     }
 
@@ -2726,6 +3527,7 @@
         try {
           const data = JSON.parse(reader.result);
           applyData(data);
+          commitHistory("load-draft");
           setMessage("ok", "Draft JSON berhasil diimpor.");
           setStatus("Draft impor aktif.");
         } catch (error) {
@@ -2739,18 +3541,19 @@
     function autosave() {
       clearTimeout(autosaveTimer);
       const shouldSync = !applyingRemoteData && !suppressSharedUpdate;
+      const shouldPersistCollab = collaboration.active;
       const updatedAt = applyingRemoteData ? Number(sharedState?.get("updatedAt") || Date.now()) : Date.now();
       autosaveTimer = setTimeout(() => {
-        persistAutosave(collectData(), updatedAt);
+        const data = collectData();
+        saveUserSettings(data);
+        if (!shouldPersistCollab) return;
+        persistAutosave(data, updatedAt);
         if (shouldSync) queueSharedUpdate();
       }, 250);
     }
 
     function maybeLoadAutosave() {
-      if (!collaboration.docId) {
-        clearAutosave();
-        return null;
-      }
+      if (!collaboration.active) return null;
       try {
         const data = JSON.parse(localStorage.getItem(AUTOSAVE_KEY) || "null");
         if (data) return data;
@@ -2801,7 +3604,7 @@
       const makeDateRow = (group) => {
         const row = document.createElement("tr");
         row.className = "date-row";
-        row.innerHTML = `<td colspan="4">${escapeHtml(formatDayDate(group.date))}</td>`;
+        row.innerHTML = `<td colspan="4">${escapeHtml(formatActivityDate(group.date, group.dates))}</td>`;
         return row;
       };
       const makeActivityRow = (rowData, displayIndex, rows, spans, localIndex = displayIndex) => {
@@ -2895,8 +3698,8 @@
       closing.innerHTML = `
         <p class="doc-body">Demikian Berita Acara ini dibuat, atas perhatian dan kerja sama Bapak/Ibu, kami ucapkan terima kasih.</p>
         <div class="doc-body">
-          <div><strong>OPERATION STRATEGY &amp; DEVELOPMENT GROUP (POL)</strong></div>
-          <div><strong>Application &amp; User Acceptance Test Bureau ${escapeHtml(data.bureau)}</strong></div>
+          <div><strong>${escapeHtml(data.divisionLine || defaultDivisionLine())}</strong></div>
+          <div><strong>${escapeHtml(data.applicationLine || defaultApplicationLine())}</strong></div>
           <div>${escapeHtml(data.city)}, ${escapeHtml(formatDate(data.signDate))}</div>
         </div>
         <div class="signature">
@@ -3108,9 +3911,11 @@
         dateHeight: 24,
         padX: 5,
         padY: 6,
-        bodySize: 10.5,
-        bodyLine: 13,
-        tableHeaderSize: 11
+        bodySize: DOC_STYLE.bodySizePt,
+        bodyLine: DOC_STYLE.bodyLinePt,
+        tableHeaderSize: DOC_STYLE.tableHeaderSizePt,
+        headerSize: DOC_STYLE.headerSizePt,
+        headerLine: DOC_STYLE.headerLinePt
       };
       layout.contentWidth = layout.pageWidth - layout.left - layout.right;
       layout.columns = [
@@ -3127,7 +3932,7 @@
         const rows = splitPdfRows(pdf, layout, group.rows.filter((row) => row.activity || row.result || row.pic));
         if (!rows.length) return;
         const rowHeights = rows.map((row) => pdfRowHeight(pdf, layout, row));
-        const dateText = formatDayDate(group.date);
+        const dateText = formatActivityDate(group.date, group.dates);
         let rowStart = 0;
 
         while (rowStart < rows.length) {
@@ -3194,9 +3999,9 @@
 
     function drawPdfPageHeader(pdf, data, layout) {
       pdf.setFont(layout.fontFamily, "bold");
-      pdf.setFontSize(12);
+      pdf.setFontSize(layout.headerSize);
       pdf.text(buildHeaderLineOne(data), layout.pageWidth / 2, layout.top + 12, { align: "center" });
-      pdf.text(buildHeaderLineTwo(data), layout.pageWidth / 2, layout.top + 29.5, { align: "center" });
+      pdf.text(buildHeaderLineTwo(data), layout.pageWidth / 2, layout.top + 12 + layout.headerLine, { align: "center" });
       return layout.top + 57;
     }
 
@@ -3481,9 +4286,9 @@
 
       y += 34;
       pdf.setFont(layout.fontFamily, "bold");
-      pdf.text("OPERATION STRATEGY & DEVELOPMENT GROUP (POL)", layout.left, y);
+      pdf.text(data.divisionLine || defaultDivisionLine(), layout.left, y);
       y += 15;
-      pdf.text(`Application & User Acceptance Test Bureau ${data.bureau}`, layout.left, y);
+      pdf.text(data.applicationLine || defaultApplicationLine(), layout.left, y);
       y += 15;
       pdf.setFont(layout.fontFamily, "normal");
       pdf.text(`${data.city}, ${formatDate(data.signDate)}`, layout.left, y);
@@ -3519,23 +4324,38 @@
     }
 
     function resetForm() {
+      els.resetConfirmDialog.hidden = false;
+      els.confirmResetBtn.focus();
+    }
+
+    function closeResetConfirm() {
+      els.resetConfirmDialog.hidden = true;
+    }
+
+    function performReset() {
+      closeResetConfirm();
       applyData(defaultData());
-      clearAutosave();
+      commitHistory("reset");
       setMessage("ok", "Form reset.");
       setStatus("Form reset.");
     }
 
     function defaultData() {
+      const settings = loadUserSettings();
       return {
         baType: "pilot",
         featureName: "",
         branchName: "",
         implementationDate: "",
+        implementationDates: [],
         implementationStartDate: "",
         implementationEndDate: "",
+        divisionLine: settings.divisionLine || defaultDivisionLine(),
+        applicationLine: settings.applicationLine || defaultApplicationLine(),
         autoMerge: true,
         groups: [{
           date: "",
+          dates: [],
           rows: [
             {
               activity: "",
@@ -3544,16 +4364,26 @@
             }
           ]
         }],
-        bureau: "A",
+        bureau: "",
         city: "Jakarta",
         signDate: "",
         makers: [{ name: "", role: "" }],
         approverName: "",
-        approverRole: ""
+        approverRole: "",
+        comments: []
       };
     }
 
     document.addEventListener("click", (event) => {
+      if (appState.annotationMode && !event.target.closest("#commentDialog") && !event.target.closest("#resetConfirmDialog") && !event.target.closest(".floating-tools") && !event.target.closest(".comment-panel")) {
+        const target = getCommentTarget(event);
+        if (target) {
+          event.preventDefault();
+          event.stopPropagation();
+          openCommentDialog(target);
+          return;
+        }
+      }
       if (event.target.closest("#roleMenu")) {
         const option = event.target.closest("[data-role-value]");
         if (option) chooseRole(option.dataset.roleValue);
@@ -3580,6 +4410,31 @@
     });
 
     document.addEventListener("keydown", (event) => {
+      const shortcut = event.key.toLowerCase();
+      if ((event.ctrlKey || event.metaKey) && shortcut === "m") {
+        event.preventDefault();
+        applyMasking();
+        commitHistory("masking");
+        return;
+      }
+      if ((event.ctrlKey || event.metaKey) && !event.shiftKey && shortcut === "z") {
+        event.preventDefault();
+        undoHistory();
+        return;
+      }
+      if ((event.ctrlKey || event.metaKey) && (shortcut === "y" || (event.shiftKey && shortcut === "z"))) {
+        event.preventDefault();
+        redoHistory();
+        return;
+      }
+      if (event.key === "Escape" && !els.commentDialog.hidden) {
+        closeCommentDialog();
+        return;
+      }
+      if (event.key === "Escape" && !els.resetConfirmDialog.hidden) {
+        closeResetConfirm();
+        return;
+      }
       if (event.key === "Escape" && !els.roleMenu.hidden) {
         closeRoleMenu();
         return;
@@ -3594,7 +4449,6 @@
         return;
       }
       if (event.target.matches("#groups textarea") && (event.ctrlKey || event.metaKey)) {
-        const shortcut = event.key.toLowerCase();
         const formatMap = { b: "bold", i: "italic", u: "underline" };
         if (formatMap[shortcut]) {
           event.preventDefault();
@@ -3610,10 +4464,6 @@
       }
     });
 
-    document.addEventListener("focusin", (event) => {
-      if (isMaskableField(event.target)) activeMaskTarget = event.target;
-    });
-
     document.addEventListener("input", (event) => {
       if (event.target.matches("input, textarea, select")) {
         setGenerateMessage("", "");
@@ -3627,10 +4477,10 @@
           activeActivityTextarea = event.target;
           writeRichFormats(event.target, readRichFormats(event.target));
         }
-        if (isMaskableField(event.target)) activeMaskTarget = event.target;
         refreshNumbers();
         renderPreview();
         autosave();
+        queueHistory("input");
       }
     });
 
@@ -3639,6 +4489,7 @@
         setGenerateMessage("", "");
         renderPreview();
         autosave();
+        queueHistory("change");
         if (event.target.matches(".date-input")) {
           event.target.value = formatDateInput(event.target.value);
         }
@@ -3649,25 +4500,15 @@
       createGroup();
       renderPreview();
       autosave();
+      commitHistory("add-group");
     });
 
     document.getElementById("addMakerBtn").addEventListener("click", () => {
       createMaker();
       renderPreview();
       autosave();
+      commitHistory("add-maker");
     });
-
-    function isMaskableField(element) {
-      return Boolean(element?.matches?.("#groups textarea, #approverName, #makers [data-field='name']"));
-    }
-
-    function isNameMaskField(element) {
-      return Boolean(element?.matches?.("#groups textarea, #approverName, #makers [data-field='name']"));
-    }
-
-    function getMaskerForField(element) {
-      return isNameMaskField(element) ? maskName : maskConfidentialText;
-    }
 
     function getTextRange(textarea, tokenOnly = false) {
       const start = textarea.selectionStart ?? textarea.value.length;
@@ -3675,7 +4516,7 @@
       if (start !== end) return { start, end, text: textarea.value.slice(start, end) };
 
       const value = textarea.value;
-      const test = tokenOnly && !isNameMaskField(textarea) ? /[A-Za-z0-9]/ : /\S/;
+      const test = tokenOnly ? /[A-Za-z0-9]/ : /\S/;
       let from = start;
       let to = end;
       while (from > 0 && test.test(value[from - 1])) from -= 1;
@@ -3707,11 +4548,11 @@
     }
 
     function applyMasking() {
-      const textarea = isMaskableField(document.activeElement)
+      const textarea = document.activeElement?.matches?.("#groups textarea")
         ? document.activeElement
-        : activeMaskTarget || activeActivityTextarea;
+        : activeActivityTextarea;
       if (!textarea) {
-        setMessage("error", "Klik field yang ingin dimasking lalu pilih teksnya.");
+        setMessage("error", "Klik field tabel aktivitas lalu pilih teks yang ingin dimasking.");
         return;
       }
       const range = getTextRange(textarea, true);
@@ -3719,7 +4560,7 @@
         setMessage("error", "Pilih teks confidential atau letakkan cursor pada kata yang ingin dimasking.");
         return;
       }
-      replaceTextareaRange(textarea, range, getMaskerForField(textarea)(range.text));
+      replaceTextareaRange(textarea, range, maskConfidentialText(range.text));
       setMessage("ok", "Teks confidential sudah dimasking.");
     }
 
@@ -3737,6 +4578,7 @@
         refreshMakerControls();
         renderPreview();
         autosave();
+        commitHistory("move-maker");
         return;
       }
       if (!removeMaker) return;
@@ -3745,6 +4587,7 @@
         refreshMakerControls();
         renderPreview();
         autosave();
+        commitHistory("remove-maker");
       }
     });
 
@@ -3752,8 +4595,18 @@
     document.getElementById("loadDraftBtn").addEventListener("click", loadDraft);
     document.getElementById("generateBtn").addEventListener("click", generatePdf);
     document.getElementById("resetBtn").addEventListener("click", resetForm);
+    els.confirmResetBtn.addEventListener("click", performReset);
+    els.cancelResetBtn.addEventListener("click", closeResetConfirm);
+    els.commentModeBtn.addEventListener("click", () => setAnnotationMode(!appState.annotationMode));
+    els.floatingCommentBtn.addEventListener("click", () => setAnnotationMode(!appState.annotationMode));
+    els.floatingMaskBtn.addEventListener("click", () => {
+      applyMasking();
+      commitHistory("masking");
+    });
+    els.saveCommentBtn.addEventListener("click", saveComment);
+    els.cancelCommentBtn.addEventListener("click", closeCommentDialog);
     els.collabToggleBtn.addEventListener("click", () => {
-      startCollaboration(collaboration.active);
+      startCollaboration(collaboration.active, true);
     });
     els.copyShareLinkBtn.addEventListener("click", async () => {
       if (navigator.clipboard?.writeText) {
@@ -3763,7 +4616,44 @@
       setStatus("Share link disalin.");
     });
     els.importDraftInput.addEventListener("change", (event) => importDraft(event.target.files[0]));
-    document.getElementById("maskSelectionBtn").addEventListener("click", applyMasking);
+    document.getElementById("maskSelectionBtn").addEventListener("click", () => {
+      applyMasking();
+      commitHistory("masking");
+    });
+
+    els.commentList.addEventListener("click", (event) => {
+      const focus = event.target.closest("[data-focus-comment]");
+      if (focus) {
+        focusCommentTarget(focus.dataset.focusComment);
+        return;
+      }
+      const edit = event.target.closest("[data-edit-comment]");
+      if (edit) {
+        openEditComment(edit.dataset.editComment);
+        return;
+      }
+      const toggle = event.target.closest("[data-toggle-comment]");
+      const remove = event.target.closest("[data-delete-comment]");
+      if (!toggle && !remove) return;
+      const commentId = toggle ? toggle.dataset.toggleComment : remove.dataset.deleteComment;
+      if (!commentId) return;
+      if (toggle) {
+        updateCommentById(commentId, (comment) => ({
+          ...comment,
+          resolved: !comment.resolved,
+          updatedAt: new Date().toISOString()
+        }));
+      }
+      if (remove) {
+        appState.comments = appState.comments.filter((comment) => comment.cid !== commentId);
+      }
+      renderComments();
+      autosave();
+      if (collaboration.active) commitSharedData();
+      else queueSharedUpdate();
+      commitHistory(toggle ? "toggle-comment" : "delete-comment");
+      setStatus(toggle ? "Status komentar diperbarui." : "Komentar dihapus.");
+    });
 
     els.groups.addEventListener("focusin", (event) => {
       if (event.target.matches("textarea")) activeActivityTextarea = event.target;
@@ -3808,6 +4698,7 @@
       refreshNumbers();
       renderPreview();
       autosave();
+      if (addRow || removeGroup || removeRow || moveGroup || moveRow) commitHistory("activity-table");
     });
 
     function enableSplitter() {
@@ -3829,7 +4720,8 @@
     }
 
     enableSplitter();
-    applyData(maybeLoadAutosave() || defaultData());
+    applyData(defaultData());
+    commitHistory("initial");
     setModeStatus("draft");
     setSyncStatus("offline");
     renderPresence();
