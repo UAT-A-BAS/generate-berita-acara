@@ -1184,17 +1184,34 @@
     .comment-card .actions {
       grid-column: 2;
       grid-row: 1 / span 3;
-      flex-direction: column;
-      align-items: stretch;
-      align-self: center;
+      flex-direction: row;
+      align-items: center;
+      align-self: start;
+      justify-self: end;
       gap: 6px;
     }
 
     .comment-card .actions .btn {
-      min-width: 74px;
-      min-height: 32px;
+      min-width: 36px;
+      width: 36px;
+      min-height: 36px;
+      height: 36px;
       justify-content: center;
-      padding: 7px 10px;
+      padding: 0;
+    }
+
+    .comment-card .actions .icon {
+      width: 16px;
+      height: 16px;
+    }
+
+    .comment-card.is-collapsed .comment-target-link,
+    .comment-card.is-collapsed .comment-text {
+      display: none;
+    }
+
+    .comment-card.is-collapsed .actions {
+      grid-row: 1;
     }
 
     .comment-meta {
@@ -1346,7 +1363,7 @@
       outline: 4px solid #fff200 !important;
       outline-offset: 3px !important;
       box-shadow: 0 0 0 9px rgba(255, 242, 0, 0.5), 0 12px 28px rgba(92, 67, 0, 0.18) !important;
-      animation: annotation-fade 4.5s ease-out forwards;
+      animation: annotation-fade 2s ease-out forwards;
     }
 
     @media (max-width: 720px) {
@@ -1358,7 +1375,7 @@
         grid-column: 1;
         grid-row: auto;
         flex-direction: row;
-        align-self: start;
+        justify-self: start;
       }
     }
 
@@ -3533,6 +3550,17 @@
       });
     }
 
+    function commentActionIcon(name) {
+      const icons = {
+        resolve: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`,
+        reopen: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v6h6"/></svg>`,
+        edit: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`,
+        followup: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/><path d="M8 10h8"/><path d="M8 14h5"/></svg>`,
+        delete: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>`
+      };
+      return icons[name] || "";
+    }
+
     function renderComments() {
       const comments = appState.comments || [];
       if (!comments.length) {
@@ -3540,8 +3568,11 @@
         return;
       }
       appState.comments = normalizeComments(comments);
-      els.commentList.innerHTML = appState.comments.map((comment) => `
-        <article class="comment-card ${comment.resolved ? "is-resolved" : ""}" data-comment-id="${escapeHtml(comment.cid)}">
+      els.commentList.innerHTML = appState.comments.map((comment) => {
+        const toggleLabel = comment.resolved ? "Reopen komentar" : "Resolve komentar";
+        const editLabel = comment.resolved ? "Follow up komentar" : "Edit komentar";
+        return `
+        <article class="comment-card ${comment.resolved ? "is-resolved is-collapsed" : ""}" data-comment-id="${escapeHtml(comment.cid)}">
           <div class="comment-meta">
             <span class="comment-status">${escapeHtml(comment.resolved ? "Resolved" : "Unresolved")}</span>
             <span>${escapeHtml(comment.author || "Reviewer")}</span>
@@ -3550,12 +3581,13 @@
           <button class="comment-target-link" type="button" data-focus-comment="${escapeHtml(comment.cid)}">Lihat field: ${escapeHtml(comment.label || "Area terkait")}</button>
           <p class="comment-text">${escapeHtml(comment.text)}</p>
           <div class="actions">
-            <button class="btn btn-secondary" type="button" data-toggle-comment="${escapeHtml(comment.cid)}">${comment.resolved ? "Reopen" : "Resolve"}</button>
-            <button class="btn btn-secondary" type="button" data-edit-comment="${escapeHtml(comment.cid)}">${comment.resolved ? "Follow up" : "Edit"}</button>
-            <button class="btn btn-danger" type="button" data-delete-comment="${escapeHtml(comment.cid)}">Hapus</button>
+            <button class="btn btn-secondary comment-action-btn" type="button" data-toggle-comment="${escapeHtml(comment.cid)}" aria-label="${escapeHtml(toggleLabel)}" title="${escapeHtml(toggleLabel)}">${commentActionIcon(comment.resolved ? "reopen" : "resolve")}</button>
+            <button class="btn btn-secondary comment-action-btn" type="button" data-edit-comment="${escapeHtml(comment.cid)}" aria-label="${escapeHtml(editLabel)}" title="${escapeHtml(editLabel)}">${commentActionIcon(comment.resolved ? "followup" : "edit")}</button>
+            <button class="btn btn-danger comment-action-btn" type="button" data-delete-comment="${escapeHtml(comment.cid)}" aria-label="Hapus komentar" title="Hapus komentar">${commentActionIcon("delete")}</button>
           </div>
         </article>
-      `).join("");
+      `;
+      }).join("");
     }
 
     function saveDraft() {
