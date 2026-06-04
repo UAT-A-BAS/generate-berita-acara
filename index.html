@@ -3699,8 +3699,10 @@
         const mergedCell = (key, width, align = "left") => {
           const span = spans[key];
           if (span.hidden[localIndex]) return "";
-          const rowspan = span.lengths[localIndex] > 1 ? ` rowspan="${span.lengths[localIndex]}"` : "";
-          return `<td${rowspan} style="width:${width}; text-align:${align};">${richTextToPreviewHtml(rows[localIndex][key], rows[localIndex][`${key}Formats`], key)}</td>`;
+          const isMerged = span.lengths[localIndex] > 1;
+          const rowspan = isMerged ? ` rowspan="${span.lengths[localIndex]}"` : "";
+          const verticalAlign = isMerged && (key === "result" || key === "pic") ? "middle" : "top";
+          return `<td${rowspan} style="width:${width}; text-align:${align}; vertical-align:${verticalAlign};">${richTextToPreviewHtml(rows[localIndex][key], rows[localIndex][`${key}Formats`], key)}</td>`;
         };
         row.innerHTML = `
           <td style="width:6%; text-align:center;">${rowData.continued ? "" : rowNumber}</td>
@@ -4266,18 +4268,25 @@
         const width = layout.columns[colIndex];
         if (!span.hidden[index]) {
           const height = sumRange(rowHeights, index, index + span.lengths[index]);
-          drawPdfCell(pdf, layout, x, y, width, height, rows[index][key], key === "pic" ? "center" : "left", rows[index][`${key}Formats`]);
+          const isMerged = span.lengths[index] > 1;
+          const align = key === "pic" ? "center" : "left";
+          const verticalAlign = isMerged && (key === "result" || key === "pic") ? "middle" : "top";
+          drawPdfCell(pdf, layout, x, y, width, height, rows[index][key], align, rows[index][`${key}Formats`], verticalAlign);
         }
         x += width;
       });
       return y + rowHeight;
     }
 
-    function drawPdfCell(pdf, layout, x, y, width, height, value, align = "left", formats = []) {
+    function drawPdfCell(pdf, layout, x, y, width, height, value, align = "left", formats = [], verticalAlign = "top") {
       pdf.rect(x, y, width, height);
       const lines = splitPdfRichText(pdf, value, width - layout.padX * 2, layout, formats);
+      const blockHeight = (lines.length - 1) * layout.bodyLine + layout.bodySize;
+      const firstBaselineY = verticalAlign === "middle"
+        ? y + Math.max(layout.padY + layout.bodySize, (height - blockHeight) / 2 + layout.bodySize)
+        : y + layout.padY + layout.bodySize;
       lines.forEach((segments, index) => {
-        const textY = y + layout.padY + layout.bodySize + index * layout.bodyLine;
+        const textY = firstBaselineY + index * layout.bodyLine;
         let textX = align === "center"
           ? x + width / 2 - measurePdfSegments(pdf, layout, segments) / 2
           : x + layout.padX;
