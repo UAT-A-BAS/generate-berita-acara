@@ -7,7 +7,7 @@ const sandbox = {};
 vm.createContext(sandbox);
 vm.runInContext(source, sandbox, { filename: "src/piiMasking.js" });
 
-const { maskByType, maskName } = sandbox.PiiMasking;
+const { inferMaskType, maskByType, maskName } = sandbox.PiiMasking;
 
 const cases = [
   ["li", "*i"],
@@ -64,4 +64,21 @@ const ruleCases = [
 
 for (const [type, input, expected, options] of ruleCases) {
   assert.equal(maskByType(type, input, options), expected, `${type}: ${input}`);
+}
+
+const inferenceCases = [
+  ["joa@yahoo.com", "email"],
+  ["01-12-2023", "date"],
+  ["09/20", "cardExpiry"],
+  ["5289 1900 0155 6972", "cardNumber"],
+  ["081210001294", "phone"],
+  ["Rp. 60,000,123.52", "balance"],
+  ["532", "cvv"],
+  ["margaretha cindy", "name"],
+  ["Dr. Ir. Prof. Floretta Maria", "titledName"],
+  ["Jl. Gading Kirana Barat 1 Blok E8 No. 29", "address"]
+];
+
+for (const [input, expected] of inferenceCases) {
+  assert.equal(inferMaskType(input).type, expected, `infer: ${input}`);
 }

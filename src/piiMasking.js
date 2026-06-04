@@ -161,6 +161,64 @@
     return groupDigits(`${leading}${maskCore(significant, first, last)}`);
   }
 
+  function maskTypeLabel(type) {
+    return MASKING_TYPES.find(([value]) => value === type)?.[1] || "";
+  }
+
+  function luhnValid(digits) {
+    if (!/^\d{12,19}$/.test(digits)) return false;
+    let sum = 0;
+    let alternate = false;
+    for (let index = digits.length - 1; index >= 0; index -= 1) {
+      let value = Number(digits[index]);
+      if (alternate) {
+        value *= 2;
+        if (value > 9) value -= 9;
+      }
+      sum += value;
+      alternate = !alternate;
+    }
+    return sum % 10 === 0;
+  }
+
+  function maskSuggestion(type, confidence, reason, options = {}) {
+    return {
+      type,
+      label: maskTypeLabel(type),
+      confidence,
+      reason,
+      ...options
+    };
+  }
+
+  function inferMaskType(value) {
+    const text = String(value || "").trim();
+    const digits = text.replace(/\D/g, "");
+    const letters = text.replace(/[^\p{L}]/gu, "");
+    if (!text) return maskSuggestion("", "", "");
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text)) return maskSuggestion("email", "tinggi", "format email");
+    if (/^(Rp\.?|IDR)\s*[\d.,]+/i.test(text) || /^\d{1,3}([.,]\d{3})+([.,]\d{1,2})?$/.test(text)) {
+      return maskSuggestion("balance", "tinggi", "format nominal");
+    }
+    if (/^\d{2}[/-]\d{2}$/.test(text)) return maskSuggestion("cardExpiry", "sedang", "format MM/YY");
+    if (/^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}$/.test(text)) return maskSuggestion("date", "tinggi", "format tanggal");
+    if (/^\+?\d[\d\s-]{7,}$/.test(text) && /^(0|62|\+62)/.test(text.replace(/\s/g, "")) && digits.length >= 8 && digits.length <= 15) {
+      return maskSuggestion("phone", "tinggi", "format telepon");
+    }
+    if (digits.length >= 13 && digits.length <= 19 && (luhnValid(digits) || /^\d{4}([\s-]?\d{4}){2,4}$/.test(text))) {
+      return maskSuggestion("cardNumber", luhnValid(digits) ? "tinggi" : "sedang", "format nomor kartu", { cardPolicy: "default" });
+    }
+    if (/^\d{3,4}$/.test(text)) return maskSuggestion("cvv", "rendah", "3-4 digit");
+    if (/^\d{16}$/.test(digits) && digits === text) return maskSuggestion("identityNumber", "sedang", "16 digit");
+    if (/^\d{22}$/.test(digits) && digits === text) return maskSuggestion("npwpNitku", "sedang", "22 digit");
+    if (/^[A-Z]\s?\d{6,8}$/i.test(text)) return maskSuggestion("passport", "sedang", "format paspor");
+    if (/^[A-Z]{2,}[A-Z0-9]{4,}$/i.test(text) && !/\s/.test(text)) return maskSuggestion("bcaUserId", "sedang", "format user id");
+    if (/\b(Jl\.?|Jalan|Blok|No\.?)\b/i.test(text)) return maskSuggestion("address", "sedang", "format alamat");
+    if (/\b(Dr|Ir|Prof|Hj|H|S\.|M\.)\.?/i.test(text) && letters.length >= 3) return maskSuggestion("titledName", "sedang", "nama bergelar");
+    if (/^[\p{L}.'\s-]+$/u.test(text) && letters.length >= 2) return maskSuggestion("name", "sedang", "format nama");
+    return maskSuggestion("all", "rendah", "fallback");
+  }
+
   function maskByType(type, value, options = {}) {
     const maskers = {
       name: maskName,
@@ -194,6 +252,7 @@
   root.PiiMasking = Object.freeze({
     MASKING_TYPES,
     hasMaskedToken,
+    inferMaskType,
     maskByType,
     maskName,
     maskers: Object.freeze({
