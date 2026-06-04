@@ -52,7 +52,9 @@ const ruleCases = [
   ["balance", "Rp. 60,000,123.52", "Rp. **,***,123.52"],
   ["accountNumber", "1234", "1**4"],
   ["accountNumber", "12345678901", "123******01"],
-  ["cardNumber", "5289 1900 0155 6972", "**** **** **** 6972 (Visa)"],
+  ["cardNumber", "5289 1900 0155 6972", "5289 **** **** **72 (Default)"],
+  ["cardNumber", "5289 1900 0155 6972", "5289 19** **** 6972 (PCI DSS)", { cardPolicy: "pciDss" }],
+  ["cardNumber", "5289 1900 0155 6972", "**** **** **** 6972 (Visa)", { cardPolicy: "visa" }],
   ["cardExpiry", "09/20", "**/**"],
   ["cvv", "532", "***"],
   ["customerNumber", "0000 0000 0000 1234", "0000 0000 0000 1**4"],
@@ -60,6 +62,6 @@ const ruleCases = [
   ["serialNumber", "1234567890", "*******890"]
 ];
 
-for (const [type, input, expected] of ruleCases) {
-  assert.equal(maskByType(type, input), expected, `${type}: ${input}`);
+for (const [type, input, expected, options] of ruleCases) {
+  assert.equal(maskByType(type, input, options), expected, `${type}: ${input}`);
 }

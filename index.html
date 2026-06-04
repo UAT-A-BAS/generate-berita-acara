@@ -1367,6 +1367,18 @@
       font-weight: 700;
     }
 
+    #maskDialog .dialog-box {
+      width: min(420px, 100%);
+      gap: 10px;
+    }
+
+    #maskSourceText,
+    #maskPreviewText {
+      min-height: 58px;
+      max-height: 82px;
+      resize: vertical;
+    }
+
     .comment-target {
       padding: 8px 10px;
       border-radius: 8px;
@@ -1707,13 +1719,13 @@
     </div>
     <footer class="app-credit">Developed by Alex Surya Marcelo (UAT - A) &bull; Generator Berita Acara</footer>
     <div class="floating-tools floating-tools-left" aria-label="Akses cepat masking">
-      <button class="btn btn-secondary" id="floatingMaskBtn" type="button" title="Masking teks yang dipilih (Ctrl+M)">
+      <button class="btn btn-primary" id="floatingMaskBtn" type="button" title="Masking teks yang dipilih (Ctrl+M)">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="M9 12h6"/></svg>
         Masking
       </button>
     </div>
     <div class="floating-tools floating-tools-right" aria-label="Akses cepat komentar">
-      <button class="btn btn-secondary" id="floatingCommentBtn" type="button" title="Komentar review">
+      <button class="btn btn-primary" id="floatingCommentBtn" type="button" title="Komentar review">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
         Comment
       </button>
@@ -1755,13 +1767,21 @@
       <div class="dialog-box">
         <h3 id="maskDialogTitle">Masking Data</h3>
         <label>Jenis Masking <span class="required-mark">*</span>
-          <select id="maskTypeSelect"></select>
+          <input id="maskTypeSearch" list="maskTypeOptions" autocomplete="off" placeholder="Ketik jenis masking">
+          <datalist id="maskTypeOptions"></datalist>
+        </label>
+        <label id="cardPolicyField" hidden>Sub-policy Nomor Kartu <span class="required-mark">*</span>
+          <select id="cardPolicySelect">
+            <option value="default">Default - 4 depan + 2 belakang</option>
+            <option value="pciDss">PCI DSS - BIN + 4 belakang</option>
+            <option value="visa">Visa - 4 belakang</option>
+          </select>
         </label>
         <label>Text dipilih
-          <textarea id="maskSourceText" rows="3" readonly></textarea>
+          <textarea id="maskSourceText" rows="2" readonly></textarea>
         </label>
         <label>Preview masking
-          <textarea id="maskPreviewText" rows="3" readonly></textarea>
+          <textarea id="maskPreviewText" rows="2" readonly></textarea>
         </label>
         <div class="actions">
           <button class="btn btn-secondary" id="cancelMaskBtn" type="button">Batal</button>
@@ -1965,7 +1985,10 @@
       saveCommentBtn: document.getElementById("saveCommentBtn"),
       cancelCommentBtn: document.getElementById("cancelCommentBtn"),
       maskDialog: document.getElementById("maskDialog"),
-      maskTypeSelect: document.getElementById("maskTypeSelect"),
+      maskTypeSearch: document.getElementById("maskTypeSearch"),
+      maskTypeOptions: document.getElementById("maskTypeOptions"),
+      cardPolicyField: document.getElementById("cardPolicyField"),
+      cardPolicySelect: document.getElementById("cardPolicySelect"),
       maskSourceText: document.getElementById("maskSourceText"),
       maskPreviewText: document.getElementById("maskPreviewText"),
       applyMaskBtn: document.getElementById("applyMaskBtn"),
@@ -2595,7 +2618,7 @@
       ["bcaUserId", "BCA ID / User ID"],
       ["balance", "Informasi Saldo"],
       ["accountNumber", "Nomor rekening"],
-      ["cardNumber", "Nomor kartu (Visa)"],
+      ["cardNumber", "Nomor kartu"],
       ["cardExpiry", "Tanggal expired kartu"],
       ["cvv", "CVV"],
       ["customerNumber", "Customer Number"],
@@ -2721,11 +2744,15 @@
       return value.replace(/(.{4})/g, "$1 ").trim();
     }
 
-    function maskCardVisa(value) {
+    function maskCardNumber(value, policy = "default") {
       const digits = String(value || "").replace(/\D/g, "");
       if (!digits) return "";
-      const masked = `${repeatMask(Math.max(0, digits.length - 4))}${digits.slice(-4)}`;
-      return `${groupDigits(masked)} (Visa)`;
+      if (policy === "pciDss") return `${groupDigits(maskCore(digits, 6, 4))} (PCI DSS)`;
+      if (policy === "visa") {
+        const masked = `${repeatMask(Math.max(0, digits.length - 4))}${digits.slice(-4)}`;
+        return `${groupDigits(masked)} (Visa)`;
+      }
+      return `${groupDigits(maskCore(digits, 4, 2))} (Default)`;
     }
 
     function maskCustomerNumber(value) {
@@ -2743,7 +2770,7 @@
       return groupDigits(masked);
     }
 
-    function maskByType(type, value) {
+    function maskByType(type, value, options = {}) {
       const maskers = {
         name: maskName,
         titledName: maskName,
@@ -2760,13 +2787,13 @@
         bcaUserId: maskBcaUserId,
         balance: maskBalance,
         accountNumber: maskAccountNumber,
-        cardNumber: maskCardVisa,
+        cardNumber: (text, maskOptions = {}) => maskCardNumber(text, maskOptions.cardPolicy),
         cardExpiry: maskDateAllDigits,
         cvv: maskAll,
         customerNumber: maskCustomerNumber,
         serialNumber: (text) => maskLast(text, 3)
       };
-      return (maskers[type] || maskAll)(value);
+      return (maskers[type] || maskAll)(value, options);
     }
 
     function downloadBlob(blob, filename) {
@@ -5052,16 +5079,64 @@
     }
 
     function populateMaskingTypes() {
-      els.maskTypeSelect.innerHTML = `<option value="">Pilih jenis masking</option>${MASKING_TYPES
-        .map(([value, label]) => `<option value="${value}">${escapeHtml(label)}</option>`)
-        .join("")}`;
+      els.maskTypeOptions.innerHTML = MASKING_TYPES
+        .map(([value, label]) => `<option value="${escapeHtml(label)}" data-type="${escapeHtml(value)}"></option>`)
+        .join("");
+    }
+
+    function resolveMaskingType() {
+      const raw = normalizeText(els.maskTypeSearch.value);
+      if (!raw) return "";
+      const query = raw.toLocaleLowerCase("id-ID");
+      if (["kartu", "card", "pan", "visa", "pci", "pci dss"].includes(query)) return "cardNumber";
+      const exact = MASKING_TYPES.find(([value, label]) => (
+        value.toLocaleLowerCase("id-ID") === query || label.toLocaleLowerCase("id-ID") === query
+      ));
+      if (exact) return exact[0];
+      const matches = MASKING_TYPES.filter(([value, label]) => (
+        `${value} ${label}`.toLocaleLowerCase("id-ID").includes(query)
+      ));
+      return matches.length === 1 ? matches[0][0] : "";
+    }
+
+    function selectedMaskOptions() {
+      return {
+        cardPolicy: els.cardPolicySelect.value || "default"
+      };
+    }
+
+    function syncCardPolicyField(type) {
+      const isCardNumber = type === "cardNumber";
+      els.cardPolicyField.hidden = !isCardNumber;
+      if (!isCardNumber) els.cardPolicySelect.value = "default";
     }
 
     function updateMaskPreview() {
-      const type = els.maskTypeSelect.value;
+      const type = resolveMaskingType();
       const source = els.maskSourceText.value;
-      els.maskPreviewText.value = type ? maskByType(type, source) : "";
+      syncCardPolicyField(type);
+      els.maskPreviewText.value = type ? maskByType(type, source, selectedMaskOptions()) : "";
       els.applyMaskBtn.disabled = !type || !source;
+    }
+
+    function firstMaskingSuggestion() {
+      const raw = normalizeText(els.maskTypeSearch.value);
+      if (!raw) return "";
+      const query = raw.toLocaleLowerCase("id-ID");
+      return MASKING_TYPES.find(([value, label]) => (
+        value.toLocaleLowerCase("id-ID").includes(query) || label.toLocaleLowerCase("id-ID").includes(query)
+      ))?.[1] || "";
+    }
+
+    function commitMaskTypeSearch() {
+      const type = resolveMaskingType();
+      if (type) {
+        els.maskTypeSearch.value = MASKING_TYPES.find(([value]) => value === type)?.[1] || els.maskTypeSearch.value;
+      } else {
+        const suggestion = firstMaskingSuggestion();
+        if (suggestion) els.maskTypeSearch.value = suggestion;
+      }
+      updateMaskPreview();
     }
 
     function openMaskDialog() {
@@ -5079,10 +5154,11 @@
       }
       appState.maskSelection = { textarea, range };
       els.maskSourceText.value = range.text;
-      els.maskTypeSelect.value = "";
+      els.maskTypeSearch.value = "";
+      els.cardPolicySelect.value = "default";
       updateMaskPreview();
       els.maskDialog.hidden = false;
-      els.maskTypeSelect.focus();
+      els.maskTypeSearch.focus();
       return true;
     }
 
@@ -5093,9 +5169,13 @@
 
     function applyMasking() {
       const selection = appState.maskSelection;
-      const type = els.maskTypeSelect.value;
-      if (!selection || !type) return;
-      replaceTextareaRange(selection.textarea, selection.range, maskByType(type, selection.range.text));
+      const type = resolveMaskingType();
+      if (!selection || !type) {
+        els.maskTypeSearch.focus();
+        setMessage("error", "Pilih jenis masking yang valid.");
+        return;
+      }
+      replaceTextareaRange(selection.textarea, selection.range, maskByType(type, selection.range.text, selectedMaskOptions()));
       closeMaskDialog();
       setMessage("ok", "Teks confidential sudah dimasking.");
     }
@@ -5148,7 +5228,15 @@
     els.floatingMaskBtn.addEventListener("click", () => {
       openMaskDialog();
     });
-    els.maskTypeSelect.addEventListener("change", updateMaskPreview);
+    els.maskTypeSearch.addEventListener("input", updateMaskPreview);
+    els.maskTypeSearch.addEventListener("change", commitMaskTypeSearch);
+    els.maskTypeSearch.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        commitMaskTypeSearch();
+      }
+    });
+    els.cardPolicySelect.addEventListener("change", updateMaskPreview);
     els.applyMaskBtn.addEventListener("click", () => {
       applyMasking();
       commitHistory("masking");
