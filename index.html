@@ -565,6 +565,48 @@
       min-width: 128px;
     }
 
+    .comment-drawer {
+      position: fixed;
+      right: 18px;
+      bottom: 78px;
+      z-index: 55;
+      width: min(390px, calc(100vw - 36px));
+      max-height: min(620px, calc(100dvh - 110px));
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr);
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid rgba(185, 201, 220, 0.95);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 18px 42px rgba(31, 45, 61, 0.18);
+      backdrop-filter: blur(10px);
+    }
+
+    .comment-drawer[hidden] {
+      display: none;
+    }
+
+    .comment-panel-head p {
+      margin: 2px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .comment-toolbar {
+      display: grid;
+      grid-template-columns: 1fr minmax(118px, auto);
+      gap: 8px;
+      align-items: center;
+    }
+
+    .comment-toolbar .btn,
+    .comment-toolbar select {
+      min-height: 36px;
+      font-size: 12px;
+    }
+
     .activity-groups {
       display: grid;
       gap: 12px;
@@ -1148,7 +1190,7 @@
     .comment-list {
       display: grid;
       gap: 8px;
-      max-height: 280px;
+      max-height: 100%;
       overflow: auto;
     }
 
@@ -1176,7 +1218,8 @@
 
     .comment-card .comment-meta,
     .comment-card .comment-target-link,
-    .comment-card .comment-text {
+    .comment-card .comment-text,
+    .comment-card .comment-audit {
       grid-column: 1;
       min-width: 0;
     }
@@ -1267,6 +1310,13 @@
       line-height: 1.35;
       white-space: pre-wrap;
       overflow-wrap: anywhere;
+    }
+
+    .comment-audit {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
     }
 
     .comment-empty {
@@ -1464,6 +1514,12 @@
       .floating-tools .btn {
         min-width: 0;
       }
+
+      .comment-drawer {
+        right: 12px;
+        bottom: 72px;
+        width: calc(100vw - 24px);
+      }
     }
 
     @media (max-width: 520px) {
@@ -1561,10 +1617,6 @@
               </div>
               <div class="activity-groups" id="groups"></div>
               <div class="section-actions">
-                <button class="btn btn-secondary" id="maskSelectionBtn" type="button" title="Masking teks yang dipilih">
-                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="M9 12h6"/></svg>
-                  Masking
-                </button>
                 <button class="btn btn-secondary btn-icon" id="addGroupBtn" type="button" aria-label="Tambah tanggal" title="Tambah tanggal">
                   <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
                 </button>
@@ -1650,13 +1702,6 @@
         </div>
         <div class="panel-body">
           <div id="preview"></div>
-          <section class="comment-panel" aria-labelledby="comments-title">
-            <div class="comment-panel-head">
-              <h3 id="comments-title">Komentar Review</h3>
-              <button class="btn btn-secondary" id="commentModeBtn" type="button">Add Comment</button>
-            </div>
-            <div class="comment-list" id="commentList"></div>
-          </section>
         </div>
       </aside>
     </div>
@@ -1668,23 +1713,72 @@
       </button>
     </div>
     <div class="floating-tools floating-tools-right" aria-label="Akses cepat komentar">
-      <button class="btn btn-secondary" id="floatingCommentBtn" type="button" title="Tambah komentar">
+      <button class="btn btn-secondary" id="floatingCommentBtn" type="button" title="Komentar review">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
         Comment
       </button>
     </div>
+    <section class="comment-drawer" id="commentDrawer" aria-labelledby="comments-title" hidden>
+      <div class="comment-panel-head">
+        <div>
+          <h3 id="comments-title">Komentar Review</h3>
+          <p id="commentSummary">0 unresolved</p>
+        </div>
+        <button class="btn btn-secondary btn-icon" id="closeCommentDrawerBtn" type="button" aria-label="Tutup komentar" title="Tutup komentar">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="comment-toolbar">
+        <button class="btn btn-primary" id="commentModeBtn" type="button">Add Comment</button>
+        <select id="commentFilter" aria-label="Filter komentar">
+          <option value="all">All</option>
+          <option value="unresolved">Unresolved</option>
+          <option value="resolved">Resolved</option>
+        </select>
+      </div>
+      <div class="comment-list" id="commentList"></div>
+    </section>
     <div class="comment-dialog" id="commentDialog" role="dialog" aria-modal="true" aria-labelledby="commentDialogTitle" hidden>
       <div class="dialog-box">
         <h3 id="commentDialogTitle">Tambah komentar</h3>
-        <label>Nama Reviewer <span class="required-mark">*</span>
-          <input id="commentAuthor" autocomplete="off" placeholder="Nama reviewer" required>
-        </label>
+        <p id="commentIdentityText">Reviewer: -</p>
         <label>Komentar <span class="required-mark">*</span>
           <textarea id="commentText" rows="4" placeholder="Tulis catatan reviewer" required></textarea>
         </label>
         <div class="actions">
           <button class="btn btn-secondary" id="cancelCommentBtn" type="button">Batal</button>
           <button class="btn btn-primary" id="saveCommentBtn" type="button">Simpan</button>
+        </div>
+      </div>
+    </div>
+    <div class="comment-dialog" id="maskDialog" role="dialog" aria-modal="true" aria-labelledby="maskDialogTitle" hidden>
+      <div class="dialog-box">
+        <h3 id="maskDialogTitle">Masking Data</h3>
+        <label>Jenis Masking <span class="required-mark">*</span>
+          <select id="maskTypeSelect"></select>
+        </label>
+        <label>Text dipilih
+          <textarea id="maskSourceText" rows="3" readonly></textarea>
+        </label>
+        <label>Preview masking
+          <textarea id="maskPreviewText" rows="3" readonly></textarea>
+        </label>
+        <div class="actions">
+          <button class="btn btn-secondary" id="cancelMaskBtn" type="button">Batal</button>
+          <button class="btn btn-primary" id="applyMaskBtn" type="button">Apply Masking</button>
+        </div>
+      </div>
+    </div>
+    <div class="comment-dialog" id="collabNameDialog" role="dialog" aria-modal="true" aria-labelledby="collabNameTitle" hidden>
+      <div class="dialog-box">
+        <h3 id="collabNameTitle">Isi nama kolaborator</h3>
+        <p>Nama dipakai untuk presence dan audit log komentar review.</p>
+        <label>Nama <span class="required-mark">*</span>
+          <input id="collabNameInput" autocomplete="name" placeholder="Nama reviewer / maker">
+        </label>
+        <div class="actions">
+          <button class="btn btn-secondary" id="cancelCollabNameBtn" type="button">Batal</button>
+          <button class="btn btn-primary" id="saveCollabNameBtn" type="button">Lanjut</button>
         </div>
       </div>
     </div>
@@ -1856,16 +1950,30 @@
       syncStatusText: document.getElementById("syncStatusText"),
       userCountText: document.getElementById("userCountText"),
       lastSyncedText: document.getElementById("lastSyncedText"),
+      commentDrawer: document.getElementById("commentDrawer"),
+      closeCommentDrawerBtn: document.getElementById("closeCommentDrawerBtn"),
+      commentSummary: document.getElementById("commentSummary"),
+      commentFilter: document.getElementById("commentFilter"),
       commentList: document.getElementById("commentList"),
       commentModeBtn: document.getElementById("commentModeBtn"),
       floatingCommentBtn: document.getElementById("floatingCommentBtn"),
       floatingMaskBtn: document.getElementById("floatingMaskBtn"),
       commentDialog: document.getElementById("commentDialog"),
       commentTargetLabel: document.getElementById("commentTargetLabel"),
-      commentAuthor: document.getElementById("commentAuthor"),
+      commentIdentityText: document.getElementById("commentIdentityText"),
       commentText: document.getElementById("commentText"),
       saveCommentBtn: document.getElementById("saveCommentBtn"),
       cancelCommentBtn: document.getElementById("cancelCommentBtn"),
+      maskDialog: document.getElementById("maskDialog"),
+      maskTypeSelect: document.getElementById("maskTypeSelect"),
+      maskSourceText: document.getElementById("maskSourceText"),
+      maskPreviewText: document.getElementById("maskPreviewText"),
+      applyMaskBtn: document.getElementById("applyMaskBtn"),
+      cancelMaskBtn: document.getElementById("cancelMaskBtn"),
+      collabNameDialog: document.getElementById("collabNameDialog"),
+      collabNameInput: document.getElementById("collabNameInput"),
+      saveCollabNameBtn: document.getElementById("saveCollabNameBtn"),
+      cancelCollabNameBtn: document.getElementById("cancelCollabNameBtn"),
       resetConfirmDialog: document.getElementById("resetConfirmDialog"),
       confirmResetBtn: document.getElementById("confirmResetBtn"),
       cancelResetBtn: document.getElementById("cancelResetBtn")
@@ -1905,7 +2013,8 @@
       restoringHistory: false,
       historyTimer: null,
       lastHistoryReason: "",
-      editingCommentId: null
+      editingCommentId: null,
+      maskSelection: null
     };
 
     let activeRoleInput = null;
@@ -1921,6 +2030,7 @@
     let suppressSharedUpdate = false;
     let pendingCollabSeed = null;
     let pendingCollabSeedMustWin = false;
+    let pendingNameResolver = null;
     const clientId = crypto.randomUUID();
     const collaboration = {
       docId: getDocIdFromUrl(),
@@ -1957,27 +2067,68 @@
     }
 
     function loadCollabUser() {
+      let savedColor = "";
       try {
         const saved = JSON.parse(localStorage.getItem(USER_KEY) || "null");
-        if (saved?.name && saved?.color) return { ...saved, id: clientId };
+        savedColor = saved?.color || "";
+        if (saved?.name && saved?.color && !isDefaultCollabName(saved.name)) return { ...saved, id: clientId };
       } catch {
         // Ignore bad local profile; fresh identity is safer.
       }
       const colors = ["#1b4d78", "#1f7a4d", "#9f580a", "#7c3aed", "#be123c", "#0f766e"];
-      const user = {
+      return {
         id: clientId,
-        name: `User ${randomId(4).toUpperCase()}`,
-        color: colors[Math.floor(Math.random() * colors.length)]
+        name: "",
+        color: savedColor || colors[Math.floor(Math.random() * colors.length)]
       };
-      localStorage.setItem(USER_KEY, JSON.stringify({ name: user.name, color: user.color }));
-      return user;
+    }
+
+    function isDefaultCollabName(value) {
+      return /^(User|Reviewer)\s+[A-Z0-9]{4}$/i.test(normalizeText(value));
     }
 
     function saveCollabUser() {
+      const name = normalizeText(collaboration.user.name);
+      if (!name || isDefaultCollabName(name)) return;
       localStorage.setItem(USER_KEY, JSON.stringify({
-        name: collaboration.user.name,
+        name,
         color: collaboration.user.color
       }));
+    }
+
+    function hasCollabUserName() {
+      const name = normalizeText(collaboration.user.name);
+      return Boolean(name && !isDefaultCollabName(name));
+    }
+
+    function openCollabNameDialog() {
+      els.collabNameInput.value = hasCollabUserName() ? collaboration.user.name : "";
+      els.collabNameDialog.hidden = false;
+      els.collabNameInput.focus();
+    }
+
+    function closeCollabNameDialog(result = false) {
+      els.collabNameDialog.hidden = true;
+      if (pendingNameResolver) {
+        const resolve = pendingNameResolver;
+        pendingNameResolver = null;
+        resolve(result);
+      }
+    }
+
+    function ensureCollabUserName() {
+      if (hasCollabUserName()) return Promise.resolve(true);
+      if (pendingNameResolver) return new Promise((resolve) => {
+        const previous = pendingNameResolver;
+        pendingNameResolver = (value) => {
+          previous(value);
+          resolve(value);
+        };
+      });
+      openCollabNameDialog();
+      return new Promise((resolve) => {
+        pendingNameResolver = resolve;
+      });
     }
 
     function loadUserSettings() {
@@ -2376,12 +2527,16 @@
       return html.join("");
     }
 
+    function legacyRichPattern() {
+      return /(<u>[\s\S]+?<\/u>|(?<!\*)\*\*(?!\s)[^*\n]*?\S[^*\n]*?\*\*(?!\*)|(?<!\*)\*(?![\s*])[^*\n]*?\S[^*\n]*?\*(?!\*))/g;
+    }
+
     function legacyRichToPlainAndFormats(value) {
       const source = String(value || "");
       const formats = [];
       let text = "";
       let index = 0;
-      const pattern = /(<u>[\s\S]+?<\/u>|\*\*[^*\n]+?\*\*|\*[^*\n]+?\*)/g;
+      const pattern = legacyRichPattern();
       let match;
       while ((match = pattern.exec(source))) {
         text += source.slice(index, match.index);
@@ -2411,7 +2566,7 @@
     function readRichCell(textarea) {
       let text = normalizeCellText(textarea.value);
       let formats = readRichFormats(textarea);
-      if (!formats.length && /<u>[\s\S]+?<\/u>|\*\*[^*\n]+?\*\*|\*[^*\n]+?\*/.test(text)) {
+      if (!formats.length && legacyRichPattern().test(text)) {
         const migrated = legacyRichToPlainAndFormats(text);
         text = migrated.text;
         formats = migrated.formats;
@@ -2424,18 +2579,194 @@
       };
     }
 
-    function maskToken(token) {
-      const text = String(token || "");
-      const length = text.length;
-      if (length <= 1) return "*";
-      if (length === 2) return `*${text.slice(-1)}`;
-      if (length <= 4) return `${"*".repeat(length - 2)}${text.slice(-2)}`;
-      if (length <= 7) return `${"*".repeat(length - 3)}${text.slice(-3)}`;
-      return `${text.slice(0, 4)}${"*".repeat(length - 6)}${text.slice(-2)}`;
+    const MASKING_TYPES = [
+      ["name", "Nama"],
+      ["titledName", "Nama dengan gelar"],
+      ["date", "Tanggal"],
+      ["identityNumber", "Nomor Identitas Nasabah"],
+      ["passport", "Nomor Paspor"],
+      ["phone", "No. Handphone / Telepon"],
+      ["address", "Alamat"],
+      ["email", "Alamat Email"],
+      ["npwpNitku", "NPWP / NITKU"],
+      ["fatcaCrs", "Informasi FATCA CRS / KITAS"],
+      ["all", "Masking semua digit/karakter"],
+      ["riskCategory", "Kategori Risiko Nasabah"],
+      ["bcaUserId", "BCA ID / User ID"],
+      ["balance", "Informasi Saldo"],
+      ["accountNumber", "Nomor rekening"],
+      ["cardNumber", "Nomor kartu (Visa)"],
+      ["cardExpiry", "Tanggal expired kartu"],
+      ["cvv", "CVV"],
+      ["customerNumber", "Customer Number"],
+      ["serialNumber", "Serial Number"]
+    ];
+
+    function repeatMask(count) {
+      return "*".repeat(Math.max(0, count));
     }
 
-    function maskConfidentialText(value) {
-      return String(value || "").replace(/[A-Za-z0-9]+/g, (token) => maskToken(token));
+    function maskCore(value, first, last) {
+      const chars = Array.from(String(value || ""));
+      if (chars.length <= first + last) return repeatMask(chars.length);
+      return `${chars.slice(0, first).join("")}${repeatMask(chars.length - first - last)}${last ? chars.slice(-last).join("") : ""}`;
+    }
+
+    function maskNameCore(value) {
+      const chars = Array.from(String(value || ""));
+      const length = chars.length;
+      if (!length) return "";
+      if (length === 1) return "*";
+      if (length === 2) return `*${chars.slice(-1).join("")}`;
+      if (length === 3) return `*${chars.slice(-2).join("")}`;
+      if (length === 4) return `**${chars.slice(-2).join("")}`;
+      if (length === 5) return `**${chars.slice(-3).join("")}`;
+      if (length === 6) return `***${chars.slice(-3).join("")}`;
+      if (length === 7) return `****${chars.slice(-3).join("")}`;
+      return `${chars.slice(0, 4).join("")}${repeatMask(Math.max(3, length - 6))}${chars.slice(-2).join("")}`;
+    }
+
+    function maskName(value) {
+      return String(value || "").replace(/[\p{L}\p{N}]+/gu, (token) => maskNameCore(token));
+    }
+
+    function maskDateAllDigits(value) {
+      return String(value || "").replace(/\d/g, "*");
+    }
+
+    function maskAll(value) {
+      return String(value || "").replace(/[A-Za-z0-9]/g, "*");
+    }
+
+    function maskDigitsKeep(value, first, last) {
+      const text = String(value || "");
+      const digits = text.replace(/\D/g, "");
+      const masked = maskCore(digits, first, last);
+      let cursor = 0;
+      return text.replace(/\d/g, () => masked[cursor++] || "*");
+    }
+
+    function maskLast(value, count) {
+      const text = String(value || "");
+      const chars = Array.from(text);
+      let visible = count;
+      return chars.map((char, index) => {
+        if (!/[A-Za-z0-9]/.test(char)) return char;
+        const tail = chars.slice(index).filter((item) => /[A-Za-z0-9]/.test(item)).length;
+        if (tail <= visible) return char;
+        return "*";
+      }).join("");
+    }
+
+    function maskPhone(value) {
+      const text = String(value || "");
+      const plus = text.trim().startsWith("+");
+      const digits = text.replace(/\D/g, "");
+      const first = plus ? Math.min(6, digits.length) : 4;
+      return maskDigitsKeep(text, first, 2);
+    }
+
+    function maskAddress(value) {
+      return String(value || "")
+        .replace(/\d/g, "*")
+        .replace(/\b[IVXLCDM]{1,8}\b/gi, (token) => repeatMask(token.length));
+    }
+
+    function maskEmail(value) {
+      return String(value || "").replace(/([^\s@]+)@([^\s@]+)/g, (_, local, domain) => {
+        return `${maskNameCore(local)}@${domain}`;
+      });
+    }
+
+    function maskBcaUserId(value) {
+      const raw = String(value || "");
+      const token = raw.replace(/\s/g, "");
+      const length = token.length;
+      let masked = "";
+      if (length <= 6) masked = maskCore(token, 2, 1);
+      else if (length === 7) masked = maskCore(token, 3, 2);
+      else masked = maskCore(token, 4, 2);
+      let cursor = 0;
+      return raw.replace(/\S/g, () => masked[cursor++] || "*");
+    }
+
+    function maskBalance(value) {
+      return String(value || "").replace(/\d[\d.,]*/g, (match) => {
+        const decimalMatch = match.match(/([.,]\d{1,2})$/);
+        const decimal = decimalMatch ? decimalMatch[1] : "";
+        const amount = decimal ? match.slice(0, -decimal.length) : match;
+        const digits = amount.replace(/\D/g, "");
+        if (digits.length <= 3) return match;
+        const maskedDigits = `${repeatMask(digits.length - 3)}${digits.slice(-3)}`;
+        let cursor = 0;
+        const maskedAmount = amount.replace(/\d/g, () => maskedDigits[cursor++] || "*");
+        return `${maskedAmount}${decimal}`;
+      });
+    }
+
+    function maskAccountNumber(value) {
+      const raw = String(value || "");
+      const digits = raw.replace(/\D/g, "");
+      const length = digits.length;
+      let first = 3;
+      let last = 2;
+      if (length === 4) [first, last] = [1, 1];
+      else if (length === 5) [first, last] = [2, 1];
+      else if (length === 6) [first, last] = [2, 1];
+      else if (length === 7) [first, last] = [2, 2];
+      return maskDigitsKeep(raw, first, last);
+    }
+
+    function groupDigits(value) {
+      return value.replace(/(.{4})/g, "$1 ").trim();
+    }
+
+    function maskCardVisa(value) {
+      const digits = String(value || "").replace(/\D/g, "");
+      if (!digits) return "";
+      const masked = `${repeatMask(Math.max(0, digits.length - 4))}${digits.slice(-4)}`;
+      return `${groupDigits(masked)} (Visa)`;
+    }
+
+    function maskCustomerNumber(value) {
+      const digits = String(value || "").replace(/\D/g, "");
+      if (!digits) return "";
+      const leading = digits.match(/^0*/)?.[0] || "";
+      const significant = digits.slice(leading.length) || "0";
+      const length = significant.length;
+      let first = 2;
+      let last = 2;
+      if (length === 4) [first, last] = [1, 1];
+      else if (length === 5) [first, last] = [2, 1];
+      else if (length === 6) [first, last] = [2, 1];
+      const masked = `${leading}${maskCore(significant, first, last)}`;
+      return groupDigits(masked);
+    }
+
+    function maskByType(type, value) {
+      const maskers = {
+        name: maskName,
+        titledName: maskName,
+        date: maskDateAllDigits,
+        identityNumber: (text) => maskDigitsKeep(text, 4, 2),
+        passport: (text) => maskLast(text, 3),
+        phone: maskPhone,
+        address: maskAddress,
+        email: maskEmail,
+        npwpNitku: (text) => maskDigitsKeep(text, 4, 2),
+        fatcaCrs: (text) => maskLast(text, 3),
+        all: maskAll,
+        riskCategory: maskAll,
+        bcaUserId: maskBcaUserId,
+        balance: maskBalance,
+        accountNumber: maskAccountNumber,
+        cardNumber: maskCardVisa,
+        cardExpiry: maskDateAllDigits,
+        cvv: maskAll,
+        customerNumber: maskCustomerNumber,
+        serialNumber: (text) => maskLast(text, 3)
+      };
+      return (maskers[type] || maskAll)(value);
     }
 
     function downloadBlob(blob, filename) {
@@ -3366,9 +3697,23 @@
 
     function normalizeComment(comment = {}) {
       const cid = String(comment.cid || "");
+      const authorName = comment.authorName || comment.author || "Reviewer";
+      const authorId = comment.authorId || "";
+      const audit = Array.isArray(comment.audit) && comment.audit.length
+        ? comment.audit
+        : [{
+          action: "created",
+          byId: authorId,
+          byName: authorName,
+          at: comment.createdAt || new Date().toISOString()
+        }];
       return {
         ...comment,
         cid: /^[a-z0-9_-]{6,64}$/i.test(cid) ? cid : randomId(12),
+        authorId,
+        authorName,
+        author: authorName,
+        audit,
         resolved: Boolean(comment.resolved)
       };
     }
@@ -3395,6 +3740,24 @@
         return updater(comment);
       });
       return changed;
+    }
+
+    function currentAuditActor() {
+      return {
+        byId: collaboration.user.id || clientId,
+        byName: normalizeText(collaboration.user.name) || "Reviewer",
+        at: new Date().toISOString()
+      };
+    }
+
+    function appendCommentAudit(comment, action) {
+      return {
+        ...comment,
+        audit: [
+          ...(Array.isArray(comment.audit) ? comment.audit : []),
+          { action, ...currentAuditActor() }
+        ]
+      };
     }
 
     function getCommentTarget(event) {
@@ -3454,18 +3817,20 @@
       setTimeout(() => target.classList.remove("annotation-hit"), 4500);
     }
 
-    function openCommentDialog(target) {
+    async function openCommentDialog(target) {
+      if (!await ensureCollabUserName()) return;
       appState.editingCommentId = null;
       appState.pendingCommentTarget = target;
       if (els.commentTargetLabel) els.commentTargetLabel.textContent = target.label;
-      els.commentAuthor.value = "";
+      els.commentIdentityText.textContent = `Reviewer: ${collaboration.user.name}`;
       els.commentText.value = "";
       document.getElementById("commentDialogTitle").textContent = "Tambah komentar";
       els.commentDialog.hidden = false;
-      els.commentAuthor.focus();
+      els.commentText.focus();
     }
 
-    function openEditComment(commentId) {
+    async function openEditComment(commentId) {
+      if (!await ensureCollabUserName()) return;
       const comment = findCommentById(commentId);
       if (!comment) return;
       appState.editingCommentId = comment.cid;
@@ -3478,7 +3843,7 @@
         x: comment.x,
         y: comment.y
       };
-      els.commentAuthor.value = comment.author || "";
+      els.commentIdentityText.textContent = `Reviewer: ${collaboration.user.name}`;
       els.commentText.value = comment.text || "";
       document.getElementById("commentDialogTitle").textContent = comment.resolved ? "Follow up komentar" : "Edit komentar";
       els.commentDialog.hidden = false;
@@ -3493,10 +3858,8 @@
 
     function saveComment() {
       const text = normalizeText(els.commentText.value);
-      const author = normalizeText(els.commentAuthor.value);
-      if (!author) {
-        els.commentAuthor.focus();
-        setMessage("error", "Nama Reviewer wajib diisi.");
+      if (!hasCollabUserName()) {
+        ensureCollabUserName();
         return;
       }
       if (!text) {
@@ -3508,23 +3871,32 @@
       if (appState.editingCommentId) {
         const commentId = appState.editingCommentId;
         updateCommentById(commentId, (comment) => ({
-          ...comment,
-          ...appState.pendingCommentTarget,
-          text,
-          author,
-          resolved: false,
-          updatedAt: new Date().toISOString()
+          ...appendCommentAudit({
+            ...comment,
+            ...appState.pendingCommentTarget,
+            text,
+            authorId: comment.authorId || collaboration.user.id,
+            authorName: comment.authorName || comment.author || collaboration.user.name,
+            author: comment.authorName || comment.author || collaboration.user.name,
+            resolved: false,
+            updatedAt: new Date().toISOString()
+          }, comment.resolved ? "followed_up" : "edited")
         }));
       } else {
+        const now = new Date().toISOString();
+        const actor = currentAuditActor();
         appState.comments = [
           ...appState.comments,
           {
             cid: randomId(12),
             ...appState.pendingCommentTarget,
             text,
-            author,
-            createdAt: new Date().toISOString(),
-            resolved: false
+            authorId: collaboration.user.id || clientId,
+            authorName: collaboration.user.name,
+            author: collaboration.user.name,
+            createdAt: now,
+            resolved: false,
+            audit: [{ action: "created", ...actor, at: now }]
           }
         ];
       }
@@ -3550,6 +3922,17 @@
       });
     }
 
+    function formatAuditAction(entry = {}) {
+      const labels = {
+        created: "Dibuat",
+        edited: "Diedit",
+        followed_up: "Follow up",
+        resolved: "Solved",
+        reopened: "Reopened"
+      };
+      return `${labels[entry.action] || entry.action || "Update"} by ${entry.byName || "Reviewer"}, ${formatCommentTime(entry.at)}`;
+    }
+
     function commentActionIcon(name) {
       const icons = {
         resolve: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`,
@@ -3563,21 +3946,35 @@
 
     function renderComments() {
       const comments = appState.comments || [];
+      const normalized = normalizeComments(comments);
+      appState.comments = normalized;
+      const unresolved = normalized.filter((comment) => !comment.resolved).length;
+      const resolved = normalized.length - unresolved;
+      if (els.commentSummary) els.commentSummary.textContent = `${unresolved} unresolved, ${resolved} resolved`;
       if (!comments.length) {
         els.commentList.innerHTML = `<div class="comment-empty">Belum ada komentar review.</div>`;
         return;
       }
-      appState.comments = normalizeComments(comments);
-      els.commentList.innerHTML = appState.comments.map((comment) => {
+      const filter = els.commentFilter?.value || "all";
+      const visibleComments = normalized.filter((comment) => (
+        filter === "all" || (filter === "resolved" ? comment.resolved : !comment.resolved)
+      ));
+      if (!visibleComments.length) {
+        els.commentList.innerHTML = `<div class="comment-empty">Tidak ada komentar untuk filter ini.</div>`;
+        return;
+      }
+      els.commentList.innerHTML = visibleComments.map((comment) => {
         const toggleLabel = comment.resolved ? "Reopen komentar" : "Resolve komentar";
         const editLabel = comment.resolved ? "Follow up komentar" : "Edit komentar";
+        const latestAudit = comment.audit?.slice(-1)[0];
         return `
         <article class="comment-card ${comment.resolved ? "is-resolved is-collapsed" : ""}" data-comment-id="${escapeHtml(comment.cid)}">
           <div class="comment-meta">
             <span class="comment-status">${escapeHtml(comment.resolved ? "Resolved" : "Unresolved")}</span>
-            <span>${escapeHtml(comment.author || "Reviewer")}</span>
+            <span>${escapeHtml(comment.authorName || comment.author || "Reviewer")}</span>
             <span>${escapeHtml(formatCommentTime(comment.updatedAt || comment.createdAt))}</span>
           </div>
+          <p class="comment-audit">${escapeHtml(formatAuditAction(latestAudit))}</p>
           <button class="comment-target-link" type="button" data-focus-comment="${escapeHtml(comment.cid)}">Lihat field: ${escapeHtml(comment.label || "Area terkait")}</button>
           <p class="comment-text">${escapeHtml(comment.text)}</p>
           <div class="actions">
@@ -4470,7 +4867,7 @@
     }
 
     document.addEventListener("click", (event) => {
-      if (appState.annotationMode && !event.target.closest("#commentDialog") && !event.target.closest("#resetConfirmDialog") && !event.target.closest(".floating-tools") && !event.target.closest(".comment-panel")) {
+      if (appState.annotationMode && !event.target.closest("#commentDialog") && !event.target.closest("#resetConfirmDialog") && !event.target.closest("#maskDialog") && !event.target.closest("#collabNameDialog") && !event.target.closest(".floating-tools") && !event.target.closest(".comment-drawer")) {
         const target = getCommentTarget(event);
         if (target) {
           event.preventDefault();
@@ -4524,6 +4921,18 @@
       }
       if (event.key === "Escape" && !els.commentDialog.hidden) {
         closeCommentDialog();
+        return;
+      }
+      if (event.key === "Escape" && !els.maskDialog.hidden) {
+        closeMaskDialog();
+        return;
+      }
+      if (event.key === "Escape" && !els.collabNameDialog.hidden) {
+        closeCollabNameDialog(false);
+        return;
+      }
+      if (event.key === "Escape" && !els.commentDrawer.hidden) {
+        els.commentDrawer.hidden = true;
         return;
       }
       if (event.key === "Escape" && !els.resetConfirmDialog.hidden) {
@@ -4642,20 +5051,52 @@
       textarea.dispatchEvent(new Event("input", { bubbles: true }));
     }
 
-    function applyMasking() {
+    function populateMaskingTypes() {
+      els.maskTypeSelect.innerHTML = `<option value="">Pilih jenis masking</option>${MASKING_TYPES
+        .map(([value, label]) => `<option value="${value}">${escapeHtml(label)}</option>`)
+        .join("")}`;
+    }
+
+    function updateMaskPreview() {
+      const type = els.maskTypeSelect.value;
+      const source = els.maskSourceText.value;
+      els.maskPreviewText.value = type ? maskByType(type, source) : "";
+      els.applyMaskBtn.disabled = !type || !source;
+    }
+
+    function openMaskDialog() {
       const textarea = document.activeElement?.matches?.("#groups textarea")
         ? document.activeElement
         : activeActivityTextarea;
       if (!textarea) {
         setMessage("error", "Klik field tabel aktivitas lalu pilih teks yang ingin dimasking.");
-        return;
+        return false;
       }
-      const range = getTextRange(textarea, true);
+      const range = getTextRange(textarea, false);
       if (!range.text) {
         setMessage("error", "Pilih teks confidential atau letakkan cursor pada kata yang ingin dimasking.");
-        return;
+        return false;
       }
-      replaceTextareaRange(textarea, range, maskConfidentialText(range.text));
+      appState.maskSelection = { textarea, range };
+      els.maskSourceText.value = range.text;
+      els.maskTypeSelect.value = "";
+      updateMaskPreview();
+      els.maskDialog.hidden = false;
+      els.maskTypeSelect.focus();
+      return true;
+    }
+
+    function closeMaskDialog() {
+      els.maskDialog.hidden = true;
+      appState.maskSelection = null;
+    }
+
+    function applyMasking() {
+      const selection = appState.maskSelection;
+      const type = els.maskTypeSelect.value;
+      if (!selection || !type) return;
+      replaceTextareaRange(selection.textarea, selection.range, maskByType(type, selection.range.text));
+      closeMaskDialog();
       setMessage("ok", "Teks confidential sudah dimasking.");
     }
 
@@ -4692,15 +5133,49 @@
     document.getElementById("resetBtn").addEventListener("click", resetForm);
     els.confirmResetBtn.addEventListener("click", performReset);
     els.cancelResetBtn.addEventListener("click", closeResetConfirm);
-    els.commentModeBtn.addEventListener("click", () => setAnnotationMode(!appState.annotationMode));
-    els.floatingCommentBtn.addEventListener("click", () => setAnnotationMode(!appState.annotationMode));
+    els.commentModeBtn.addEventListener("click", async () => {
+      if (!await ensureCollabUserName()) return;
+      setAnnotationMode(!appState.annotationMode);
+    });
+    els.floatingCommentBtn.addEventListener("click", () => {
+      els.commentDrawer.hidden = !els.commentDrawer.hidden;
+      if (!els.commentDrawer.hidden) renderComments();
+    });
+    els.closeCommentDrawerBtn.addEventListener("click", () => {
+      els.commentDrawer.hidden = true;
+    });
+    els.commentFilter.addEventListener("change", renderComments);
     els.floatingMaskBtn.addEventListener("click", () => {
+      openMaskDialog();
+    });
+    els.maskTypeSelect.addEventListener("change", updateMaskPreview);
+    els.applyMaskBtn.addEventListener("click", () => {
       applyMasking();
       commitHistory("masking");
     });
+    els.cancelMaskBtn.addEventListener("click", closeMaskDialog);
     els.saveCommentBtn.addEventListener("click", saveComment);
     els.cancelCommentBtn.addEventListener("click", closeCommentDialog);
-    els.collabToggleBtn.addEventListener("click", () => {
+    els.saveCollabNameBtn.addEventListener("click", () => {
+      const name = normalizeText(els.collabNameInput.value);
+      if (!name) {
+        els.collabNameInput.focus();
+        setMessage("error", "Nama kolaborator wajib diisi.");
+        return;
+      }
+      collaboration.user.name = name.slice(0, 32);
+      saveCollabUser();
+      sendPresence();
+      renderComments();
+      closeCollabNameDialog(true);
+      setMessage("", "");
+    });
+    els.cancelCollabNameBtn.addEventListener("click", () => closeCollabNameDialog(false));
+    els.collabNameInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") els.saveCollabNameBtn.click();
+    });
+    els.collabToggleBtn.addEventListener("click", async () => {
+      if (!await ensureCollabUserName()) return;
       startCollaboration(collaboration.active, true);
     });
     els.copyShareLinkBtn.addEventListener("click", async () => {
@@ -4711,10 +5186,6 @@
       setStatus("Share link disalin.");
     });
     els.importDraftInput.addEventListener("change", (event) => importDraft(event.target.files[0]));
-    document.getElementById("maskSelectionBtn").addEventListener("click", () => {
-      applyMasking();
-      commitHistory("masking");
-    });
 
     els.commentList.addEventListener("click", (event) => {
       const focus = event.target.closest("[data-focus-comment]");
@@ -4733,11 +5204,11 @@
       const commentId = toggle ? toggle.dataset.toggleComment : remove.dataset.deleteComment;
       if (!commentId) return;
       if (toggle) {
-        updateCommentById(commentId, (comment) => ({
+        updateCommentById(commentId, (comment) => appendCommentAudit({
           ...comment,
           resolved: !comment.resolved,
           updatedAt: new Date().toISOString()
-        }));
+        }, comment.resolved ? "reopened" : "resolved"));
       }
       if (remove) {
         appState.comments = appState.comments.filter((comment) => comment.cid !== commentId);
@@ -4815,13 +5286,18 @@
     }
 
     enableSplitter();
+    populateMaskingTypes();
     applyData(defaultData());
     commitHistory("initial");
     setModeStatus("draft");
     setSyncStatus("offline");
     renderPresence();
     setLastSynced("-");
-    if (collaboration.docId) startCollaboration(false);
+    if (collaboration.docId) {
+      ensureCollabUserName().then((ok) => {
+        if (ok) startCollaboration(false);
+      });
+    }
     if (!window.jspdf?.jsPDF) {
       setGenerateMessage("error", "Library PDF belum termuat. Refresh jika tombol generate gagal.");
     }

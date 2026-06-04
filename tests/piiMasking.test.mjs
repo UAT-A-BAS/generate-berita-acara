@@ -7,7 +7,7 @@ const sandbox = {};
 vm.createContext(sandbox);
 vm.runInContext(source, sandbox, { filename: "src/piiMasking.js" });
 
-const { maskName } = sandbox.PiiMasking;
+const { maskByType, maskName } = sandbox.PiiMasking;
 
 const cases = [
   ["li", "*i"],
@@ -30,3 +30,36 @@ assert.equal(maskName(null), "");
 assert.equal(maskName(undefined), "");
 assert.equal(maskName(""), "");
 assert.equal(maskName("margaretha   cindy"), "marg****ha   **ndy");
+
+const ruleCases = [
+  ["name", "margaretha cindy", "marg****ha **ndy"],
+  ["titledName", "Dr. Ir. Prof. Floretta Maria", "*r. *r. **of. Flor***ta **ria"],
+  ["date", "01-12-2023", "**-**-****"],
+  ["identityNumber", "3313091704330000", "3313**********00"],
+  ["passport", "X 7895521", "* ****521"],
+  ["phone", "081210001294", "0812******94"],
+  ["phone", "+6281210001294", "+628121*****94"],
+  ["address", "Jl. Gading Kirana Barat 1 Blok E8 No. 29", "Jl. Gading Kirana Barat * Blok E* No. **"],
+  ["email", "joa@yahoo.com", "*oa@yahoo.com"],
+  ["email", "margaretha_gammadita@bca.co.id", "marg**************ta@bca.co.id"],
+  ["npwpNitku", "3313091704330000890098", "3313****************98"],
+  ["fatcaCrs", "XA123456789", "********789"],
+  ["all", "532", "***"],
+  ["riskCategory", "002", "***"],
+  ["bcaUserId", "JOAQUI", "JO***I"],
+  ["bcaUserId", "JOAQUIN", "JOA**IN"],
+  ["bcaUserId", "JOAQUINMIRACL", "JOAQ*******CL"],
+  ["balance", "Rp. 60,000,123.52", "Rp. **,***,123.52"],
+  ["accountNumber", "1234", "1**4"],
+  ["accountNumber", "12345678901", "123******01"],
+  ["cardNumber", "5289 1900 0155 6972", "**** **** **** 6972 (Visa)"],
+  ["cardExpiry", "09/20", "**/**"],
+  ["cvv", "532", "***"],
+  ["customerNumber", "0000 0000 0000 1234", "0000 0000 0000 1**4"],
+  ["customerNumber", "0000 0000 1234 5678", "0000 0000 12** **78"],
+  ["serialNumber", "1234567890", "*******890"]
+];
+
+for (const [type, input, expected] of ruleCases) {
+  assert.equal(maskByType(type, input), expected, `${type}: ${input}`);
+}
