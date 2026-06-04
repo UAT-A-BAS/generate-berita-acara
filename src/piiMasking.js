@@ -17,7 +17,7 @@
     ["bcaUserId", "BCA ID / User ID"],
     ["balance", "Informasi Saldo"],
     ["accountNumber", "Nomor rekening"],
-    ["cardNumber", "Nomor kartu (Visa)"],
+    ["cardNumber", "Nomor kartu"],
     ["cardExpiry", "Tanggal expired kartu"],
     ["cvv", "CVV"],
     ["customerNumber", "Customer Number"],
@@ -139,10 +139,12 @@
     return value.replace(/(.{4})/g, "$1 ").trim();
   }
 
-  function maskCardVisa(value) {
+  function maskCardNumber(value, policy = "default") {
     const digits = String(value || "").replace(/\D/g, "");
     if (!digits) return "";
-    return `${groupDigits(`${repeatMask(Math.max(0, digits.length - 4))}${digits.slice(-4)}`)} (Visa)`;
+    if (policy === "pciDss") return `${groupDigits(maskCore(digits, 6, 4))} (PCI DSS)`;
+    if (policy === "visa") return `${groupDigits(`${repeatMask(Math.max(0, digits.length - 4))}${digits.slice(-4)}`)} (Visa)`;
+    return `${groupDigits(maskCore(digits, 4, 2))} (Default)`;
   }
 
   function maskCustomerNumber(value) {
@@ -159,7 +161,7 @@
     return groupDigits(`${leading}${maskCore(significant, first, last)}`);
   }
 
-  function maskByType(type, value) {
+  function maskByType(type, value, options = {}) {
     const maskers = {
       name: maskName,
       titledName: maskName,
@@ -176,13 +178,13 @@
       bcaUserId: maskBcaUserId,
       balance: maskBalance,
       accountNumber: maskAccountNumber,
-      cardNumber: maskCardVisa,
+      cardNumber: (text, maskOptions = {}) => maskCardNumber(text, maskOptions.cardPolicy),
       cardExpiry: maskDateAllDigits,
       cvv: maskAll,
       customerNumber: maskCustomerNumber,
       serialNumber: (text) => maskLast(text, 3)
     };
-    return (maskers[type] || maskAll)(value);
+    return (maskers[type] || maskAll)(value, options);
   }
 
   function hasMaskedToken(value) {
@@ -210,7 +212,7 @@
       bcaUserId: maskBcaUserId,
       balance: maskBalance,
       accountNumber: maskAccountNumber,
-      cardNumber: maskCardVisa,
+      cardNumber: (text, options = {}) => maskCardNumber(text, options.cardPolicy),
       cardExpiry: maskDateAllDigits,
       cvv: maskAll,
       customerNumber: maskCustomerNumber,
