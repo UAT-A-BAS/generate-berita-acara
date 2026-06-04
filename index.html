@@ -333,7 +333,8 @@
     label > textarea,
     label > .date-range,
     label > .date-field,
-    label > .role-combobox {
+    label > .role-combobox,
+    label > .mask-combobox {
       margin-top: 6px;
     }
 
@@ -938,6 +939,71 @@
     }
 
     .role-empty {
+      padding: 8px 10px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .mask-combobox {
+      position: relative;
+      display: block;
+    }
+
+    .mask-combobox input {
+      padding-right: 42px;
+    }
+
+    .mask-type-toggle {
+      position: absolute;
+      right: 6px;
+      top: 6px;
+      width: 30px;
+      min-width: 30px;
+      height: 30px;
+      min-height: 30px;
+      border: 1px solid rgba(201, 211, 223, 0.95);
+      border-radius: 8px;
+      background: #f7f9fc;
+      color: #0067bd;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .mask-type-menu {
+      position: absolute;
+      inset-inline: 0;
+      top: calc(100% + 6px);
+      z-index: 90;
+      max-height: 220px;
+      overflow-y: auto;
+      border: 1px solid rgba(201, 211, 223, 0.92);
+      border-radius: 12px;
+      padding: 6px;
+      background: #fff;
+      box-shadow: 0 18px 42px rgba(28, 39, 52, 0.18);
+    }
+
+    .mask-type-option {
+      width: 100%;
+      justify-content: flex-start;
+      min-height: 34px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: #1c2734;
+      font-weight: 750;
+      text-align: left;
+    }
+
+    .mask-type-option:hover,
+    .mask-type-option.is-active {
+      background: #d9e8f5;
+      color: #005bac;
+      transform: none;
+    }
+
+    .mask-type-empty {
       padding: 8px 10px;
       color: var(--muted);
       font-size: 12px;
@@ -1776,8 +1842,13 @@
       <div class="dialog-box">
         <h3 id="maskDialogTitle">Masking Data</h3>
         <label>Jenis Masking <span class="required-mark">*</span>
-          <input id="maskTypeSearch" list="maskTypeOptions" autocomplete="off" placeholder="Ketik jenis masking">
-          <datalist id="maskTypeOptions"></datalist>
+          <div class="mask-combobox" id="maskTypeCombobox">
+            <input id="maskTypeSearch" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="maskTypeMenu" placeholder="Ketik jenis masking">
+            <button class="mask-type-toggle" id="maskTypeToggle" type="button" aria-label="Buka pilihan jenis masking" title="Buka pilihan jenis masking">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="mask-type-menu" id="maskTypeMenu" role="listbox" hidden></div>
+          </div>
         </label>
         <p class="mask-suggestion" id="maskSuggestionText">Saran otomatis: -</p>
         <label id="cardPolicyField" hidden>Sub-policy Nomor Kartu <span class="required-mark">*</span>
@@ -1995,8 +2066,10 @@
       saveCommentBtn: document.getElementById("saveCommentBtn"),
       cancelCommentBtn: document.getElementById("cancelCommentBtn"),
       maskDialog: document.getElementById("maskDialog"),
+      maskTypeCombobox: document.getElementById("maskTypeCombobox"),
       maskTypeSearch: document.getElementById("maskTypeSearch"),
-      maskTypeOptions: document.getElementById("maskTypeOptions"),
+      maskTypeToggle: document.getElementById("maskTypeToggle"),
+      maskTypeMenu: document.getElementById("maskTypeMenu"),
       maskSuggestionText: document.getElementById("maskSuggestionText"),
       cardPolicyField: document.getElementById("cardPolicyField"),
       cardPolicySelect: document.getElementById("cardPolicySelect"),
@@ -2048,7 +2121,8 @@
       historyTimer: null,
       lastHistoryReason: "",
       editingCommentId: null,
-      maskSelection: null
+      maskSelection: null,
+      maskTypeActiveIndex: -1
     };
 
     let activeRoleInput = null;
@@ -2763,7 +2837,7 @@
         const masked = `${repeatMask(Math.max(0, digits.length - 4))}${digits.slice(-4)}`;
         return `${groupDigits(masked)} (Visa)`;
       }
-      return `${groupDigits(maskCore(digits, 4, 2))} (Default)`;
+      return groupDigits(maskCore(digits, 4, 2));
     }
 
     function maskCustomerNumber(value) {
@@ -5148,9 +5222,92 @@
     }
 
     function populateMaskingTypes() {
-      els.maskTypeOptions.innerHTML = MASKING_TYPES
-        .map(([value, label]) => `<option value="${escapeHtml(label)}" data-type="${escapeHtml(value)}"></option>`)
-        .join("");
+      renderMaskTypeMenu(false);
+    }
+
+    function maskTypeAlias(value) {
+      const aliases = {
+        name: "nama orang lengkap ibu kandung",
+        titledName: "nama gelar titel dr ir prof",
+        date: "tanggal lahir kematian date dd mm yyyy",
+        identityNumber: "identitas nasabah nik ktp nomor id",
+        passport: "paspor passport",
+        phone: "handphone hp telepon telp phone mobile",
+        address: "alamat jalan jl domisili identitas",
+        email: "email alamat surel mail",
+        npwpNitku: "npwp nitku pajak",
+        fatcaCrs: "fatca crs kitas",
+        all: "semua karakter digit full mask",
+        riskCategory: "kategori risiko nasabah risk",
+        bcaUserId: "bca id user id userid",
+        balance: "saldo limit mutasi investasi rp nominal uang",
+        accountNumber: "rekening nomor rekening account",
+        cardNumber: "nomor kartu kartu card pan visa pci pci dss debit kredit",
+        cardExpiry: "expired kartu expiry mm yy tanggal expired",
+        cvv: "cvv cvc security code",
+        customerNumber: "customer number cn nomor customer",
+        serialNumber: "serial number"
+      };
+      return aliases[value] || "";
+    }
+
+    function maskTypeScore([value, label], query) {
+      const valueText = value.toLocaleLowerCase("id-ID");
+      const labelText = label.toLocaleLowerCase("id-ID");
+      const aliasText = maskTypeAlias(value).toLocaleLowerCase("id-ID");
+      if (!query) return 1;
+      if (valueText === query || labelText === query) return 100;
+      if (value === "cardNumber" && ["kartu", "card", "pan", "visa", "pci", "pci dss"].includes(query)) return 95;
+      if (labelText.startsWith(query)) return 80;
+      if (aliasText.split(/\s+/).includes(query)) return 70;
+      if (`${labelText} ${aliasText}`.split(/\s+/).some((word) => word.startsWith(query))) return 65;
+      if (`${valueText} ${labelText} ${aliasText}`.includes(query)) return 50;
+      return -1;
+    }
+
+    function matchingMaskingTypes() {
+      const query = normalizeText(els.maskTypeSearch.value).toLocaleLowerCase("id-ID");
+      return MASKING_TYPES
+        .map((item) => ({ item, score: maskTypeScore(item, query) }))
+        .filter((entry) => entry.score >= 0)
+        .sort((a, b) => b.score - a.score || a.item[1].localeCompare(b.item[1], "id-ID"))
+        .map((entry) => entry.item);
+    }
+
+    function closeMaskTypeMenu() {
+      els.maskTypeMenu.hidden = true;
+      els.maskTypeSearch.setAttribute("aria-expanded", "false");
+      els.maskTypeSearch.removeAttribute("aria-activedescendant");
+    }
+
+    function renderMaskTypeMenu(open = true) {
+      const matches = matchingMaskingTypes();
+      if (!matches.length) appState.maskTypeActiveIndex = -1;
+      else if (appState.maskTypeActiveIndex >= matches.length) appState.maskTypeActiveIndex = matches.length - 1;
+      els.maskTypeMenu.innerHTML = matches.length
+        ? matches.map(([value, label], index) => `
+          <button class="mask-type-option ${index === appState.maskTypeActiveIndex ? "is-active" : ""}" id="maskTypeOption-${index}" type="button" role="option" data-mask-type="${escapeHtml(value)}" aria-selected="${index === appState.maskTypeActiveIndex}">
+            ${escapeHtml(label)}
+          </button>
+        `).join("")
+        : `<div class="mask-type-empty">Jenis masking tidak ditemukan.</div>`;
+      if (open) {
+        els.maskTypeMenu.hidden = false;
+        els.maskTypeSearch.setAttribute("aria-expanded", "true");
+        if (appState.maskTypeActiveIndex >= 0) {
+          els.maskTypeSearch.setAttribute("aria-activedescendant", `maskTypeOption-${appState.maskTypeActiveIndex}`);
+        }
+      } else {
+        closeMaskTypeMenu();
+      }
+    }
+
+    function selectMaskingType(type) {
+      const label = MASKING_TYPES.find(([value]) => value === type)?.[1] || "";
+      if (!label) return;
+      els.maskTypeSearch.value = label;
+      closeMaskTypeMenu();
+      updateMaskPreview();
     }
 
     function resolveMaskingType() {
@@ -5162,9 +5319,7 @@
         value.toLocaleLowerCase("id-ID") === query || label.toLocaleLowerCase("id-ID") === query
       ));
       if (exact) return exact[0];
-      const matches = MASKING_TYPES.filter(([value, label]) => (
-        `${value} ${label}`.toLocaleLowerCase("id-ID").includes(query)
-      ));
+      const matches = matchingMaskingTypes();
       return matches.length === 1 ? matches[0][0] : "";
     }
 
@@ -5195,21 +5350,16 @@
     }
 
     function firstMaskingSuggestion() {
-      const raw = normalizeText(els.maskTypeSearch.value);
-      if (!raw) return "";
-      const query = raw.toLocaleLowerCase("id-ID");
-      return MASKING_TYPES.find(([value, label]) => (
-        value.toLocaleLowerCase("id-ID").includes(query) || label.toLocaleLowerCase("id-ID").includes(query)
-      ))?.[1] || "";
+      return matchingMaskingTypes()[0]?.[0] || "";
     }
 
     function commitMaskTypeSearch() {
       const type = resolveMaskingType();
       if (type) {
-        els.maskTypeSearch.value = MASKING_TYPES.find(([value]) => value === type)?.[1] || els.maskTypeSearch.value;
+        selectMaskingType(type);
       } else {
         const suggestion = firstMaskingSuggestion();
-        if (suggestion) els.maskTypeSearch.value = suggestion;
+        if (suggestion) selectMaskingType(suggestion);
       }
       updateMaskPreview();
     }
@@ -5241,6 +5391,7 @@
 
     function closeMaskDialog() {
       els.maskDialog.hidden = true;
+      closeMaskTypeMenu();
       appState.maskSelection = null;
     }
 
@@ -5305,13 +5456,61 @@
     els.floatingMaskBtn.addEventListener("click", () => {
       openMaskDialog();
     });
-    els.maskTypeSearch.addEventListener("input", updateMaskPreview);
+    els.maskTypeSearch.addEventListener("focus", () => renderMaskTypeMenu(true));
+    els.maskTypeSearch.addEventListener("input", () => {
+      appState.maskTypeActiveIndex = -1;
+      renderMaskTypeMenu(true);
+      updateMaskPreview();
+    });
     els.maskTypeSearch.addEventListener("change", commitMaskTypeSearch);
     els.maskTypeSearch.addEventListener("keydown", (event) => {
+      const matches = matchingMaskingTypes();
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        event.stopPropagation();
+        appState.maskTypeActiveIndex = matches.length
+          ? Math.min(matches.length - 1, appState.maskTypeActiveIndex + 1)
+          : -1;
+        renderMaskTypeMenu(true);
+        return;
+      }
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        event.stopPropagation();
+        appState.maskTypeActiveIndex = matches.length
+          ? Math.max(0, appState.maskTypeActiveIndex - 1)
+          : -1;
+        renderMaskTypeMenu(true);
+        return;
+      }
       if (event.key === "Enter") {
         event.preventDefault();
-        commitMaskTypeSearch();
+        event.stopPropagation();
+        const selected = matches[appState.maskTypeActiveIndex]?.[0];
+        if (!els.maskTypeMenu.hidden && selected) selectMaskingType(selected);
+        else commitMaskTypeSearch();
+        return;
       }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        closeMaskTypeMenu();
+      }
+    });
+    els.maskTypeToggle.addEventListener("click", () => {
+      if (els.maskTypeMenu.hidden) renderMaskTypeMenu(true);
+      else closeMaskTypeMenu();
+      els.maskTypeSearch.focus();
+    });
+    els.maskTypeMenu.addEventListener("mousedown", (event) => event.preventDefault());
+    els.maskTypeMenu.addEventListener("click", (event) => {
+      const option = event.target.closest("[data-mask-type]");
+      if (!option) return;
+      selectMaskingType(option.dataset.maskType);
+      els.maskTypeSearch.focus();
+    });
+    document.addEventListener("click", (event) => {
+      if (!event.target.closest("#maskTypeCombobox")) closeMaskTypeMenu();
     });
     els.cardPolicySelect.addEventListener("change", updateMaskPreview);
     els.applyMaskBtn.addEventListener("click", () => {

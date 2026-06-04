@@ -144,7 +144,7 @@
     if (!digits) return "";
     if (policy === "pciDss") return `${groupDigits(maskCore(digits, 6, 4))} (PCI DSS)`;
     if (policy === "visa") return `${groupDigits(`${repeatMask(Math.max(0, digits.length - 4))}${digits.slice(-4)}`)} (Visa)`;
-    return `${groupDigits(maskCore(digits, 4, 2))} (Default)`;
+    return groupDigits(maskCore(digits, 4, 2));
   }
 
   function maskCustomerNumber(value) {
