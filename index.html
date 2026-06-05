@@ -5346,7 +5346,7 @@
       const source = els.maskSourceText.value;
       syncCardPolicyField(type);
       els.maskPreviewText.value = type ? maskByType(type, source, selectedMaskOptions()) : "";
-      els.applyMaskBtn.disabled = !type || !source;
+      els.applyMaskBtn.disabled = !type || !source || !els.maskPreviewText.value;
     }
 
     function firstMaskingSuggestion() {
@@ -5403,7 +5403,16 @@
         setMessage("error", "Pilih jenis masking yang valid.");
         return;
       }
-      replaceTextareaRange(selection.textarea, selection.range, maskByType(type, selection.range.text, selectedMaskOptions()));
+      let replacement = els.maskPreviewText.value;
+      if (!replacement) {
+        updateMaskPreview();
+        replacement = els.maskPreviewText.value;
+      }
+      if (!replacement) {
+        setMessage("error", "Preview masking kosong. Pilih jenis masking yang sesuai.");
+        return;
+      }
+      replaceTextareaRange(selection.textarea, selection.range, replacement);
       closeMaskDialog();
       setMessage("ok", "Teks confidential sudah dimasking.");
     }
