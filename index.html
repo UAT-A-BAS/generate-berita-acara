@@ -2639,6 +2639,10 @@
       return /(<u>[\s\S]+?<\/u>|(?<!\*)\*\*(?!\s)[^*\n]*?\S[^*\n]*?\*\*(?!\*)|(?<!\*)\*(?![\s*])[^*\n]*?\S[^*\n]*?\*(?!\*))/g;
     }
 
+    function shouldSkipLegacyRichMigration(textarea, text) {
+      return textarea.dataset.skipLegacyRichMigration === "1" || /\*{3,}/.test(text);
+    }
+
     function legacyRichToPlainAndFormats(value) {
       const source = String(value || "");
       const formats = [];
@@ -2674,7 +2678,7 @@
     function readRichCell(textarea) {
       let text = normalizeCellText(textarea.value);
       let formats = readRichFormats(textarea);
-      if (!formats.length && legacyRichPattern().test(text)) {
+      if (!formats.length && !shouldSkipLegacyRichMigration(textarea, text) && legacyRichPattern().test(text)) {
         const migrated = legacyRichToPlainAndFormats(text);
         text = migrated.text;
         formats = migrated.formats;
@@ -5198,11 +5202,17 @@
       return { start: from, end: to, text: value.slice(from, to) };
     }
 
-    function replaceTextareaRange(textarea, range, replacement) {
-      textarea.setSelectionRange(range.start, range.end);
-      textarea.setRangeText(replacement, range.start, range.end, "select");
-      textarea.focus();
-      textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    function replaceTextareaRange(textarea, range, replacement, options = {}) {
+      const skipLegacyRichMigration = Boolean(options.skipLegacyRichMigration);
+      if (skipLegacyRichMigration) textarea.dataset.skipLegacyRichMigration = "1";
+      try {
+        textarea.setSelectionRange(range.start, range.end);
+        textarea.setRangeText(replacement, range.start, range.end, "select");
+        textarea.focus();
+        textarea.dispatchEvent(new Event("input", { bubbles: true }));
+      } finally {
+        if (skipLegacyRichMigration) delete textarea.dataset.skipLegacyRichMigration;
+      }
     }
 
     function applyTextareaFormat(textarea, type) {
@@ -5412,7 +5422,7 @@
         setMessage("error", "Preview masking kosong. Pilih jenis masking yang sesuai.");
         return;
       }
-      replaceTextareaRange(selection.textarea, selection.range, replacement);
+      replaceTextareaRange(selection.textarea, selection.range, replacement, { skipLegacyRichMigration: true });
       closeMaskDialog();
       setMessage("ok", "Teks confidential sudah dimasking.");
     }
