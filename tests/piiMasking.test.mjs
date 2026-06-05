@@ -51,6 +51,7 @@ const ruleCases = [
   ["bcaUserId", "JOAQUINMIRACL", "JOAQ*******CL"],
   ["balance", "Rp. 60,000,123.52", "Rp. **,***,123.52"],
   ["accountNumber", "1234", "1**4"],
+  ["accountNumber", "1234567890", "123*****90"],
   ["accountNumber", "12345678901", "123******01"],
   ["cardNumber", "5289 1900 0155 6972", "5289 **** **** **72"],
   ["cardNumber", "5289 1900 0155 6972", "5289 19** **** 6972 (PCI DSS)", { cardPolicy: "pciDss" }],
