@@ -566,6 +566,30 @@
       min-width: 128px;
     }
 
+    .floating-tools .btn.has-badge {
+      position: relative;
+      padding-right: 34px;
+    }
+
+    .comment-badge {
+      position: absolute;
+      top: -7px;
+      right: -7px;
+      display: inline-grid;
+      min-width: 24px;
+      height: 24px;
+      place-items: center;
+      padding: 0 6px;
+      border: 2px solid #fff;
+      border-radius: 999px;
+      background: var(--danger);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 900;
+      line-height: 1;
+      box-shadow: 0 8px 18px rgba(204, 36, 29, 0.28);
+    }
+
     .comment-drawer {
       position: fixed;
       right: 18px;
@@ -1803,6 +1827,7 @@
       <button class="btn btn-primary" id="floatingCommentBtn" type="button" title="Komentar review">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
         Comment
+        <span class="comment-badge" id="floatingCommentBadge" aria-hidden="true" hidden>0</span>
       </button>
     </div>
     <section class="comment-drawer" id="commentDrawer" aria-labelledby="comments-title" hidden>
@@ -2058,6 +2083,7 @@
       commentList: document.getElementById("commentList"),
       commentModeBtn: document.getElementById("commentModeBtn"),
       floatingCommentBtn: document.getElementById("floatingCommentBtn"),
+      floatingCommentBadge: document.getElementById("floatingCommentBadge"),
       floatingMaskBtn: document.getElementById("floatingMaskBtn"),
       commentDialog: document.getElementById("commentDialog"),
       commentTargetLabel: document.getElementById("commentTargetLabel"),
@@ -4118,12 +4144,27 @@
       return icons[name] || "";
     }
 
+    function updateFloatingCommentBadge(unresolvedCount) {
+      const count = Number(unresolvedCount) || 0;
+      const hasUnresolved = count > 0;
+      if (!els.floatingCommentBtn || !els.floatingCommentBadge) return;
+      els.floatingCommentBadge.hidden = !hasUnresolved;
+      els.floatingCommentBadge.textContent = count > 99 ? "99+" : String(count);
+      els.floatingCommentBtn.classList.toggle("has-badge", hasUnresolved);
+      const label = hasUnresolved
+        ? `Komentar review, ${count} unresolved`
+        : "Komentar review";
+      els.floatingCommentBtn.title = label;
+      els.floatingCommentBtn.setAttribute("aria-label", label);
+    }
+
     function renderComments() {
       const comments = appState.comments || [];
       const normalized = normalizeComments(comments);
       appState.comments = normalized;
       const unresolved = normalized.filter((comment) => !comment.resolved).length;
       const resolved = normalized.length - unresolved;
+      updateFloatingCommentBadge(unresolved);
       if (els.commentSummary) els.commentSummary.textContent = `${unresolved} unresolved, ${resolved} resolved`;
       if (!comments.length) {
         els.commentList.innerHTML = `<div class="comment-empty">Belum ada komentar review.</div>`;
