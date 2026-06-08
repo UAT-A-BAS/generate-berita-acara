@@ -731,13 +731,28 @@
 
     .maker-row {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+      grid-template-columns: minmax(0, 1fr) minmax(220px, 0.92fr) 132px;
       gap: 12px;
       align-items: start;
     }
 
     .maker-actions {
-      margin-top: 28px;
+      width: 132px;
+      margin-top: 27px;
+    }
+
+    .maker-actions .btn-icon {
+      flex: 0 0 40px;
+    }
+
+    .maker-actions .move-stack {
+      width: 86px;
+    }
+
+    .maker-actions [hidden] {
+      display: inline-flex !important;
+      visibility: hidden;
+      pointer-events: none;
     }
 
     .date-range-picker {
