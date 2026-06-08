@@ -2128,19 +2128,13 @@
     const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
     const DOC_STYLE = {
       fontFamilyCss: "Calibri, Arial, sans-serif",
-      fontFamilyPdf: "Carlito",
+      fontFamilyPdf: "helvetica",
       headerSizePx: 18,
       headerSizePt: 13.5,
       headerLinePt: 16.2,
       bodySizePt: 10.5,
       bodyLinePt: 13,
       tableHeaderSizePt: 11
-    };
-    const pdfFontSources = {
-      regular: "https://raw.githubusercontent.com/googlefonts/carlito/main/fonts/ttf/Carlito-Regular.ttf",
-      bold: "https://raw.githubusercontent.com/googlefonts/carlito/main/fonts/ttf/Carlito-Bold.ttf",
-      italic: "https://raw.githubusercontent.com/googlefonts/carlito/main/fonts/ttf/Carlito-Italic.ttf",
-      boldItalic: "https://raw.githubusercontent.com/googlefonts/carlito/main/fonts/ttf/Carlito-BoldItalic.ttf"
     };
     const roleOptions = [
       "Staff",
@@ -4924,8 +4918,7 @@
         renderPreview();
         const filename = sanitizeFilename(`Form Berita Acara ${data.featureName}`) + ".pdf";
         const pdf = new JsPdfCtor({ unit: "pt", format: "a4", orientation: "portrait" });
-        const pdfFont = await registerPdfFonts(pdf);
-        buildSelectablePdf(pdf, data, pdfFont);
+        buildSelectablePdf(pdf, data, registerPdfFonts());
         pdf.save(filename);
         setGenerateMessage("ok", "PDF berhasil dibuat.");
         setStatus("PDF selesai.");
@@ -4938,43 +4931,8 @@
       }
     }
 
-    async function registerPdfFonts(pdf) {
-      try {
-        const [regular, bold, italic, boldItalic] = await Promise.all([
-          fetchFontAsBase64(pdfFontSources.regular),
-          fetchFontAsBase64(pdfFontSources.bold),
-          fetchFontAsBase64(pdfFontSources.italic),
-          fetchFontAsBase64(pdfFontSources.boldItalic)
-        ]);
-        pdf.addFileToVFS("Carlito-Regular.ttf", regular);
-        pdf.addFileToVFS("Carlito-Bold.ttf", bold);
-        pdf.addFileToVFS("Carlito-Italic.ttf", italic);
-        pdf.addFileToVFS("Carlito-BoldItalic.ttf", boldItalic);
-        pdf.addFont("Carlito-Regular.ttf", "Carlito", "normal");
-        pdf.addFont("Carlito-Bold.ttf", "Carlito", "bold");
-        pdf.addFont("Carlito-Italic.ttf", "Carlito", "italic");
-        pdf.addFont("Carlito-BoldItalic.ttf", "Carlito", "bolditalic");
-        return "Carlito";
-      } catch {
-        return "helvetica";
-      }
-    }
-
-    async function fetchFontAsBase64(url) {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`Font gagal load: ${response.status}`);
-      const buffer = await response.arrayBuffer();
-      return arrayBufferToBase64(buffer);
-    }
-
-    function arrayBufferToBase64(buffer) {
-      const bytes = new Uint8Array(buffer);
-      let binary = "";
-      const chunkSize = 0x8000;
-      for (let index = 0; index < bytes.length; index += chunkSize) {
-        binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
-      }
-      return btoa(binary);
+    function registerPdfFonts() {
+      return DOC_STYLE.fontFamilyPdf;
     }
 
     function buildSelectablePdf(pdf, data, fontFamily = "helvetica") {
