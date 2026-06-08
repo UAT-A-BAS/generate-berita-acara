@@ -1344,15 +1344,6 @@
       height: 14px;
     }
 
-    .comment-card.is-collapsed .comment-target-link,
-    .comment-card.is-collapsed .comment-text {
-      display: none;
-    }
-
-    .comment-card.is-collapsed .actions {
-      grid-row: 1;
-    }
-
     .comment-meta {
       display: flex;
       flex-wrap: wrap;
@@ -4554,7 +4545,7 @@
         const latestAudit = comment.audit?.slice(-1)[0];
         const replies = Array.isArray(comment.replies) ? comment.replies : [];
         return `
-        <article class="comment-card ${comment.resolved ? "is-resolved is-collapsed" : ""}" data-comment-id="${escapeHtml(comment.cid)}">
+        <article class="comment-card ${comment.resolved ? "is-resolved" : ""}" data-comment-id="${escapeHtml(comment.cid)}">
           <div class="comment-meta">
             <span class="comment-status">${escapeHtml(comment.resolved ? "Resolved" : "Unresolved")}</span>
             <span>${escapeHtml(commentAuthor)}</span>
