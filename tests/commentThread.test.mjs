@@ -21,3 +21,4 @@ assert.doesNotMatch(html, /Audit comment/);
 assert.doesNotMatch(html, /Audit reply/);
 assert.doesNotMatch(html, /comment-owner-note/);
 assert.doesNotMatch(html, /Edit\/hapus hanya untuk/);
+assert.doesNotMatch(html, /is-collapsed/);
