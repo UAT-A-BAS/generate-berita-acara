@@ -4965,12 +4965,21 @@
       setPdfBaseStyle(pdf, layout);
       let y = drawPdfPageHeader(pdf, data, layout);
       y = drawPdfTableHeader(pdf, layout, y);
+      const closingGap = layout.bodyLine;
+      const closingHeight = getPdfClosingHeight(data, layout);
+      const closingLeadHeight = getPdfClosingLeadHeight(layout);
+      const freshFinalRowY = drawPdfPageHeaderHeight(layout) + layout.tableHeaderHeight + layout.dateHeight;
+      const preparedGroups = data.groups
+        .map((group) => ({
+          dateText: formatActivityDate(group.date, group.dates),
+          rows: splitPdfRows(pdf, layout, group.rows.filter((row) => row.activity || row.result || row.pic))
+        }))
+        .filter((group) => group.rows.length);
 
-      data.groups.forEach((group) => {
-        const rows = splitPdfRows(pdf, layout, group.rows.filter((row) => row.activity || row.result || row.pic));
-        if (!rows.length) return;
+      preparedGroups.forEach((group, groupIndex) => {
+        const rows = group.rows;
         const rowHeights = rows.map((row) => pdfRowHeight(pdf, layout, row));
-        const dateText = formatActivityDate(group.date, group.dates);
+        const dateText = group.dateText;
         let rowStart = 0;
 
         while (rowStart < rows.length) {
@@ -4987,6 +4996,28 @@
           while (rowStart + pageRows.length < rows.length) {
             const sourceIndex = rowStart + pageRows.length;
             const nextHeight = rowHeights[sourceIndex];
+            const queuedHeight = sumRange(pageRowHeights, 0, pageRowHeights.length);
+            const finalRow = groupIndex === preparedGroups.length - 1 && sourceIndex === rows.length - 1;
+            const reserveFullClosing = freshFinalRowY + nextHeight + closingGap + closingHeight <= layout.bottomLimit;
+            const reservedClosingHeight = reserveFullClosing ? closingHeight : closingLeadHeight;
+            if (shouldStartFinalPdfRowOnNewPage({
+              finalRow,
+              currentY: y,
+              queuedHeight,
+              rowHeight: nextHeight,
+              closingGap,
+              closingHeight: reservedClosingHeight,
+              bottomLimit: layout.bottomLimit,
+              freshY: freshFinalRowY
+            })) {
+              if (pageRows.length) break;
+              pdf.addPage();
+              setPdfBaseStyle(pdf, layout);
+              y = drawPdfPageHeader(pdf, data, layout);
+              y = drawPdfTableHeader(pdf, layout, y);
+              y = drawPdfDateRow(pdf, layout, y, dateText);
+              continue;
+            }
             if (pageRows.length === 0 && y + nextHeight > layout.bottomLimit && y > layout.top + 57 + layout.tableHeaderHeight + layout.dateHeight) {
               pdf.addPage();
               setPdfBaseStyle(pdf, layout);
@@ -5018,8 +5049,8 @@
         }
       });
 
-      y += 18;
-      if (y + 185 > layout.bottomLimit) {
+      y += closingGap;
+      if (y + closingLeadHeight > layout.bottomLimit) {
         pdf.addPage();
         setPdfBaseStyle(pdf, layout);
         y = drawPdfPageHeader(pdf, data, layout);
@@ -5324,6 +5355,38 @@
       return layout.top + 57;
     }
 
+    function getPdfClosingLeadHeight(layout) {
+      return 34 + 15 + 15 + layout.bodyLine;
+    }
+
+    function getPdfClosingHeight(data, layout) {
+      const makers = (data.makers || []).filter((maker) => maker.name || maker.role);
+      const makerCount = Math.max(1, makers.length);
+      return 156 + makerCount * 15 + layout.bodyLine;
+    }
+
+    function getPdfSignatureHeight(data, layout) {
+      const makers = (data.makers || []).filter((maker) => maker.name || maker.role);
+      const makerCount = Math.max(1, makers.length);
+      return 92 + makerCount * 15 + layout.bodyLine;
+    }
+
+    function shouldStartFinalPdfRowOnNewPage({
+      finalRow,
+      currentY,
+      queuedHeight,
+      rowHeight,
+      closingGap,
+      closingHeight,
+      bottomLimit,
+      freshY
+    }) {
+      if (!finalRow) return false;
+      const requiredBottom = currentY + queuedHeight + rowHeight + closingGap + closingHeight;
+      const freshRequiredBottom = freshY + rowHeight + closingGap + closingHeight;
+      return requiredBottom > bottomLimit && freshRequiredBottom <= bottomLimit;
+    }
+
     function drawPdfClosing(pdf, data, layout, y) {
       pdf.setFont(layout.fontFamily, "normal");
       pdf.setFontSize(layout.bodySize);
@@ -5338,7 +5401,13 @@
       pdf.setFont(layout.fontFamily, "normal");
       pdf.text(`${data.city}, ${formatDate(data.signDate)}`, layout.left, y);
 
-      y += 44;
+      if (y + getPdfSignatureHeight(data, layout) > layout.bottomLimit) {
+        pdf.addPage();
+        setPdfBaseStyle(pdf, layout);
+        y = drawPdfPageHeader(pdf, data, layout) + 20;
+      } else {
+        y += 44;
+      }
       pdf.setFont(layout.fontFamily, "bold");
       pdf.text("Pembuat :", layout.left, y);
       y += 15;
