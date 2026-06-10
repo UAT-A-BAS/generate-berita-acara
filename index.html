@@ -4672,11 +4672,26 @@
         return article;
       };
 
-      const overflows = (page) => page.scrollHeight > page.clientHeight + 2;
-      const makeDateRow = (group) => {
+      const JsPdfCtor = window.jspdf?.jsPDF;
+      if (!JsPdfCtor) {
+        els.preview.innerHTML = `<div class="empty-preview">Library PDF belum siap.</div>`;
+        return;
+      }
+      const measurePdf = new JsPdfCtor({ orientation: "portrait", unit: "pt", format: "a4" });
+      const pdfLayout = createPdfLayout(measurePdf, registerPdfFonts());
+      setPdfBaseStyle(measurePdf, pdfLayout);
+      const preparedGroups = preparePdfGroups(measurePdf, data, pdfLayout);
+      const paginationPlan = buildPdfPaginationPlan(
+        preparedGroups,
+        pdfLayout,
+        getPdfClosingHeight(data, pdfLayout),
+        getPdfClosingLeadHeight(pdfLayout)
+      );
+
+      const makeDateRow = (dateText) => {
         const row = document.createElement("tr");
         row.className = "date-row";
-        row.innerHTML = `<td colspan="4">${escapeHtml(formatActivityDate(group.date, group.dates))}</td>`;
+        row.innerHTML = `<td colspan="4">${escapeHtml(dateText)}</td>`;
         return row;
       };
       const makeActivityRow = (rowData, displayIndex, rows, spans, localIndex = displayIndex) => {
@@ -4697,97 +4712,59 @@
           ${mergedCell("pic", "14%", "center")}`;
         return row;
       };
-      const makePlainActivityRow = (rowData, displayIndex) => {
-        const row = document.createElement("tr");
-        const rowNumber = (rowData.originalIndex ?? displayIndex) + 1;
-        row.innerHTML = `
-          <td style="width:6%; text-align:center;">${rowData.continued ? "" : rowNumber}</td>
-          <td style="width:42%;">${richTextToPreviewHtml(rowData.activity, rowData.activityFormats, "activity")}</td>
-          <td style="width:38%;">${richTextToPreviewHtml(rowData.result, rowData.resultFormats, "result")}</td>
-          <td style="width:14%; text-align:center;">${richTextToPreviewHtml(rowData.pic, rowData.picFormats, "pic")}</td>`;
-        return row;
-      };
-
-      let page = createPaper(true);
-      let tbody = page.querySelector("tbody");
-
-      data.groups.forEach((group) => {
-        const rows = splitPreviewRows(group.rows.filter((row) => row.activity || row.result || row.pic));
-        if (!rows.length) return;
-
-        let rowStart = 0;
-        while (rowStart < rows.length) {
-          let dateRow = makeDateRow(group);
-          tbody.appendChild(dateRow);
-          if (overflows(page) && tbody.children.length > 1) {
-            dateRow.remove();
-            page = createPaper(true);
-            tbody = page.querySelector("tbody");
-            dateRow = makeDateRow(group);
-            tbody.appendChild(dateRow);
-          }
-
-          const segmentRows = [];
-          while (rowStart + segmentRows.length < rows.length) {
-            const displayIndex = rowStart + segmentRows.length;
-            const testRow = makePlainActivityRow(rows[displayIndex], displayIndex);
-            tbody.appendChild(testRow);
-            if (overflows(page) && segmentRows.length === 0 && tbody.children.length > 2) {
-              testRow.remove();
-              dateRow.remove();
-              page = createPaper(true);
-              tbody = page.querySelector("tbody");
-              dateRow = makeDateRow(group);
-              tbody.appendChild(dateRow);
-              continue;
-            }
-            if (overflows(page) && segmentRows.length > 0) {
-              testRow.remove();
-              break;
-            }
-            segmentRows.push(rows[displayIndex]);
-            if (overflows(page)) break;
-          }
-
-          while (dateRow.nextSibling) dateRow.nextSibling.remove();
-          const pageSpans = buildPdfSpans(segmentRows);
-          segmentRows.forEach((rowData, localIndex) => {
-            tbody.appendChild(makeActivityRow(rowData, rowStart + localIndex, segmentRows, pageSpans, localIndex));
-          });
-          rowStart += segmentRows.length;
-
-          if (rowStart < rows.length) {
-            page = createPaper(true);
-            tbody = page.querySelector("tbody");
-          }
-        }
-      });
 
       const makers = data.makers
         .filter((maker) => maker.name || maker.role)
         .map((maker) => `<p>${escapeHtml(formatPersonText(maker))}</p>`)
         .join("");
 
-      const closing = document.createElement("div");
-      closing.innerHTML = `
+      const makeClosingLead = () => {
+        const closing = document.createElement("div");
+        closing.innerHTML = `
         <p class="doc-body">Demikian Berita Acara ini dibuat, atas perhatian dan kerja sama Bapak/Ibu, kami ucapkan terima kasih.</p>
         <div class="doc-body">
           <div><strong>${escapeHtml(data.divisionLine || defaultDivisionLine())}</strong></div>
           <div><strong>${escapeHtml(data.applicationLine || defaultApplicationLine())}</strong></div>
           <div>${escapeHtml(data.city)}, ${escapeHtml(formatDate(data.signDate))}</div>
-        </div>
-        <div class="signature">
+        </div>`;
+        return closing;
+      };
+      const makeSignature = () => {
+        const signature = document.createElement("div");
+        signature.className = "signature";
+        signature.innerHTML = `
           <p class="role">Pembuat :</p>
           ${makers || "<p>-</p>"}
           <p class="role">Menyetujui :</p>
-          <p>${escapeHtml(formatPersonText({ name: data.approverName, role: data.approverRole }))}</p>
-        </div>`;
-      page.insertBefore(closing, page.querySelector(".doc-footer"));
-      if (overflows(page)) {
-        closing.remove();
-        page = createPaper(false);
-        page.insertBefore(closing, page.querySelector(".doc-footer"));
-      }
+          <p>${escapeHtml(formatPersonText({ name: data.approverName, role: data.approverRole }))}</p>`;
+        return signature;
+      };
+
+      paginationPlan.forEach((pagePlan) => {
+        const page = createPaper(pagePlan.withTable);
+        if (pagePlan.withTable) {
+          const tbody = page.querySelector("tbody");
+          pagePlan.segments.forEach((segment) => {
+            tbody.appendChild(makeDateRow(segment.dateText));
+            const spans = buildPdfSpans(segment.rows);
+            segment.rows.forEach((rowData, localIndex) => {
+              tbody.appendChild(makeActivityRow(
+                rowData,
+                segment.displayStart + localIndex,
+                segment.rows,
+                spans,
+                localIndex
+              ));
+            });
+          });
+        }
+        if (pagePlan.closing === "full" || pagePlan.closing === "lead") {
+          page.insertBefore(makeClosingLead(), page.querySelector(".doc-footer"));
+        }
+        if (pagePlan.closing === "full" || pagePlan.closing === "signature") {
+          page.insertBefore(makeSignature(), page.querySelector(".doc-footer"));
+        }
+      });
 
       pages.forEach((paper, index) => {
         paper.querySelector(".doc-footer").textContent = `Halaman ${index + 1}/${pages.length}`;
@@ -4935,7 +4912,7 @@
       return DOC_STYLE.fontFamilyPdf;
     }
 
-    function buildSelectablePdf(pdf, data, fontFamily = "helvetica") {
+    function createPdfLayout(pdf, fontFamily = "helvetica") {
       const layout = {
         pageWidth: pdf.internal.pageSize.getWidth(),
         pageHeight: pdf.internal.pageSize.getHeight(),
@@ -4962,100 +4939,157 @@
         layout.contentWidth * 0.38,
         layout.contentWidth * 0.14
       ];
-      setPdfBaseStyle(pdf, layout);
-      let y = drawPdfPageHeader(pdf, data, layout);
-      y = drawPdfTableHeader(pdf, layout, y);
-      const closingGap = layout.bodyLine;
-      const closingHeight = getPdfClosingHeight(data, layout);
-      const closingLeadHeight = getPdfClosingLeadHeight(layout);
-      const freshFinalRowY = drawPdfPageHeaderHeight(layout) + layout.tableHeaderHeight + layout.dateHeight;
-      const preparedGroups = data.groups
-        .map((group) => ({
-          dateText: formatActivityDate(group.date, group.dates),
-          rows: splitPdfRows(pdf, layout, group.rows.filter((row) => row.activity || row.result || row.pic))
-        }))
+      return layout;
+    }
+
+    function preparePdfGroups(pdf, data, layout) {
+      return data.groups
+        .map((group) => {
+          const rows = splitPdfRows(pdf, layout, group.rows.filter((row) => row.activity || row.result || row.pic));
+          return {
+            dateText: formatActivityDate(group.date, group.dates),
+            rows,
+            rowHeights: rows.map((row) => pdfRowHeight(pdf, layout, row))
+          };
+        })
         .filter((group) => group.rows.length);
+    }
+
+    function buildPdfPaginationPlan(preparedGroups, layout, closingHeight, closingLeadHeight) {
+      const tableStartY = layout.top + 57 + layout.tableHeaderHeight;
+      const freshFinalRowY = tableStartY + layout.dateHeight;
+      const closingGap = layout.bodyLine;
+      const pages = [];
+      const addPage = (withTable = true) => {
+        const page = {
+          withTable,
+          segments: [],
+          y: withTable ? tableStartY : layout.top + 57,
+          closing: "",
+          closingY: 0
+        };
+        pages.push(page);
+        return page;
+      };
+      let page = addPage(true);
 
       preparedGroups.forEach((group, groupIndex) => {
-        const rows = group.rows;
-        const rowHeights = rows.map((row) => pdfRowHeight(pdf, layout, row));
-        const dateText = group.dateText;
         let rowStart = 0;
-
-        while (rowStart < rows.length) {
-          if (y + layout.dateHeight > layout.bottomLimit) {
-            pdf.addPage();
-            setPdfBaseStyle(pdf, layout);
-            y = drawPdfPageHeader(pdf, data, layout);
-            y = drawPdfTableHeader(pdf, layout, y);
+        while (rowStart < group.rows.length) {
+          const firstHeight = group.rowHeights[rowStart];
+          if (page.segments.length && page.y + layout.dateHeight + firstHeight > layout.bottomLimit) {
+            page = addPage(true);
           }
-          y = drawPdfDateRow(pdf, layout, y, dateText);
 
+          const rowY = page.y + layout.dateHeight;
           const pageRows = [];
           const pageRowHeights = [];
-          while (rowStart + pageRows.length < rows.length) {
+          let restartOnNewPage = false;
+
+          while (rowStart + pageRows.length < group.rows.length) {
             const sourceIndex = rowStart + pageRows.length;
-            const nextHeight = rowHeights[sourceIndex];
-            const queuedHeight = sumRange(pageRowHeights, 0, pageRowHeights.length);
-            const finalRow = groupIndex === preparedGroups.length - 1 && sourceIndex === rows.length - 1;
+            const nextHeight = group.rowHeights[sourceIndex];
+            const queuedHeight = pageRowHeights.reduce((total, height) => total + height, 0);
+            const finalRow = groupIndex === preparedGroups.length - 1 && sourceIndex === group.rows.length - 1;
             const reserveFullClosing = freshFinalRowY + nextHeight + closingGap + closingHeight <= layout.bottomLimit;
             const reservedClosingHeight = reserveFullClosing ? closingHeight : closingLeadHeight;
-            if (shouldStartFinalPdfRowOnNewPage({
-              finalRow,
-              currentY: y,
-              queuedHeight,
-              rowHeight: nextHeight,
-              closingGap,
-              closingHeight: reservedClosingHeight,
-              bottomLimit: layout.bottomLimit,
-              freshY: freshFinalRowY
-            })) {
+            const requiredBottom = rowY + queuedHeight + nextHeight + closingGap + reservedClosingHeight;
+            const freshRequiredBottom = freshFinalRowY + nextHeight + closingGap + reservedClosingHeight;
+            const moveFinalRow = finalRow && requiredBottom > layout.bottomLimit && freshRequiredBottom <= layout.bottomLimit;
+
+            if (moveFinalRow) {
               if (pageRows.length) break;
-              pdf.addPage();
-              setPdfBaseStyle(pdf, layout);
-              y = drawPdfPageHeader(pdf, data, layout);
-              y = drawPdfTableHeader(pdf, layout, y);
-              y = drawPdfDateRow(pdf, layout, y, dateText);
-              continue;
+              if (page.segments.length) {
+                page = addPage(true);
+                restartOnNewPage = true;
+                break;
+              }
             }
-            if (pageRows.length === 0 && y + nextHeight > layout.bottomLimit && y > layout.top + 57 + layout.tableHeaderHeight + layout.dateHeight) {
-              pdf.addPage();
-              setPdfBaseStyle(pdf, layout);
-              y = drawPdfPageHeader(pdf, data, layout);
-              y = drawPdfTableHeader(pdf, layout, y);
-              y = drawPdfDateRow(pdf, layout, y, dateText);
-              continue;
-            }
-            if (pageRows.length > 0 && y + sumRange(pageRowHeights, 0, pageRowHeights.length) + nextHeight > layout.bottomLimit) {
+
+            if (!pageRows.length && rowY + nextHeight > layout.bottomLimit && page.segments.length) {
+              page = addPage(true);
+              restartOnNewPage = true;
               break;
             }
-            pageRows.push(rows[sourceIndex]);
+            if (pageRows.length && rowY + queuedHeight + nextHeight > layout.bottomLimit) break;
+
+            pageRows.push(group.rows[sourceIndex]);
             pageRowHeights.push(nextHeight);
-            if (y + sumRange(pageRowHeights, 0, pageRowHeights.length) > layout.bottomLimit) break;
+            if (rowY + queuedHeight + nextHeight > layout.bottomLimit) break;
           }
 
-          const pageSpans = buildPdfSpans(pageRows);
-          pageRows.forEach((row, localIndex) => {
-            y = drawPdfActivityRow(pdf, layout, row, localIndex, pageRows, pageRowHeights, pageSpans, y, rowStart + localIndex);
+          if (restartOnNewPage) continue;
+          if (!pageRows.length) {
+            pageRows.push(group.rows[rowStart]);
+            pageRowHeights.push(group.rowHeights[rowStart]);
+          }
+
+          page.segments.push({
+            dateText: group.dateText,
+            rows: pageRows,
+            rowHeights: pageRowHeights,
+            displayStart: rowStart
           });
+          page.y = rowY + pageRowHeights.reduce((total, height) => total + height, 0);
           rowStart += pageRows.length;
-
-          if (rowStart < rows.length) {
-            pdf.addPage();
-            setPdfBaseStyle(pdf, layout);
-            y = drawPdfPageHeader(pdf, data, layout);
-            y = drawPdfTableHeader(pdf, layout, y);
-          }
+          if (rowStart < group.rows.length) page = addPage(true);
         }
       });
 
-      y += closingGap;
-      if (y + closingLeadHeight > layout.bottomLimit) {
-        pdf.addPage();
-        setPdfBaseStyle(pdf, layout);
-        y = drawPdfPageHeader(pdf, data, layout);
+      let closingY = page.y + closingGap;
+      if (closingY + closingLeadHeight > layout.bottomLimit) {
+        page = addPage(false);
+        closingY = layout.top + 57;
       }
-      drawPdfClosing(pdf, data, layout, y);
+      if (closingY + closingHeight <= layout.bottomLimit) {
+        page.closing = "full";
+        page.closingY = closingY;
+      } else {
+        page.closing = "lead";
+        page.closingY = closingY;
+        page = addPage(false);
+        page.closing = "signature";
+        page.closingY = layout.top + 77;
+      }
+      return pages;
+    }
+
+    function buildSelectablePdf(pdf, data, fontFamily = "helvetica") {
+      const layout = createPdfLayout(pdf, fontFamily);
+      setPdfBaseStyle(pdf, layout);
+      const closingHeight = getPdfClosingHeight(data, layout);
+      const closingLeadHeight = getPdfClosingLeadHeight(layout);
+      const preparedGroups = preparePdfGroups(pdf, data, layout);
+      const pages = buildPdfPaginationPlan(preparedGroups, layout, closingHeight, closingLeadHeight);
+
+      pages.forEach((page, pageIndex) => {
+        if (pageIndex) pdf.addPage();
+        setPdfBaseStyle(pdf, layout);
+        let y = drawPdfPageHeader(pdf, data, layout);
+        if (page.withTable) {
+          y = drawPdfTableHeader(pdf, layout, y);
+          page.segments.forEach((segment) => {
+            y = drawPdfDateRow(pdf, layout, y, segment.dateText);
+            const spans = buildPdfSpans(segment.rows);
+            segment.rows.forEach((row, localIndex) => {
+              y = drawPdfActivityRow(
+                pdf,
+                layout,
+                row,
+                localIndex,
+                segment.rows,
+                segment.rowHeights,
+                spans,
+                y,
+                segment.displayStart + localIndex
+              );
+            });
+          });
+        }
+        if (page.closing === "full") drawPdfClosing(pdf, data, layout, page.closingY);
+        if (page.closing === "lead") drawPdfClosingLead(pdf, data, layout, page.closingY);
+        if (page.closing === "signature") drawPdfSignature(pdf, data, layout, page.closingY);
+      });
       drawPdfFooters(pdf, layout);
     }
 
@@ -5388,6 +5422,11 @@
     }
 
     function drawPdfClosing(pdf, data, layout, y) {
+      y = drawPdfClosingLead(pdf, data, layout, y);
+      drawPdfSignature(pdf, data, layout, y + 44);
+    }
+
+    function drawPdfClosingLead(pdf, data, layout, y) {
       pdf.setFont(layout.fontFamily, "normal");
       pdf.setFontSize(layout.bodySize);
       pdf.text("Demikian Berita Acara ini dibuat, atas perhatian dan kerja sama Bapak/Ibu, kami ucapkan terima kasih.", layout.left, y);
@@ -5400,14 +5439,10 @@
       y += 15;
       pdf.setFont(layout.fontFamily, "normal");
       pdf.text(`${data.city}, ${formatDate(data.signDate)}`, layout.left, y);
+      return y;
+    }
 
-      if (y + getPdfSignatureHeight(data, layout) > layout.bottomLimit) {
-        pdf.addPage();
-        setPdfBaseStyle(pdf, layout);
-        y = drawPdfPageHeader(pdf, data, layout) + 20;
-      } else {
-        y += 44;
-      }
+    function drawPdfSignature(pdf, data, layout, y) {
       pdf.setFont(layout.fontFamily, "bold");
       pdf.text("Pembuat :", layout.left, y);
       y += 15;

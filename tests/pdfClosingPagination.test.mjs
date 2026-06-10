@@ -89,4 +89,4 @@ assert.equal(
 );
 
 assert.match(html, /const closingGap = layout\.bodyLine;/);
-assert.match(html, /drawPdfClosing\(pdf, data, layout, y\);/);
+assert.match(html, /drawPdfClosing\(pdf, data, layout, page\.closingY\)/);
