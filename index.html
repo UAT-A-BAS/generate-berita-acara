@@ -77,25 +77,12 @@
       width: 100%;
       margin: 0 auto 14px;
       padding: 14px 18px;
-      border: 1px solid rgba(255, 255, 255, 0.18);
+      border: 1px solid rgba(9, 23, 39, 0.1);
       border-radius: 28px;
-      background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 46%),
-        linear-gradient(135deg, #285885 0%, #1d456b 48%, #163859 100%);
+      background: #184066;
       box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.14),
-        0 16px 36px rgba(12, 28, 46, 0.18);
-    }
-
-    .topbar::after {
-      content: "";
-      position: absolute;
-      inset: 8px auto auto 18px;
-      width: min(240px, 28%);
-      height: 32px;
-      border-radius: 999px;
-      background: linear-gradient(90deg, rgba(255, 255, 255, 0.16), transparent 76%);
-      pointer-events: none;
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 12px 28px rgba(12, 28, 46, 0.14);
     }
 
     .eyebrow {
@@ -137,15 +124,14 @@
       display: flex;
       min-width: 320px;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 7px;
       align-items: center;
       justify-content: flex-end;
-      padding: 6px;
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      border-radius: 16px;
-      background: rgba(15, 37, 59, 0.28);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(10px);
+      padding: 6px 7px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.06);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
     }
 
     .sync-pill {
@@ -223,20 +209,47 @@
     }
 
     .collab-button {
-      min-height: 34px;
-      padding: 6px 12px;
-      border-color: rgba(255, 255, 255, 0.22);
+      min-height: 36px;
+      padding: 7px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
       border-radius: 12px;
-      background: linear-gradient(180deg, #ffffff 0%, #eef4fb 100%);
-      color: var(--brand-2);
+      background: rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.96);
       font-size: 12px;
-      font-weight: 800;
-      box-shadow: 0 4px 10px rgba(9, 25, 42, 0.16);
+      font-weight: 700;
+      box-shadow: none;
+      backdrop-filter: blur(6px);
+      transition: background 180ms ease, border-color 180ms ease, transform 180ms ease, color 180ms ease;
     }
 
     .collab-button:hover {
-      background: linear-gradient(180deg, #ffffff 0%, #dceaf8 100%);
-      border-color: rgba(206, 227, 247, 0.95);
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.24);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    .collab-button:focus-visible {
+      outline: 3px solid rgba(255, 255, 255, 0.22);
+      outline-offset: 2px;
+    }
+
+    #collabToggleBtn {
+      background: #ffffff;
+      border-color: rgba(255, 255, 255, 0.78);
+      color: #184066;
+      box-shadow: 0 6px 14px rgba(9, 25, 42, 0.16);
+    }
+
+    #collabToggleBtn:hover {
+      background: #f6f9fc;
+      border-color: #ffffff;
+      color: #163756;
+    }
+
+    #copyShareLinkBtn {
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.94);
     }
 
     .layout {
@@ -1715,10 +1728,6 @@
         gap: 14px;
         padding: 14px;
         border-radius: 24px;
-      }
-
-      .topbar::after {
-        width: 55%;
       }
 
       .row-actions {
