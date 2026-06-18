@@ -132,6 +132,7 @@
     else if (length === 5) [first, last] = [2, 1];
     else if (length === 6) [first, last] = [2, 1];
     else if (length === 7) [first, last] = [2, 2];
+    else if (length >= 10) [first, last] = [4, 2];
     return maskDigitsKeep(raw, first, last);
   }
 
