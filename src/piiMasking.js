@@ -20,7 +20,7 @@
     ["cardNumber", "Nomor kartu"],
     ["cardExpiry", "Tanggal expired kartu"],
     ["cvv", "CVV"],
-    ["customerNumber", "Customer Number"],
+    ["customerNumber", "Card Number"],
     ["serialNumber", "Serial Number"]
   ];
 
