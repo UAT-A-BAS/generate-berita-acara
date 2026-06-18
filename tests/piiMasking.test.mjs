@@ -16,14 +16,17 @@ const cases = [
   ["cindy", "**ndy"],
   ["andrea", "***rea"],
   ["abimana", "****ana"],
+  ["Agustina rosi divina", "Agus**na **si ***ina"],
   ["margaretha", "marg****ha"],
   ["alex surya marcelo", "**ex **rya ****elo"],
   ["margaretha cindy", "marg****ha **ndy"],
-  ["Dr. Ir. Prof. Floretta Maria", "*r. *r. **of. Flor***ta **ria"]
+  ["Dr. Ir. Prof. Floretta Maria", "*r. *r. **of. Flor**ta **ria"]
 ];
 
 for (const [input, expected] of cases) {
-  assert.equal(maskName(input), expected, input);
+  const masked = maskName(input);
+  assert.equal(masked, expected, input);
+  assert.equal(Array.from(masked).length, Array.from(input).length, `length: ${input}`);
 }
 
 assert.equal(maskName(null), "");
@@ -33,7 +36,7 @@ assert.equal(maskName("margaretha   cindy"), "marg****ha   **ndy");
 
 const ruleCases = [
   ["name", "margaretha cindy", "marg****ha **ndy"],
-  ["titledName", "Dr. Ir. Prof. Floretta Maria", "*r. *r. **of. Flor***ta **ria"],
+  ["titledName", "Dr. Ir. Prof. Floretta Maria", "*r. *r. **of. Flor**ta **ria"],
   ["date", "01-12-2023", "**-**-****"],
   ["identityNumber", "3313091704330000", "3313**********00"],
   ["passport", "X 7895521", "* ****521"],

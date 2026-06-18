@@ -2911,7 +2911,7 @@
       if (length === 5) return `**${chars.slice(-3).join("")}`;
       if (length === 6) return `***${chars.slice(-3).join("")}`;
       if (length === 7) return `****${chars.slice(-3).join("")}`;
-      return `${chars.slice(0, 4).join("")}${repeatMask(Math.max(3, length - 6))}${chars.slice(-2).join("")}`;
+      return `${chars.slice(0, 4).join("")}${repeatMask(length - 6)}${chars.slice(-2).join("")}`;
     }
 
     function maskName(value) {
