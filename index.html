@@ -5267,6 +5267,13 @@
         const contentStart = listItem ? rawLine.indexOf(listItem[2]) : 0;
         const tokens = pdfSegmentsForRange(rawText, offset + contentStart, offset + rawLine.length, formats);
         const prefixSegment = prefix ? [{ text: prefix, bold: false, italic: false, underline: false }] : [];
+        const prefixWidth = measurePdfSegments(pdf, layout, prefixSegment);
+        pdf.setFont(layout.fontFamily, "normal");
+        pdf.setFontSize(layout.bodySize);
+        const spaceWidth = Math.max(0.1, pdf.getTextWidth(" "));
+        const continuationSegment = prefix
+          ? [{ text: " ".repeat(Math.ceil(prefixWidth / spaceWidth)), bold: false, italic: false, underline: false }]
+          : [];
         let segments = [...prefixSegment];
         let hasText = false;
 
@@ -5279,7 +5286,8 @@
             const testSegments = [...segments, next];
             if (hasText && measurePdfSegments(pdf, layout, testSegments) > Math.max(8, width)) {
               output.push(segments);
-              segments = [...prefixSegment];
+              segments = [...continuationSegment];
+              hasText = false;
               if (!isSpace) {
                 segments.push(next);
                 hasText = true;
