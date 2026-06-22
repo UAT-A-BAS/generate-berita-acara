@@ -28,6 +28,7 @@ function extractFunction(name) {
   throw new Error(`Unable to extract ${name}`);
 }
 
+globalThis.compactPdfPageRows = extractFunction("compactPdfPageRows");
 const buildPdfPaginationPlan = extractFunction("buildPdfPaginationPlan");
 const layout = {
   top: 69,

@@ -4750,7 +4750,7 @@
       };
       const makeActivityRow = (rowData, displayIndex, rows, spans, localIndex = displayIndex) => {
         const row = document.createElement("tr");
-        const rowNumber = (rowData.originalIndex ?? displayIndex) + 1;
+        const rowNumber = getPdfRowNumber(rowData, displayIndex);
         const mergedCell = (key, width, align = "left") => {
           const span = spans[key];
           if (span.hidden[localIndex]) return "";
@@ -4760,7 +4760,7 @@
           return `<td${rowspan} style="width:${width}; text-align:${align}; vertical-align:${verticalAlign};">${richTextToPreviewHtml(rows[localIndex][key], rows[localIndex][`${key}Formats`], key)}</td>`;
         };
         row.innerHTML = `
-          <td style="width:6%; text-align:center;">${rowData.continued ? "" : rowNumber}</td>
+          <td style="width:6%; text-align:center;">${rowNumber}</td>
           ${mergedCell("activity", "42%")}
           ${mergedCell("result", "38%")}
           ${mergedCell("pic", "14%", "center")}`;
@@ -5020,6 +5020,44 @@
         .filter((group) => group.rows.length);
     }
 
+    function compactPdfPageRows(rows, rowHeights) {
+      const compactedRows = [];
+      const compactedHeights = [];
+
+      rows.forEach((row, index) => {
+        const previous = compactedRows[compactedRows.length - 1];
+        if (previous && row.originalIndex != null && previous.originalIndex === row.originalIndex) {
+          ["activity", "result", "pic"].forEach((key) => {
+            const incoming = row[key] || "";
+            if (!incoming) return;
+            const separator = previous[key] ? "\n" : "";
+            const offset = previous[key].length + separator.length;
+            previous[key] += separator + incoming;
+            previous[`${key}Formats`] = [
+              ...(previous[`${key}Formats`] || []),
+              ...(row[`${key}Formats`] || []).map((format) => ({
+                ...format,
+                start: format.start + offset,
+                end: format.end + offset
+              }))
+            ];
+          });
+          compactedHeights[compactedHeights.length - 1] += rowHeights[index];
+          return;
+        }
+
+        compactedRows.push({
+          ...row,
+          activityFormats: [...(row.activityFormats || [])],
+          resultFormats: [...(row.resultFormats || [])],
+          picFormats: [...(row.picFormats || [])]
+        });
+        compactedHeights.push(rowHeights[index]);
+      });
+
+      return { rows: compactedRows, rowHeights: compactedHeights };
+    }
+
     function buildPdfPaginationPlan(preparedGroups, layout, closingHeight, closingLeadHeight) {
       const pageHeaderBottom = layout.pageHeaderBottom || layout.top + 57;
       const tableStartY = pageHeaderBottom + layout.tableHeaderHeight;
@@ -5089,13 +5127,15 @@
             pageRowHeights.push(group.rowHeights[rowStart]);
           }
 
+          const compactedPageRows = compactPdfPageRows(pageRows, pageRowHeights);
+
           page.segments.push({
             dateText: group.dateText,
-            rows: pageRows,
-            rowHeights: pageRowHeights,
+            rows: compactedPageRows.rows,
+            rowHeights: compactedPageRows.rowHeights,
             displayStart: rowStart
           });
-          page.y = rowY + pageRowHeights.reduce((total, height) => total + height, 0);
+          page.y = rowY + compactedPageRows.rowHeights.reduce((total, height) => total + height, 0);
           rowStart += pageRows.length;
           if (rowStart < group.rows.length) page = addPage(true);
         }
@@ -5336,13 +5376,17 @@
       return { lengths, hidden };
     }
 
+    function getPdfRowNumber(row, displayIndex) {
+      return (row.originalIndex ?? displayIndex) + 1;
+    }
+
     function drawPdfActivityRow(pdf, layout, row, index, rows, rowHeights, spans, y, displayIndex = index) {
       const rowHeight = rowHeights[index];
       let x = layout.left;
       pdf.setFont(layout.fontFamily, "normal");
       pdf.setFontSize(layout.bodySize);
-      const rowNumber = (row.originalIndex ?? displayIndex) + 1;
-      drawPdfCell(pdf, layout, x, y, layout.columns[0], rowHeight, [row.continued ? "" : String(rowNumber)], "center");
+      const rowNumber = getPdfRowNumber(row, displayIndex);
+      drawPdfCell(pdf, layout, x, y, layout.columns[0], rowHeight, [String(rowNumber)], "center");
       x += layout.columns[0];
 
       ["activity", "result", "pic"].forEach((key, offset) => {

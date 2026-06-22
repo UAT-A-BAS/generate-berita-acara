@@ -59,3 +59,50 @@ assert.equal(rows.length, 2);
 assert.equal(rows[0].continued, false);
 assert.equal(rows[1].continued, true);
 assert.deepEqual(maxLinesSeen, [17, 17, 17]);
+
+const getPdfRowNumber = Function(
+  `return (${extractFunction("getPdfRowNumber")});`
+)();
+assert.equal(
+  getPdfRowNumber({ originalIndex: 2, continued: true }, 0),
+  3,
+  "continuation chunks repeat the original activity number"
+);
+
+const compactPdfPageRows = Function(
+  `return (${extractFunction("compactPdfPageRows")});`
+)();
+const compacted = compactPdfPageRows([
+  {
+    activity: "activity",
+    activityFormats: [],
+    result: "first half",
+    resultFormats: [{ start: 0, end: 5, bold: true }],
+    pic: "pic",
+    picFormats: [],
+    originalIndex: 0,
+    continued: false
+  },
+  {
+    activity: "",
+    activityFormats: [],
+    result: "second half",
+    resultFormats: [{ start: 0, end: 6, italic: true }],
+    pic: "",
+    picFormats: [],
+    originalIndex: 0,
+    continued: true
+  }
+], [100, 110]);
+assert.equal(compacted.rows.length, 1, "chunks of one activity on the same page render as one table row");
+assert.equal(compacted.rows[0].result, "first half\nsecond half");
+assert.deepEqual(compacted.rowHeights, [210]);
+assert.deepEqual(compacted.rows[0].resultFormats, [
+  { start: 0, end: 5, bold: true },
+  { start: 11, end: 17, italic: true }
+]);
+assert.match(
+  html,
+  /const compactedPageRows = compactPdfPageRows\(pageRows, pageRowHeights\);/,
+  "pagination must compact same-page chunks before rendering"
+);

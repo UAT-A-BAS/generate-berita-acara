@@ -36,6 +36,7 @@ function extractFunction(name) {
 
 const getPdfClosingHeight = extractFunction("getPdfClosingHeight");
 const shouldStartFinalPdfRowOnNewPage = extractFunction("shouldStartFinalPdfRowOnNewPage");
+globalThis.compactPdfPageRows = extractFunction("compactPdfPageRows");
 const buildPdfPaginationPlan = extractFunction("buildPdfPaginationPlan");
 
 const layout = { bodyLine: 13 };
