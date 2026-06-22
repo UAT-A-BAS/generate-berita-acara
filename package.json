@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node tests/piiMasking.test.mjs && node tests/previewPagination.test.mjs && node tests/commentThread.test.mjs && node tests/pdfFont.test.mjs && node tests/pdfClosingPagination.test.mjs && node tests/pdfBulletWrapping.test.mjs && node tests/sharedPagination.test.mjs",
+    "test": "node tests/piiMasking.test.mjs && node tests/previewPagination.test.mjs && node tests/commentThread.test.mjs && node tests/pdfFont.test.mjs && node tests/pdfHeader.test.mjs && node tests/pdfRowContinuation.test.mjs && node tests/pdfClosingPagination.test.mjs && node tests/pdfBulletWrapping.test.mjs && node tests/sharedPagination.test.mjs",
     "dev:worker": "wrangler dev",
     "deploy:worker": "wrangler deploy"
   },

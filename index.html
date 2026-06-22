@@ -2766,16 +2766,13 @@
     function richTextToPreviewHtml(value, formats = [], key = "activity") {
       const text = normalizeText(value);
       const lines = text.split("\n");
-      const maxChars = previewWrapChars[key] || 39;
       const html = [];
       let listOpen = false;
       let listType = "";
       let listNumber = 1;
       let offset = 0;
 
-      const renderWrapped = (start, end) => wrapPreviewRanges(text, start, end, maxChars)
-        .map(([from, to]) => richSliceToHtml(text, from, to, formats))
-        .join("<br>");
+      const renderWrapped = (start, end) => richSliceToHtml(text, start, end, formats);
 
       lines.forEach((line, lineIndex) => {
         const listItem = line.match(/^\s*(?:(\d+)[.)]|-)\s+(.*)$/);
@@ -3408,7 +3405,9 @@
 
     function buildHeaderLineOne(data) {
       const mode = data.baType === "pilot" ? "PILOT IMPLEMENTASI" : "IMPLEMENTASI";
-      return `BERITA ACARA VERIFIKASI ${mode} ${toUpper(data.featureName)}`.trim();
+      const featureName = toUpper(data.featureName);
+      const projectName = featureName.startsWith(mode) ? featureName.slice(mode.length).trim() : featureName;
+      return `BERITA ACARA VERIFIKASI ${mode} ${projectName}`.trim();
     }
 
     function buildHeaderLineTwo(data) {
@@ -4734,6 +4733,7 @@
       const measurePdf = new JsPdfCtor({ orientation: "portrait", unit: "pt", format: "a4" });
       const pdfLayout = createPdfLayout(measurePdf, registerPdfFonts());
       setPdfBaseStyle(measurePdf, pdfLayout);
+      setPdfPageHeaderMetrics(measurePdf, data, pdfLayout);
       const preparedGroups = preparePdfGroups(measurePdf, data, pdfLayout);
       const paginationPlan = buildPdfPaginationPlan(
         preparedGroups,
@@ -4996,6 +4996,17 @@
       return layout;
     }
 
+    function setPdfPageHeaderMetrics(pdf, data, layout) {
+      pdf.setFont(layout.fontFamily, "bold");
+      pdf.setFontSize(layout.headerSize);
+      layout.pageHeaderLines = [
+        ...pdf.splitTextToSize(buildHeaderLineOne(data), layout.contentWidth),
+        ...pdf.splitTextToSize(buildHeaderLineTwo(data), layout.contentWidth)
+      ];
+      layout.pageHeaderBottom = layout.top + 57 + Math.max(0, layout.pageHeaderLines.length - 2) * layout.headerLine;
+      return layout.pageHeaderLines;
+    }
+
     function preparePdfGroups(pdf, data, layout) {
       return data.groups
         .map((group) => {
@@ -5010,7 +5021,8 @@
     }
 
     function buildPdfPaginationPlan(preparedGroups, layout, closingHeight, closingLeadHeight) {
-      const tableStartY = layout.top + 57 + layout.tableHeaderHeight;
+      const pageHeaderBottom = layout.pageHeaderBottom || layout.top + 57;
+      const tableStartY = pageHeaderBottom + layout.tableHeaderHeight;
       const freshFinalRowY = tableStartY + layout.dateHeight;
       const closingGap = layout.bodyLine;
       const pages = [];
@@ -5045,8 +5057,7 @@
             const nextHeight = group.rowHeights[sourceIndex];
             const queuedHeight = pageRowHeights.reduce((total, height) => total + height, 0);
             const finalRow = groupIndex === preparedGroups.length - 1 && sourceIndex === group.rows.length - 1;
-            const reserveFullClosing = freshFinalRowY + nextHeight + closingGap + closingHeight <= layout.bottomLimit;
-            const reservedClosingHeight = reserveFullClosing ? closingHeight : closingLeadHeight;
+            const reservedClosingHeight = closingHeight;
             const requiredBottom = rowY + queuedHeight + nextHeight + closingGap + reservedClosingHeight;
             const freshRequiredBottom = freshFinalRowY + nextHeight + closingGap + reservedClosingHeight;
             const moveFinalRow = finalRow && requiredBottom > layout.bottomLimit && freshRequiredBottom <= layout.bottomLimit;
@@ -5091,26 +5102,19 @@
       });
 
       let closingY = page.y + closingGap;
-      if (closingY + closingLeadHeight > layout.bottomLimit) {
+      if (closingY + closingHeight > layout.bottomLimit) {
         page = addPage(false);
-        closingY = layout.top + 57;
+        closingY = pageHeaderBottom;
       }
-      if (closingY + closingHeight <= layout.bottomLimit) {
-        page.closing = "full";
-        page.closingY = closingY;
-      } else {
-        page.closing = "lead";
-        page.closingY = closingY;
-        page = addPage(false);
-        page.closing = "signature";
-        page.closingY = layout.top + 77;
-      }
+      page.closing = "full";
+      page.closingY = closingY;
       return pages;
     }
 
     function buildSelectablePdf(pdf, data, fontFamily = "helvetica") {
       const layout = createPdfLayout(pdf, fontFamily);
       setPdfBaseStyle(pdf, layout);
+      setPdfPageHeaderMetrics(pdf, data, layout);
       const closingHeight = getPdfClosingHeight(data, layout);
       const closingLeadHeight = getPdfClosingLeadHeight(layout);
       const preparedGroups = preparePdfGroups(pdf, data, layout);
@@ -5157,9 +5161,11 @@
     function drawPdfPageHeader(pdf, data, layout) {
       pdf.setFont(layout.fontFamily, "bold");
       pdf.setFontSize(layout.headerSize);
-      pdf.text(buildHeaderLineOne(data), layout.pageWidth / 2, layout.top + 12, { align: "center" });
-      pdf.text(buildHeaderLineTwo(data), layout.pageWidth / 2, layout.top + 12 + layout.headerLine, { align: "center" });
-      return layout.top + 57;
+      const lines = layout.pageHeaderLines || setPdfPageHeaderMetrics(pdf, data, layout);
+      lines.forEach((line, index) => {
+        pdf.text(line, layout.pageWidth / 2, layout.top + 12 + index * layout.headerLine, { align: "center" });
+      });
+      return layout.pageHeaderBottom;
     }
 
     function drawPdfTableHeader(pdf, layout, y) {
@@ -5384,9 +5390,21 @@
       return values.slice(start, end).reduce((total, value) => total + value, 0);
     }
 
+    function getPdfMaxLinesPerRow(pdf, layout, row) {
+      const pageCapacity = Math.max(1, Math.floor((layout.bottomLimit - drawPdfPageHeaderHeight(layout) - layout.tableHeaderHeight - layout.dateHeight - layout.padY * 2) / layout.bodyLine));
+      const balancedChunkTarget = Math.max(1, Math.floor(pageCapacity / 2));
+      const lineCounts = ["activity", "result", "pic"].map((key, offset) =>
+        splitPdfRichText(pdf, row[key], layout.columns[offset + 1] - layout.padX * 2, layout, row[`${key}Formats`]).length
+      );
+      const rowLines = Math.max(...lineCounts);
+      const chunkCount = Math.max(1, Math.ceil(rowLines / balancedChunkTarget));
+      const balancedLines = Math.ceil(rowLines / chunkCount) + (chunkCount > 1 ? 1 : 0);
+      return Math.max(1, Math.min(rowLines, balancedLines));
+    }
+
     function splitPdfRows(pdf, layout, rows) {
-      const maxLines = Math.max(1, Math.floor((layout.bottomLimit - drawPdfPageHeaderHeight(layout) - layout.tableHeaderHeight - layout.dateHeight - layout.padY * 2) / layout.bodyLine));
       return rows.flatMap((row, index) => {
+        const maxLines = getPdfMaxLinesPerRow(pdf, layout, row);
         const values = ["activity", "result", "pic"].map((key, offset) =>
           splitPdfRichChunks(pdf, layout, row[key], row[`${key}Formats`], layout.columns[offset + 1] - layout.padX * 2, maxLines)
         );
@@ -5448,7 +5466,7 @@
     }
 
     function drawPdfPageHeaderHeight(layout) {
-      return layout.top + 57;
+      return layout.pageHeaderBottom || layout.top + 57;
     }
 
     function getPdfClosingLeadHeight(layout) {
