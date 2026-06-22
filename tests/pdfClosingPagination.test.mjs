@@ -36,6 +36,7 @@ function extractFunction(name) {
 
 const getPdfClosingHeight = extractFunction("getPdfClosingHeight");
 const shouldStartFinalPdfRowOnNewPage = extractFunction("shouldStartFinalPdfRowOnNewPage");
+const buildPdfPaginationPlan = extractFunction("buildPdfPaginationPlan");
 
 const layout = { bodyLine: 13 };
 assert.equal(
@@ -90,3 +91,27 @@ assert.equal(
 
 assert.match(html, /const closingGap = layout\.bodyLine;/);
 assert.match(html, /drawPdfClosing\(pdf, data, layout, page\.closingY\)/);
+
+const paginationLayout = {
+  top: 69,
+  pageHeaderBottom: 142.2,
+  tableHeaderHeight: 24,
+  dateHeight: 24,
+  bodyLine: 13,
+  bottomLimit: 720
+};
+const closingPlan = buildPdfPaginationPlan([
+  {
+    dateText: "Senin, 22 Juni 2026",
+    rows: [{ originalIndex: 0 }],
+    rowHeights: [450]
+  }
+], paginationLayout, 214, 77);
+assert.equal(closingPlan.length, 2);
+assert.equal(closingPlan[0].closing, "", "closing lead must not be left behind without signatures");
+assert.equal(closingPlan[1].closing, "full", "the complete closing block moves together to the next page");
+assert.equal(
+  closingPlan.some((page) => page.closing === "lead" || page.closing === "signature"),
+  false,
+  "closing content is never split across pages"
+);
