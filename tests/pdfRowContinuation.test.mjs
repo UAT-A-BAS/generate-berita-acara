@@ -58,8 +58,8 @@ const rows = splitPdfRows({}, layout, [{ activity: "activity", result: "long res
 assert.equal(rows.length, 2);
 assert.equal(rows[0].continued, false);
 assert.equal(rows[1].continued, true);
-assert.equal(rows[1].activity, "activity", "continuation chunks keep the original activity visible");
-assert.equal(rows[1].repeatedActivity, true, "repeated activity is marked so same-page chunks can be compacted cleanly");
+assert.equal(rows[1].activity, "", "continuation chunks stay blank until pagination proves they start a new page");
+assert.equal(rows[1].continuedActivity, "activity", "continuation chunks keep the original activity for page breaks");
 assert.deepEqual(maxLinesSeen, [17, 17, 17]);
 
 const getPdfRowNumber = Function(
@@ -86,15 +86,14 @@ const compacted = compactPdfPageRows([
     continued: false
   },
   {
-    activity: "activity",
+    activity: "",
     activityFormats: [],
     result: "second half",
     resultFormats: [{ start: 0, end: 6, italic: true }],
     pic: "",
     picFormats: [],
     originalIndex: 0,
-    continued: true,
-    repeatedActivity: true
+    continued: true
   }
 ], [100, 110]);
 assert.equal(compacted.rows.length, 1, "chunks of one activity on the same page render as one table row");
@@ -109,4 +108,30 @@ assert.match(
   html,
   /const compactedPageRows = compactPdfPageRows\(pageRows, pageRowHeights\);/,
   "pagination must compact same-page chunks before rendering"
+);
+
+globalThis.compactPdfPageRows = compactPdfPageRows;
+const buildPdfPaginationPlan = Function(
+  `return (${extractFunction("buildPdfPaginationPlan")});`
+)();
+const continuedPlan = buildPdfPaginationPlan([
+  {
+    dateText: "Senin, 22 Juni 2026",
+    rows: [
+      { activity: "activity", result: "first half", pic: "pic", originalIndex: 0, continued: false },
+      { activity: "", continuedActivity: "activity", result: "second half", pic: "", originalIndex: 0, continued: true }
+    ],
+    rowHeights: [50, 40]
+  }
+], {
+  top: 69,
+  tableHeaderHeight: 24,
+  dateHeight: 24,
+  bodyLine: 13,
+  bottomLimit: 240
+}, 0, 0);
+assert.equal(
+  continuedPlan[1].segments[0].rows[0].activity,
+  "activity",
+  "activity repeats only when a continued chunk starts a new page"
 );
