@@ -5011,10 +5011,16 @@
       return data.groups
         .map((group) => {
           const rows = splitPdfRows(pdf, layout, group.rows.filter((row) => row.activity || row.result || row.pic));
+          const measuredRows = rows.map((row) => ({
+            ...row,
+            continuedActivityHeight: row.continuedActivity
+              ? pdfRowHeight(pdf, layout, { ...row, activity: row.continuedActivity, activityFormats: row.continuedActivityFormats })
+              : 0
+          }));
           return {
             dateText: formatActivityDate(group.date, group.dates),
-            rows,
-            rowHeights: rows.map((row) => pdfRowHeight(pdf, layout, row))
+            rows: measuredRows,
+            rowHeights: measuredRows.map((row) => pdfRowHeight(pdf, layout, row))
           };
         })
         .filter((group) => group.rows.length);
@@ -5028,7 +5034,6 @@
         const previous = compactedRows[compactedRows.length - 1];
         if (previous && row.originalIndex != null && previous.originalIndex === row.originalIndex) {
           ["activity", "result", "pic"].forEach((key) => {
-            if (key === "activity" && row.repeatedActivity) return;
             const incoming = row[key] || "";
             if (!incoming) return;
             const separator = previous[key] ? "\n" : "";
@@ -5064,6 +5069,18 @@
       const tableStartY = pageHeaderBottom + layout.tableHeaderHeight;
       const freshFinalRowY = tableStartY + layout.dateHeight;
       const closingGap = layout.bodyLine;
+      const getPageRowHeight = (row, rowHeight, startsPageChunk) => {
+        if (!startsPageChunk || !row.continuedActivity) return rowHeight;
+        return Math.max(rowHeight, row.continuedActivityHeight || rowHeight);
+      };
+      const fillPageContinuedActivity = (row) => {
+        if (!row.continuedActivity || row.activity) return row;
+        return {
+          ...row,
+          activity: row.continuedActivity,
+          activityFormats: [...(row.continuedActivityFormats || [])]
+        };
+      };
       const pages = [];
       const addPage = (withTable = true) => {
         const page = {
@@ -5093,7 +5110,8 @@
 
           while (rowStart + pageRows.length < group.rows.length) {
             const sourceIndex = rowStart + pageRows.length;
-            const nextHeight = group.rowHeights[sourceIndex];
+            const startsPageChunk = pageRows.length === 0;
+            const nextHeight = getPageRowHeight(group.rows[sourceIndex], group.rowHeights[sourceIndex], startsPageChunk);
             const queuedHeight = pageRowHeights.reduce((total, height) => total + height, 0);
             const finalRow = groupIndex === preparedGroups.length - 1 && sourceIndex === group.rows.length - 1;
             const reservedClosingHeight = closingHeight;
@@ -5117,15 +5135,15 @@
             }
             if (pageRows.length && rowY + queuedHeight + nextHeight > layout.bottomLimit) break;
 
-            pageRows.push(group.rows[sourceIndex]);
+            pageRows.push(startsPageChunk ? fillPageContinuedActivity(group.rows[sourceIndex]) : group.rows[sourceIndex]);
             pageRowHeights.push(nextHeight);
             if (rowY + queuedHeight + nextHeight > layout.bottomLimit) break;
           }
 
           if (restartOnNewPage) continue;
           if (!pageRows.length) {
-            pageRows.push(group.rows[rowStart]);
-            pageRowHeights.push(group.rowHeights[rowStart]);
+            pageRows.push(fillPageContinuedActivity(group.rows[rowStart]));
+            pageRowHeights.push(getPageRowHeight(group.rows[rowStart], group.rowHeights[rowStart], true));
           }
 
           const compactedPageRows = compactPdfPageRows(pageRows, pageRowHeights);
@@ -5456,17 +5474,18 @@
         const chunkCount = Math.max(...values.map((chunks) => chunks.length));
         return Array.from({ length: chunkCount }, (_, chunkIndex) => {
           const activityChunk = values[0][chunkIndex];
-          const repeatedActivity = chunkIndex > 0 && !activityChunk?.text && Boolean(String(row.activity || "").trim());
+          const continuedActivity = chunkIndex > 0 && !activityChunk?.text && Boolean(String(row.activity || "").trim());
           return {
-            activity: repeatedActivity ? row.activity : activityChunk?.text || "",
-            activityFormats: repeatedActivity ? [...(row.activityFormats || [])] : activityChunk?.formats || [],
+            activity: activityChunk?.text || "",
+            activityFormats: activityChunk?.formats || [],
             result: values[1][chunkIndex]?.text || "",
             resultFormats: values[1][chunkIndex]?.formats || [],
             pic: values[2][chunkIndex]?.text || "",
             picFormats: values[2][chunkIndex]?.formats || [],
             continued: chunkIndex > 0,
             originalIndex: index,
-            repeatedActivity
+            continuedActivity: continuedActivity ? row.activity : "",
+            continuedActivityFormats: continuedActivity ? [...(row.activityFormats || [])] : []
           };
         });
       });
