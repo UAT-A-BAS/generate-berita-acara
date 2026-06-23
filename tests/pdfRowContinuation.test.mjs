@@ -58,6 +58,8 @@ const rows = splitPdfRows({}, layout, [{ activity: "activity", result: "long res
 assert.equal(rows.length, 2);
 assert.equal(rows[0].continued, false);
 assert.equal(rows[1].continued, true);
+assert.equal(rows[1].activity, "activity", "continuation chunks keep the original activity visible");
+assert.equal(rows[1].repeatedActivity, true, "repeated activity is marked so same-page chunks can be compacted cleanly");
 assert.deepEqual(maxLinesSeen, [17, 17, 17]);
 
 const getPdfRowNumber = Function(
@@ -84,17 +86,19 @@ const compacted = compactPdfPageRows([
     continued: false
   },
   {
-    activity: "",
+    activity: "activity",
     activityFormats: [],
     result: "second half",
     resultFormats: [{ start: 0, end: 6, italic: true }],
     pic: "",
     picFormats: [],
     originalIndex: 0,
-    continued: true
+    continued: true,
+    repeatedActivity: true
   }
 ], [100, 110]);
 assert.equal(compacted.rows.length, 1, "chunks of one activity on the same page render as one table row");
+assert.equal(compacted.rows[0].activity, "activity");
 assert.equal(compacted.rows[0].result, "first half\nsecond half");
 assert.deepEqual(compacted.rowHeights, [210]);
 assert.deepEqual(compacted.rows[0].resultFormats, [
