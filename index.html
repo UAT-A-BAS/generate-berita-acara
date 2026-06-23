@@ -5028,6 +5028,7 @@
         const previous = compactedRows[compactedRows.length - 1];
         if (previous && row.originalIndex != null && previous.originalIndex === row.originalIndex) {
           ["activity", "result", "pic"].forEach((key) => {
+            if (key === "activity" && row.repeatedActivity) return;
             const incoming = row[key] || "";
             if (!incoming) return;
             const separator = previous[key] ? "\n" : "";
@@ -5453,16 +5454,21 @@
           splitPdfRichChunks(pdf, layout, row[key], row[`${key}Formats`], layout.columns[offset + 1] - layout.padX * 2, maxLines)
         );
         const chunkCount = Math.max(...values.map((chunks) => chunks.length));
-        return Array.from({ length: chunkCount }, (_, chunkIndex) => ({
-          activity: values[0][chunkIndex]?.text || "",
-          activityFormats: values[0][chunkIndex]?.formats || [],
-          result: values[1][chunkIndex]?.text || "",
-          resultFormats: values[1][chunkIndex]?.formats || [],
-          pic: values[2][chunkIndex]?.text || "",
-          picFormats: values[2][chunkIndex]?.formats || [],
-          continued: chunkIndex > 0,
-          originalIndex: index
-        }));
+        return Array.from({ length: chunkCount }, (_, chunkIndex) => {
+          const activityChunk = values[0][chunkIndex];
+          const repeatedActivity = chunkIndex > 0 && !activityChunk?.text && Boolean(String(row.activity || "").trim());
+          return {
+            activity: repeatedActivity ? row.activity : activityChunk?.text || "",
+            activityFormats: repeatedActivity ? [...(row.activityFormats || [])] : activityChunk?.formats || [],
+            result: values[1][chunkIndex]?.text || "",
+            resultFormats: values[1][chunkIndex]?.formats || [],
+            pic: values[2][chunkIndex]?.text || "",
+            picFormats: values[2][chunkIndex]?.formats || [],
+            continued: chunkIndex > 0,
+            originalIndex: index,
+            repeatedActivity
+          };
+        });
       });
     }
 
