@@ -2315,6 +2315,14 @@
     let pendingCollabSeed = null;
     let pendingCollabSeedMustWin = false;
     let pendingNameResolver = null;
+    let collabIdleTimer = null;
+    let collabHiddenTimer = null;
+    const COLLAB_IDLE_TIMEOUT_MS = 5 * 60 * 1000;
+    const COLLAB_HIDDEN_TIMEOUT_MS = 60 * 1000;
+    const COLLAB_AUTOSAVE_DELAY_MS = 2500;
+    const COLLAB_RECONNECT_BASE_MS = 1200;
+    const COLLAB_RECONNECT_MAX_MS = 15000;
+    const COLLAB_ACTIVITY_EVENTS = ["keydown", "input", "click", "mousemove", "scroll", "touchstart"];
     const clientId = crypto.randomUUID();
     const collaboration = {
       docId: getDocIdFromUrl(),
@@ -2323,6 +2331,8 @@
       active: false,
       connected: false,
       ready: false,
+      idle: false,
+      reconnectAttempts: 0,
       localUpdatedAt: 0
     };
 
@@ -3207,6 +3217,110 @@
       return url.toString();
     }
 
+    function canReconnectCollaboration({ active, ready, idle, hidden, socketReadyState }) {
+      const socketIsOpeningOrOpen = socketReadyState === 0 || socketReadyState === 1;
+      return Boolean(active && ready && !idle && !hidden && !socketIsOpeningOrOpen);
+    }
+
+    function getCollaborationReconnectDelay(attempt, base = COLLAB_RECONNECT_BASE_MS, max = COLLAB_RECONNECT_MAX_MS) {
+      return Math.min(max, base * (2 ** Math.max(0, attempt)));
+    }
+
+    function shouldReconnectCollaboration() {
+      return canReconnectCollaboration({
+        active: collaboration.active,
+        ready: collaboration.ready,
+        idle: collaboration.idle,
+        hidden: document.hidden,
+        socketReadyState: sharedSocket?.readyState ?? 3
+      });
+    }
+
+    function scheduleCollaborationReconnect(immediate = false) {
+      clearTimeout(reconnectTimer);
+      if (!shouldReconnectCollaboration()) return;
+      const delay = immediate ? 0 : getCollaborationReconnectDelay(collaboration.reconnectAttempts);
+      if (!immediate) collaboration.reconnectAttempts += 1;
+      reconnectTimer = setTimeout(() => {
+        if (shouldReconnectCollaboration()) connectCollaborationSocket();
+      }, delay);
+    }
+
+    function scheduleCollaborationIdleTimer() {
+      clearTimeout(collabIdleTimer);
+      if (!collaboration.active) return;
+      collabIdleTimer = setTimeout(() => pauseCollaborationForIdle("idle"), COLLAB_IDLE_TIMEOUT_MS);
+    }
+
+    function flushSharedChanges() {
+      clearTimeout(sharedUpdateTimer);
+      clearTimeout(autosaveTimer);
+      const data = collectData();
+      saveUserSettings(data);
+      if (!collaboration.active || applyingRemoteData) return;
+      if (sharedState && Y) {
+        commitSharedData(data);
+      } else {
+        persistAutosave(data);
+      }
+    }
+
+    function closeSharedSocketForIdle(reason = "idle") {
+      clearTimeout(reconnectTimer);
+      const socket = sharedSocket;
+      sharedSocket = null;
+      collaboration.connected = false;
+      collaboration.users = new Map([[clientId, collaboration.user]]);
+      renderPresence();
+      setSyncStatus("offline");
+      if (socket && socket.readyState <= 1) socket.close(1000, reason);
+    }
+
+    function pauseCollaborationForIdle(reason = "idle") {
+      if (!collaboration.active) return;
+      collaboration.idle = true;
+      clearTimeout(collabIdleTimer);
+      clearTimeout(collabHiddenTimer);
+      flushSharedChanges();
+      closeSharedSocketForIdle(reason);
+      setStatus(reason === "hidden" ? "Kolaborasi dijeda saat tab tidak aktif." : "Kolaborasi dijeda karena idle.");
+    }
+
+    function markCollaborationActive() {
+      if (!collaboration.active) return;
+      collaboration.idle = false;
+      scheduleCollaborationIdleTimer();
+      if (!document.hidden && shouldReconnectCollaboration()) {
+        scheduleCollaborationReconnect(true);
+      }
+    }
+
+    function handleCollaborationVisibilityChange() {
+      if (!collaboration.active) return;
+      clearTimeout(collabHiddenTimer);
+      if (document.hidden) {
+        collabHiddenTimer = setTimeout(() => pauseCollaborationForIdle("hidden"), COLLAB_HIDDEN_TIMEOUT_MS);
+        return;
+      }
+      markCollaborationActive();
+    }
+
+    function handleCollaborationPageExit() {
+      if (!collaboration.active) return;
+      flushSharedChanges();
+      closeSharedSocketForIdle("unload");
+    }
+
+    function registerCollaborationActivityListeners() {
+      COLLAB_ACTIVITY_EVENTS.forEach((eventName) => {
+        const target = eventName === "scroll" ? window : document;
+        target.addEventListener(eventName, markCollaborationActive, { capture: true, passive: true });
+      });
+      document.addEventListener("visibilitychange", handleCollaborationVisibilityChange);
+      window.addEventListener("pagehide", handleCollaborationPageExit);
+      window.addEventListener("beforeunload", handleCollaborationPageExit);
+    }
+
     function sendPresence() {
       if (!sharedSocket || sharedSocket.readyState !== WebSocket.OPEN) return;
       sharedSocket.send(JSON.stringify({
@@ -3281,6 +3395,8 @@
       pendingCollabSeedMustWin = Boolean(seedData && shouldCreateDoc);
       collaboration.active = true;
       collaboration.users.set(clientId, collaboration.user);
+      collaboration.idle = false;
+      collaboration.reconnectAttempts = 0;
       renderPresence();
       setModeStatus("live");
       setSyncStatus("syncing");
@@ -3298,6 +3414,7 @@
           sendYUpdate(update);
         });
         collaboration.ready = true;
+        scheduleCollaborationIdleTimer();
         connectCollaborationSocket();
       } catch (error) {
         setSyncStatus("offline");
@@ -3308,6 +3425,8 @@
     function stopCollaboration(resetUi = true) {
       clearTimeout(reconnectTimer);
       clearTimeout(sharedUpdateTimer);
+      clearTimeout(collabIdleTimer);
+      clearTimeout(collabHiddenTimer);
       if (sharedSocket) {
         sharedSocket.onclose = null;
         sharedSocket.close();
@@ -3320,6 +3439,8 @@
       pendingCollabSeedMustWin = false;
       collaboration.connected = false;
       collaboration.ready = false;
+      collaboration.idle = false;
+      collaboration.reconnectAttempts = 0;
       collaboration.users = new Map();
       if (resetUi) {
         collaboration.active = false;
@@ -3331,6 +3452,8 @@
     }
 
     function connectCollaborationSocket() {
+      if (!collaboration.active || !collaboration.ready || collaboration.idle) return;
+      if (sharedSocket && sharedSocket.readyState <= 1) return;
       clearTimeout(reconnectTimer);
       setSyncStatus("syncing");
       firstServerSync = false;
@@ -3346,7 +3469,10 @@
       socket.addEventListener("open", () => {
         if (socket !== sharedSocket) return;
         collaboration.connected = true;
+        collaboration.idle = false;
+        collaboration.reconnectAttempts = 0;
         setSyncStatus("connected");
+        scheduleCollaborationIdleTimer();
         sendPresence();
       });
 
@@ -3382,9 +3508,10 @@
 
       socket.addEventListener("close", () => {
         if (socket !== sharedSocket) return;
+        sharedSocket = null;
         collaboration.connected = false;
         setSyncStatus("offline");
-        reconnectTimer = setTimeout(connectCollaborationSocket, 1800);
+        scheduleCollaborationReconnect();
       });
 
       socket.addEventListener("error", () => {
@@ -4674,7 +4801,7 @@
         if (!shouldPersistCollab) return;
         persistAutosave(data, updatedAt);
         if (shouldSync) queueSharedUpdate();
-      }, 250);
+      }, COLLAB_AUTOSAVE_DELAY_MS);
     }
 
     function maybeLoadAutosave() {
@@ -6350,6 +6477,7 @@
     }
 
     enableSplitter();
+    registerCollaborationActivityListeners();
     populateMaskingTypes();
     applyData(defaultData());
     commitHistory("initial");
