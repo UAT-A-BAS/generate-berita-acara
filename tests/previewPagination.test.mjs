@@ -20,13 +20,13 @@ function extractFunction(name) {
 
 const previewRenderer = Function(`
   const previewWrapChars = { activity: 39, result: 37, pic: 10 };
-  ${["normalizeText", "escapeHtml", "richSliceToHtml", "wrapPreviewRanges", "richTextToPreviewHtml"].map(extractFunction).join("\n")}
+  ${["parseListLine", "normalizeCellText", "escapeHtml", "richSliceToHtml", "wrapPreviewRanges", "richTextToPreviewHtml"].map(extractFunction).join("\n")}
   return richTextToPreviewHtml;
 `)();
 const receiverName = "- Nama penerima kuasa: Agustina Rosi Divina";
 assert.equal(
   previewRenderer(receiverName, [], "result"),
-  "<ul><li>Nama penerima kuasa: Agustina Rosi Divina</li></ul>",
+  '<span class="doc-list-line is-level-1"><span class="doc-list-marker">•</span><span>Nama penerima kuasa: Agustina Rosi Divina</span></span>',
   "preview must leave proportional-font wrapping to CSS instead of injecting a character-count break"
 );
 

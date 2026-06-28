@@ -90,7 +90,7 @@ assert.equal(
   "extreme closing blocks fall back instead of repeatedly adding pages"
 );
 
-assert.match(html, /const closingGap = layout\.bodyLine;/);
+assert.match(html, /const closingGap = layout\.bodyLine \* 2;/);
 assert.match(html, /drawPdfClosing\(pdf, data, layout, page\.closingY\)/);
 
 const paginationLayout = {
