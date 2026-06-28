@@ -1,0 +1,95 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+
+const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+
+function extractFunction(name) {
+  const start = html.indexOf(`function ${name}(`);
+  assert.notEqual(start, -1, `${name} must exist`);
+  const paramsStart = html.indexOf("(", start);
+  let paramsDepth = 0;
+  let bodyStart = -1;
+  for (let index = paramsStart; index < html.length; index += 1) {
+    if (html[index] === "(") paramsDepth += 1;
+    if (html[index] === ")") paramsDepth -= 1;
+    if (paramsDepth === 0) {
+      bodyStart = html.indexOf("{", index);
+      break;
+    }
+  }
+  let depth = 0;
+  for (let index = bodyStart; index < html.length; index += 1) {
+    if (html[index] === "{") depth += 1;
+    if (html[index] === "}") {
+      depth -= 1;
+      if (depth === 0) return html.slice(start, index + 1);
+    }
+  }
+  throw new Error(`Unable to extract ${name}`);
+}
+
+const listHelpers = Function(`
+  ${extractFunction("parseListLine")}
+  ${extractFunction("listPrefix")}
+  ${extractFunction("buildListEdits")}
+  return { parseListLine, buildListEdits };
+`)();
+
+function applyEdits(value, edits) {
+  return [...edits]
+    .sort((left, right) => right.start - left.start)
+    .reduce((text, edit) => text.slice(0, edit.start) + edit.text + text.slice(edit.end), value);
+}
+
+assert.deepEqual(
+  listHelpers.parseListLine("  o Sub kedua"),
+  {
+    kind: "bullet",
+    depth: 2,
+    marker: "o",
+    content: "Sub kedua",
+    prefixLength: 4,
+    numberParts: []
+  }
+);
+assert.equal(
+  applyEdits("Alpha\nBeta", listHelpers.buildListEdits("Alpha\nBeta", 0, 10, "bullet")),
+  "• Alpha\n• Beta",
+  "bullet button formats all selected lines"
+);
+assert.equal(
+  applyEdits("Alpha\nBeta", listHelpers.buildListEdits("Alpha\nBeta", 0, 10, "number")),
+  "1. Alpha\n2. Beta",
+  "number button formats all selected lines"
+);
+assert.equal(
+  applyEdits("• Alpha", listHelpers.buildListEdits("• Alpha", 0, 7, "indent")),
+  "  o Alpha",
+  "chunk down uses the second-level bullet"
+);
+assert.equal(
+  applyEdits("  o Alpha", listHelpers.buildListEdits("  o Alpha", 0, 9, "indent")),
+  "    - Alpha",
+  "chunk down stops at the third-level bullet format"
+);
+assert.equal(
+  applyEdits("    1.1.1. Alpha", listHelpers.buildListEdits("    1.1.1. Alpha", 0, 18, "outdent")),
+  "  1.1. Alpha",
+  "chunk up removes one numbering level"
+);
+
+const draftFilename = Function(
+  "sanitizeFilename",
+  `return (${extractFunction("draftFilename")});`
+)(Function(`return (${extractFunction("sanitizeFilename")});`)());
+assert.equal(draftFilename("Project BDS 4.4.0"), "Project BDS 4 4 0_berita_acara.json");
+assert.equal(draftFilename(""), "draft_berita_acara.json");
+
+assert.match(html, /data-rich-command="bullet"/);
+assert.match(html, /data-rich-command="number"/);
+assert.match(html, /data-rich-command="outdent"/);
+assert.match(html, /data-rich-command="indent"/);
+assert.match(html, /function syncRichTextareaVisual/);
+assert.match(html, /function autoResizeTextarea/);
+assert.match(html, /resize:\s*none/);
+assert.match(html, /class="readonly-display"/);

@@ -451,7 +451,93 @@
 
     textarea {
       min-height: 92px;
-      resize: vertical;
+      overflow-y: hidden;
+      resize: none;
+    }
+
+    .rich-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 6px;
+      padding: 4px;
+      border: 1px solid rgba(201, 211, 223, 0.95);
+      border-bottom: 0;
+      border-radius: 8px 8px 0 0;
+      background: #f7f9fc;
+    }
+
+    .rich-toolbar + .rich-text-shell {
+      margin-top: 0;
+    }
+
+    .rich-tool {
+      min-width: 30px;
+      min-height: 30px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 4px 7px;
+      background: transparent;
+      color: var(--brand-2);
+      cursor: pointer;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 850;
+      line-height: 1;
+    }
+
+    .rich-tool:hover,
+    .rich-tool[aria-pressed="true"] {
+      border-color: #9fc2df;
+      background: #d9e8f5;
+      color: #003f73;
+    }
+
+    .rich-text-shell {
+      position: relative;
+      display: block;
+      margin-top: 6px;
+    }
+
+    .rich-text-shell textarea {
+      position: relative;
+      z-index: 2;
+      margin-top: 0;
+      background: transparent;
+      caret-color: #001b3a;
+    }
+
+    .rich-text-shell textarea.rich-text-input {
+      color: transparent !important;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .rich-text-shell textarea::placeholder {
+      color: rgba(91, 103, 120, 0.48);
+      -webkit-text-fill-color: rgba(91, 103, 120, 0.48);
+    }
+
+    .rich-text-mirror {
+      position: absolute;
+      z-index: 1;
+      inset: 1px;
+      overflow: hidden;
+      padding: 10px 11px;
+      border-radius: 7px;
+      color: #001b3a;
+      font-size: 14px;
+      font-weight: 650;
+      line-height: 1.45;
+      pointer-events: none;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .readonly-display {
+      background: #eef2f6 !important;
+      color: #66768a !important;
+      border-style: dashed !important;
+      cursor: not-allowed;
     }
 
     .segmented {
@@ -604,6 +690,7 @@
 
     .floating-tools-right {
       right: 18px;
+      flex-direction: row;
     }
 
     .floating-tools .btn {
@@ -614,6 +701,32 @@
     .floating-tools .btn.has-badge {
       position: relative;
       padding-right: 34px;
+    }
+
+    .floating-tools-right .generate-message {
+      position: absolute;
+      right: 0;
+      bottom: calc(100% + 8px);
+      width: max-content;
+      max-width: min(420px, calc(100vw - 36px));
+      min-height: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      background: #fff;
+      box-shadow: 0 10px 24px rgba(23, 32, 42, 0.14);
+    }
+
+    .floating-tools-right .generate-message:empty {
+      display: none;
+    }
+
+    #commentModeBtn.is-active,
+    #floatingCommentBtn.is-active {
+      border-color: #c28a00;
+      background: #ffd75a;
+      color: #3f2c00;
+      box-shadow: 0 0 0 3px rgba(255, 215, 90, 0.28);
     }
 
     .comment-badge {
@@ -1122,13 +1235,6 @@
       color: var(--ok);
     }
 
-    .output-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-    }
-
     .generate-message {
       min-height: 20px;
       font-size: 13px;
@@ -1146,11 +1252,21 @@
     .preview-wrap {
       position: sticky;
       top: 18px;
+      display: grid;
+      height: calc(100vh - 36px);
+      grid-template-rows: auto minmax(0, 1fr);
+      overflow: hidden;
+    }
+
+    .preview-wrap > .panel-body {
+      min-height: 0;
+      overflow-x: auto;
+      overflow-y: auto;
+      overscroll-behavior: contain;
     }
 
     #preview {
       max-width: 100%;
-      overflow-x: auto;
       padding-bottom: 4px;
     }
 
@@ -1235,6 +1351,29 @@
       padding-left: 2px;
     }
 
+    .doc-list-line {
+      display: inline-grid;
+      width: 100%;
+      grid-template-columns: 28px minmax(0, 1fr);
+      align-items: start;
+      white-space: normal;
+    }
+
+    .doc-list-line.is-level-2 {
+      width: calc(100% - 14px);
+      margin-left: 14px;
+    }
+
+    .doc-list-line.is-level-3 {
+      width: calc(100% - 28px);
+      margin-left: 28px;
+    }
+
+    .doc-list-marker {
+      padding-right: 4px;
+      text-align: right;
+    }
+
     .doc-table th:first-child,
     .doc-table td:first-child {
       padding-left: 2px;
@@ -1259,7 +1398,26 @@
     }
 
     .doc-body {
-      margin-top: 14px;
+      margin-top: 26px;
+    }
+
+    [data-preview-target-id],
+    [data-preview-group-index],
+    [data-preview-maker-index] {
+      border-radius: 3px;
+      cursor: pointer;
+      transition: background 180ms ease, box-shadow 180ms ease;
+    }
+
+    [data-preview-target-id]:hover,
+    [data-preview-group-index]:hover,
+    [data-preview-maker-index]:hover,
+    [data-preview-target-id]:focus-visible,
+    [data-preview-group-index]:focus-visible,
+    [data-preview-maker-index]:focus-visible {
+      background: rgba(255, 242, 0, 0.22);
+      box-shadow: 0 0 0 2px rgba(194, 138, 0, 0.28);
+      outline: none;
     }
 
     .signature {
@@ -1611,8 +1769,7 @@
     #maskSourceText,
     #maskPreviewText {
       min-height: 58px;
-      max-height: 82px;
-      resize: vertical;
+      max-height: none;
     }
 
     .mask-suggestion {
@@ -1673,6 +1830,27 @@
       animation: annotation-fade 2s ease-out forwards;
     }
 
+    .preview-input-hit {
+      outline: 4px solid #fff200 !important;
+      outline-offset: 3px !important;
+      box-shadow: 0 0 0 9px rgba(255, 242, 0, 0.5), 0 12px 28px rgba(92, 67, 0, 0.18) !important;
+      animation: annotation-fade 2s ease-out forwards;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+      }
+
+      .comment-card,
+      .annotation-hit,
+      .preview-input-hit {
+        animation: none !important;
+      }
+    }
+
     @media (max-width: 720px) {
       .comment-card {
         grid-template-columns: 1fr;
@@ -1709,6 +1887,12 @@
 
       .preview-wrap {
         position: static;
+        height: auto;
+        overflow: visible;
+      }
+
+      .preview-wrap > .panel-body {
+        overflow: auto;
       }
     }
 
@@ -1943,15 +2127,6 @@
               </div>
             </section>
 
-            <section class="section" aria-labelledby="output-section">
-              <div class="section-title">
-                <h3 id="output-section">Output</h3>
-              </div>
-              <div class="output-actions">
-                <button class="btn btn-primary" id="generateBtn" type="button">Generate PDF</button>
-                <span class="generate-message" id="generateMessage" role="status" aria-live="polite"></span>
-              </div>
-            </section>
           </div>
         </div>
       </section>
@@ -1978,11 +2153,16 @@
       </button>
     </div>
     <div class="floating-tools floating-tools-right" aria-label="Akses cepat komentar">
+      <button class="btn btn-primary" id="generateBtn" type="button" title="Generate PDF">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15h8"/><path d="M8 18h5"/></svg>
+        Generate PDF
+      </button>
       <button class="btn btn-primary" id="floatingCommentBtn" type="button" title="Komentar review">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
         Comment
         <span class="comment-badge" id="floatingCommentBadge" aria-hidden="true" hidden>0</span>
       </button>
+      <span class="generate-message" id="generateMessage" role="status" aria-live="polite"></span>
     </div>
     <section class="comment-drawer" id="commentDrawer" aria-labelledby="comments-title" hidden>
       <div class="comment-panel-head">
@@ -1995,7 +2175,7 @@
         </button>
       </div>
       <div class="comment-toolbar">
-        <button class="btn btn-primary" id="commentModeBtn" type="button">Add Comment</button>
+        <button class="btn btn-secondary" id="commentModeBtn" type="button">Add Comment</button>
         <select id="commentFilter" aria-label="Filter komentar">
           <option value="all">All</option>
           <option value="unresolved">Unresolved</option>
@@ -2008,6 +2188,7 @@
       <div class="dialog-box">
         <h3 id="commentDialogTitle">Tambah komentar</h3>
         <p id="commentIdentityText">Reviewer: -</p>
+        <p class="comment-target" id="commentTargetLabel">Field: -</p>
         <label>Komentar <span class="required-mark">*</span>
           <textarea id="commentText" rows="4" placeholder="Tulis catatan reviewer" required></textarea>
         </label>
@@ -2038,10 +2219,10 @@
           </select>
         </label>
         <label>Text dipilih
-          <textarea id="maskSourceText" rows="2" readonly></textarea>
+          <textarea class="readonly-display" id="maskSourceText" rows="2" readonly aria-readonly="true"></textarea>
         </label>
         <label>Preview masking
-          <textarea id="maskPreviewText" rows="2" readonly></textarea>
+          <textarea class="readonly-display" id="maskPreviewText" rows="2" readonly aria-readonly="true"></textarea>
         </label>
         <div class="actions">
           <button class="btn btn-secondary" id="cancelMaskBtn" type="button">Batal</button>
@@ -2113,12 +2294,35 @@
         <input data-field="no" readonly>
       </label>
       <label>Aktivitas <span class="required-mark">*</span>
+        <span class="rich-toolbar" role="toolbar" aria-label="Format aktivitas">
+          <button class="rich-tool" data-rich-command="bold" type="button" aria-label="Bold" title="Bold (Ctrl+B)"><strong>B</strong></button>
+          <button class="rich-tool" data-rich-command="italic" type="button" aria-label="Italic" title="Italic (Ctrl+I)"><em>I</em></button>
+          <button class="rich-tool" data-rich-command="underline" type="button" aria-label="Underline" title="Underline (Ctrl+U)"><u>U</u></button>
+          <button class="rich-tool" data-rich-command="bullet" type="button" aria-label="Bullet" title="Bullet">•</button>
+          <button class="rich-tool" data-rich-command="number" type="button" aria-label="Numbering" title="Numbering">1.</button>
+          <button class="rich-tool" data-rich-command="outdent" type="button" aria-label="Chunk up" title="Chunk up">←</button>
+          <button class="rich-tool" data-rich-command="indent" type="button" aria-label="Chunk down" title="Chunk down">→</button>
+        </span>
         <textarea data-field="activity" placeholder="Aktivitas"></textarea>
       </label>
       <label>Hasil / Keterangan <span class="required-mark">*</span>
+        <span class="rich-toolbar" role="toolbar" aria-label="Format hasil atau keterangan">
+          <button class="rich-tool" data-rich-command="bold" type="button" aria-label="Bold" title="Bold (Ctrl+B)"><strong>B</strong></button>
+          <button class="rich-tool" data-rich-command="italic" type="button" aria-label="Italic" title="Italic (Ctrl+I)"><em>I</em></button>
+          <button class="rich-tool" data-rich-command="underline" type="button" aria-label="Underline" title="Underline (Ctrl+U)"><u>U</u></button>
+          <button class="rich-tool" data-rich-command="bullet" type="button" aria-label="Bullet" title="Bullet">•</button>
+          <button class="rich-tool" data-rich-command="number" type="button" aria-label="Numbering" title="Numbering">1.</button>
+          <button class="rich-tool" data-rich-command="outdent" type="button" aria-label="Chunk up" title="Chunk up">←</button>
+          <button class="rich-tool" data-rich-command="indent" type="button" aria-label="Chunk down" title="Chunk down">→</button>
+        </span>
         <textarea data-field="result" placeholder="Hasil / Keterangan"></textarea>
       </label>
       <label>PIC <span class="required-mark">*</span>
+        <span class="rich-toolbar" role="toolbar" aria-label="Format PIC">
+          <button class="rich-tool" data-rich-command="bold" type="button" aria-label="Bold" title="Bold (Ctrl+B)"><strong>B</strong></button>
+          <button class="rich-tool" data-rich-command="italic" type="button" aria-label="Italic" title="Italic (Ctrl+I)"><em>I</em></button>
+          <button class="rich-tool" data-rich-command="underline" type="button" aria-label="Underline" title="Underline (Ctrl+U)"><u>U</u></button>
+        </span>
         <textarea data-field="pic" placeholder="PIC"></textarea>
       </label>
       <div class="row-actions">
@@ -2298,7 +2502,10 @@
       replyingCommentId: null,
       editingReplyId: null,
       maskSelection: null,
-      maskTypeActiveIndex: -1
+      maskTypeActiveIndex: -1,
+      maskTypeShowAll: false,
+      commentRenderSignature: "",
+      previewHighlightTimer: null
     };
 
     let activeRoleInput = null;
@@ -2629,11 +2836,203 @@
     }
 
     function normalizeCellText(value) {
-      return normalizeText(value)
+      return String(value || "")
+        .replace(/\r\n/g, "\n")
+        .replace(/^\n+|\n+$/g, "")
         .split("\n")
-        .map((line) => line.trim())
+        .map((line) => parseListLine(line) ? line.trimEnd() : line.trim())
         .join("\n")
         .replace(/\n{3,}/g, "\n\n");
+    }
+
+    function parseListLine(line) {
+      const value = String(line || "");
+      const indent = value.match(/^\s*/)?.[0] || "";
+      const rest = value.slice(indent.length);
+      const number = rest.match(/^(\d+(?:\.\d+){0,2})\.\s+(.*)$/);
+      if (number) {
+        const numberParts = number[1].split(".").map((part) => Number(part) || 1);
+        return {
+          kind: "number",
+          depth: Math.min(3, Math.max(numberParts.length, Math.floor(indent.length / 2) + 1)),
+          marker: number[1],
+          content: number[2],
+          prefixLength: indent.length + number[1].length + 2,
+          numberParts
+        };
+      }
+      const bullet = rest.match(/^([•o-])\s+(.*)$/i);
+      if (bullet) {
+        return {
+          kind: "bullet",
+          depth: Math.min(3, Math.floor(indent.length / 2) + 1),
+          marker: bullet[1],
+          content: bullet[2],
+          prefixLength: indent.length + bullet[1].length + 1,
+          numberParts: []
+        };
+      }
+      return null;
+    }
+
+    function listPrefix(kind, depth, ordinal = 1, numberParts = []) {
+      const safeDepth = Math.max(1, Math.min(3, Number(depth) || 1));
+      const indent = "  ".repeat(safeDepth - 1);
+      if (kind === "bullet") return `${indent}${["•", "o", "-"][safeDepth - 1]} `;
+      let parts = Array.isArray(numberParts) && numberParts.length ? numberParts.slice(0, 3) : [];
+      if (!parts.length) parts = safeDepth === 1 ? [ordinal] : Array(safeDepth - 1).fill(1).concat(ordinal);
+      while (parts.length < safeDepth) parts.push(1);
+      parts = parts.slice(0, safeDepth);
+      return `${indent}${parts.join(".")}. `;
+    }
+
+    function buildListEdits(value, selectionStart, selectionEnd, command) {
+      const text = String(value || "");
+      const safeStart = Math.max(0, Math.min(text.length, Number(selectionStart) || 0));
+      const safeEnd = Math.max(safeStart, Math.min(text.length, Number(selectionEnd) || safeStart));
+      const firstLineStart = text.lastIndexOf("\n", Math.max(0, safeStart - 1)) + 1;
+      const endProbe = safeEnd > safeStart && text[safeEnd - 1] === "\n" ? safeEnd - 1 : safeEnd;
+      const nextBreak = text.indexOf("\n", endProbe);
+      const lastLineEnd = nextBreak === -1 ? text.length : nextBreak;
+      const records = [];
+      let cursor = firstLineStart;
+      while (cursor <= lastLineEnd) {
+        const breakAt = text.indexOf("\n", cursor);
+        const end = breakAt === -1 || breakAt > lastLineEnd ? lastLineEnd : breakAt;
+        const line = text.slice(cursor, end);
+        records.push({ start: cursor, end, line, info: parseListLine(line) });
+        if (end >= lastLineEnd) break;
+        cursor = end + 1;
+      }
+
+      const editable = records.filter((record) => record.line.trim());
+      const togglesOff = (command === "bullet" || command === "number")
+        && editable.length > 0
+        && editable.every((record) => record.info?.kind === command);
+      let ordinal = 0;
+      return records.flatMap((record) => {
+        if (!record.line.trim()) return [];
+        const info = record.info;
+        const prefixEnd = record.start + (info?.prefixLength || 0);
+        if (togglesOff) return [{ start: record.start, end: prefixEnd, text: "" }];
+
+        if (command === "bullet" || command === "number") {
+          ordinal += 1;
+          const depth = info?.depth || 1;
+          const parts = command === "number" && info?.kind === "number" ? info.numberParts : [];
+          return [{ start: record.start, end: prefixEnd, text: listPrefix(command, depth, ordinal, parts) }];
+        }
+
+        if (!info || (command !== "indent" && command !== "outdent")) return [];
+        const depth = command === "indent" ? Math.min(3, info.depth + 1) : Math.max(1, info.depth - 1);
+        return [{
+          start: record.start,
+          end: prefixEnd,
+          text: listPrefix(info.kind, depth, ordinal + 1, info.numberParts)
+        }];
+      });
+    }
+
+    function shiftRichFormatsForEdit(formats, start, end, replacementLength, nextLength) {
+      const delta = replacementLength - (end - start);
+      const shifted = [];
+      (Array.isArray(formats) ? formats : []).forEach((format) => {
+        if (format.end <= start) {
+          shifted.push({ ...format });
+          return;
+        }
+        if (format.start >= end) {
+          shifted.push({ ...format, start: format.start + delta, end: format.end + delta });
+          return;
+        }
+        if (format.start < start) shifted.push({ ...format, end: start });
+        if (format.end > end) {
+          shifted.push({ ...format, start: start + replacementLength, end: format.end + delta });
+        }
+      });
+      return sanitizeRichFormats(shifted, nextLength);
+    }
+
+    function applyRichTextEdits(textarea, edits) {
+      if (!textarea || !edits.length) return false;
+      const selectionStart = textarea.selectionStart ?? 0;
+      const selectionEnd = textarea.selectionEnd ?? selectionStart;
+      let formats = readRichFormats(textarea);
+      let value = textarea.value;
+      [...edits].sort((left, right) => right.start - left.start).forEach((edit) => {
+        value = value.slice(0, edit.start) + edit.text + value.slice(edit.end);
+        formats = shiftRichFormatsForEdit(formats, edit.start, edit.end, edit.text.length, value.length);
+      });
+      const deltaBefore = edits
+        .filter((edit) => edit.end <= selectionStart)
+        .reduce((total, edit) => total + edit.text.length - (edit.end - edit.start), 0);
+      const totalDelta = edits.reduce((total, edit) => total + edit.text.length - (edit.end - edit.start), 0);
+      textarea.value = value;
+      writeRichFormats(textarea, formats);
+      textarea.focus();
+      textarea.setSelectionRange(
+        Math.max(0, selectionStart + deltaBefore),
+        Math.max(0, selectionEnd + totalDelta)
+      );
+      textarea.dispatchEvent(new Event("input", { bubbles: true }));
+      return true;
+    }
+
+    function autoResizeTextarea(textarea) {
+      if (!textarea?.matches?.("textarea")) return;
+      textarea.style.height = "auto";
+      textarea.style.height = `${Math.max(58, textarea.scrollHeight + 2)}px`;
+    }
+
+    function syncRichTextareaVisual(textarea) {
+      if (!textarea?.matches?.("#groups textarea")) return;
+      const mirror = textarea.closest(".rich-text-shell")?.querySelector(".rich-text-mirror");
+      if (mirror) mirror.innerHTML = richTextToHtml(textarea.value, readRichFormats(textarea));
+      autoResizeTextarea(textarea);
+    }
+
+    function enhanceRichTextarea(textarea) {
+      if (!textarea || textarea.closest(".rich-text-shell")) return;
+      const shell = document.createElement("span");
+      shell.className = "rich-text-shell";
+      const mirror = document.createElement("span");
+      mirror.className = "rich-text-mirror";
+      mirror.setAttribute("aria-hidden", "true");
+      textarea.parentElement.insertBefore(shell, textarea);
+      shell.append(mirror, textarea);
+      textarea.classList.add("rich-text-input");
+      syncRichTextareaVisual(textarea);
+    }
+
+    function isSelectionFormatted(textarea, type) {
+      const formats = readRichFormats(textarea);
+      let start = textarea.selectionStart ?? 0;
+      let end = textarea.selectionEnd ?? start;
+      if (start === end) {
+        if (!textarea.value.length) return false;
+        start = Math.max(0, start - 1);
+        end = Math.max(start + 1, end);
+      }
+      for (let index = start; index < end; index += 1) {
+        if (!formats.some((format) => format[type] && index >= format.start && index < format.end)) return false;
+      }
+      return true;
+    }
+
+    function updateRichToolbarState(textarea) {
+      const toolbar = textarea?.closest("label")?.querySelector(".rich-toolbar");
+      if (!toolbar) return;
+      ["bold", "italic", "underline"].forEach((type) => {
+        const button = toolbar.querySelector(`[data-rich-command="${type}"]`);
+        if (button) button.setAttribute("aria-pressed", String(isSelectionFormatted(textarea, type)));
+      });
+      const currentLineStart = textarea.value.lastIndexOf("\n", Math.max(0, (textarea.selectionStart ?? 0) - 1)) + 1;
+      const currentLineEnd = textarea.value.indexOf("\n", textarea.selectionStart ?? 0);
+      const info = parseListLine(textarea.value.slice(currentLineStart, currentLineEnd === -1 ? textarea.value.length : currentLineEnd));
+      ["bullet", "number"].forEach((type) => {
+        const button = toolbar.querySelector(`[data-rich-command="${type}"]`);
+        if (button) button.setAttribute("aria-pressed", String(info?.kind === type));
+      });
     }
 
     function readRichFormats(textarea) {
@@ -2646,6 +3045,7 @@
 
     function writeRichFormats(textarea, formats) {
       textarea.dataset.formats = JSON.stringify(sanitizeRichFormats(formats, textarea.value.length));
+      if (textarea.closest?.(".rich-text-shell")) syncRichTextareaVisual(textarea);
     }
 
     function sanitizeRichFormats(formats, length) {
@@ -2712,45 +3112,22 @@
     }
 
     function richTextToHtml(value, formats = []) {
-      const text = normalizeText(value);
+      const text = normalizeCellText(value);
       const lines = text.split("\n");
       const html = [];
-      let listOpen = false;
-      let listType = "";
-      let listNumber = 1;
       let offset = 0;
 
       lines.forEach((line, lineIndex) => {
-        const listItem = line.match(/^\s*(?:(\d+)[.)]|-)\s+(.*)$/);
+        const listItem = parseListLine(line);
         if (listItem) {
-          const nextType = listItem[1] ? "ol" : "ul";
-          if (listOpen && listType !== nextType) {
-            html.push(`</${listType}>`);
-            listOpen = false;
-          }
-          if (!listOpen) {
-            listNumber = listItem[1] ? Number(listItem[1]) : 1;
-            html.push(nextType === "ol" ? `<ol start="${listNumber}">` : "<ul>");
-            listOpen = true;
-            listType = nextType;
-          }
-          const contentStart = line.indexOf(listItem[2]);
-          html.push(`<li>${richSliceToHtml(text, offset + contentStart, offset + line.length, formats)}</li>`);
-          listNumber += 1;
-          offset += line.length + 1;
-          return;
+          const marker = listItem.kind === "bullet" ? ["•", "o", "-"][listItem.depth - 1] : `${listItem.marker}.`;
+          html.push(`<span class="doc-list-line is-level-${listItem.depth}"><span class="doc-list-marker">${escapeHtml(marker)}</span><span>${richSliceToHtml(text, offset + listItem.prefixLength, offset + line.length, formats)}</span></span>`);
+        } else {
+          html.push(line ? richSliceToHtml(text, offset, offset + line.length, formats) : "<br>");
         }
-        if (listOpen) {
-          html.push(`</${listType}>`);
-          listOpen = false;
-          listType = "";
-        }
-        html.push(line ? richSliceToHtml(text, offset, offset + line.length, formats) : "<br>");
         if (lineIndex < lines.length - 1) html.push("<br>");
         offset += line.length + 1;
       });
-
-      if (listOpen) html.push(`</${listType}>`);
       return html.join("");
     }
 
@@ -2774,47 +3151,24 @@
     }
 
     function richTextToPreviewHtml(value, formats = [], key = "activity") {
-      const text = normalizeText(value);
+      const text = normalizeCellText(value);
       const lines = text.split("\n");
       const html = [];
-      let listOpen = false;
-      let listType = "";
-      let listNumber = 1;
       let offset = 0;
 
       const renderWrapped = (start, end) => richSliceToHtml(text, start, end, formats);
 
       lines.forEach((line, lineIndex) => {
-        const listItem = line.match(/^\s*(?:(\d+)[.)]|-)\s+(.*)$/);
+        const listItem = parseListLine(line);
         if (listItem) {
-          const nextType = listItem[1] ? "ol" : "ul";
-          if (listOpen && listType !== nextType) {
-            html.push(`</${listType}>`);
-            listOpen = false;
-          }
-          if (!listOpen) {
-            listNumber = listItem[1] ? Number(listItem[1]) : 1;
-            html.push(nextType === "ol" ? `<ol start="${listNumber}">` : "<ul>");
-            listOpen = true;
-            listType = nextType;
-          }
-          const contentStart = line.indexOf(listItem[2]);
-          html.push(`<li>${renderWrapped(offset + contentStart, offset + line.length)}</li>`);
-          listNumber += 1;
-          offset += line.length + 1;
-          return;
+          const marker = listItem.kind === "bullet" ? ["•", "o", "-"][listItem.depth - 1] : `${listItem.marker}.`;
+          html.push(`<span class="doc-list-line is-level-${listItem.depth}"><span class="doc-list-marker">${escapeHtml(marker)}</span><span>${renderWrapped(offset + listItem.prefixLength, offset + line.length)}</span></span>`);
+        } else {
+          html.push(line ? renderWrapped(offset, offset + line.length) : "<br>");
         }
-        if (listOpen) {
-          html.push(`</${listType}>`);
-          listOpen = false;
-          listType = "";
-        }
-        html.push(line ? renderWrapped(offset, offset + line.length) : "<br>");
         if (lineIndex < lines.length - 1) html.push("<br>");
         offset += line.length + 1;
       });
-
-      if (listOpen) html.push(`</${listType}>`);
       return html.join("");
     }
 
@@ -3146,17 +3500,8 @@
         .slice(0, 120) || "berita-acara";
     }
 
-    function timestampForFilename(date = new Date()) {
-      const pad = (value) => String(value).padStart(2, "0");
-      return [
-        date.getFullYear(),
-        pad(date.getMonth() + 1),
-        pad(date.getDate())
-      ].join("") + "-" + [
-        pad(date.getHours()),
-        pad(date.getMinutes()),
-        pad(date.getSeconds())
-      ].join("");
+    function draftFilename(projectName) {
+      return `${sanitizeFilename(projectName || "draft")}_berita_acara.json`;
     }
 
     function setMessage(type, message) {
@@ -3564,6 +3909,7 @@
       writeRichFormats(activity, rowData.activityFormats || []);
       writeRichFormats(result, rowData.resultFormats || []);
       writeRichFormats(pic, rowData.picFormats || []);
+      [activity, result, pic].forEach(enhanceRichTextarea);
       groupNode.querySelector("[data-rows]").appendChild(node);
       refreshNumbers();
       return node;
@@ -4145,10 +4491,32 @@
         button.classList.toggle("is-active", appState.annotationMode);
         button.setAttribute("aria-pressed", String(appState.annotationMode));
       });
+      els.commentModeBtn.textContent = appState.annotationMode ? "Comment Mode On" : "Add Comment";
       setStatus(appState.annotationMode ? "Mode komentar aktif. Klik field atau preview." : "Mode komentar nonaktif.");
     }
 
     function targetLabelFromElement(element) {
+      const fieldLabels = {
+        activity: "Aktivitas",
+        result: "Hasil / Keterangan",
+        pic: "PIC",
+        date: "Tanggal aktivitas",
+        name: "Nama",
+        role: "Jabatan"
+      };
+      const idLabels = {
+        featureName: "Nama Project",
+        branchName: "Cabang",
+        implementationDate: "Tanggal implementasi",
+        divisionLine: "Divisi GPOL",
+        applicationLine: "Application line",
+        city: "Kota",
+        signDate: "Tanggal sign-off",
+        approverName: "Menyetujui - Nama",
+        approverRole: "Menyetujui - Jabatan"
+      };
+      if (element.dataset.field && fieldLabels[element.dataset.field]) return fieldLabels[element.dataset.field];
+      if (element.id && idLabels[element.id]) return idLabels[element.id];
       const label = element.closest("label")?.textContent?.replace(/\s+/g, " ").trim();
       if (label) return label.replace("*", "").trim();
       if (element.id) return element.id;
@@ -4323,7 +4691,47 @@
       };
     }
 
+    function resolvePreviewLinkedInput(element) {
+      const link = element?.closest?.("[data-preview-target-id], [data-preview-group-index], [data-preview-maker-index]");
+      if (!link) return null;
+      if (link.dataset.previewTargetId) return document.getElementById(link.dataset.previewTargetId);
+      if (link.dataset.previewMakerIndex != null) {
+        const maker = els.makers.querySelectorAll("[data-maker]")[Number(link.dataset.previewMakerIndex)];
+        return maker?.querySelector(`[data-field="${CSS.escape(link.dataset.previewField || "name")}"]`) || null;
+      }
+      const group = els.groups.querySelectorAll("[data-group]")[Number(link.dataset.previewGroupIndex)];
+      if (!group) return null;
+      if (link.dataset.previewRowIndex == null) return group.querySelector("[data-field='date']");
+      const row = group.querySelectorAll("[data-row]")[Number(link.dataset.previewRowIndex)];
+      return row?.querySelector(`[data-field="${CSS.escape(link.dataset.previewField || "activity")}"]`) || null;
+    }
+
+    function focusInputFromPreview(element) {
+      const input = resolvePreviewLinkedInput(element);
+      if (!input) return false;
+      const behavior = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ? "auto" : "smooth";
+      input.scrollIntoView({ behavior, block: "center", inline: "nearest" });
+      input.focus({ preventScroll: true });
+      input.classList.remove("preview-input-hit");
+      void input.offsetWidth;
+      input.classList.add("preview-input-hit");
+      clearTimeout(appState.previewHighlightTimer);
+      appState.previewHighlightTimer = setTimeout(() => input.classList.remove("preview-input-hit"), 2200);
+      updateRichToolbarState(input);
+      return true;
+    }
+
     function getCommentTarget(event) {
+      const previewField = resolvePreviewLinkedInput(event.target);
+      if (previewField) {
+        return {
+          type: "field",
+          id: previewField.id || "",
+          field: previewField.dataset.field || "",
+          path: elementPathFrom(document.querySelector(".app"), previewField),
+          label: targetLabelFromElement(previewField)
+        };
+      }
       const field = event.target.closest("input, textarea, select");
       if (field && !field.closest(".comment-dialog") && !field.closest(".confirm-dialog")) {
         return {
@@ -4389,6 +4797,7 @@
       if (els.commentTargetLabel) els.commentTargetLabel.textContent = target.label;
       els.commentIdentityText.textContent = `Reviewer: ${collaboration.user.name}`;
       els.commentText.value = "";
+      autoResizeTextarea(els.commentText);
       document.getElementById("commentDialogTitle").textContent = "Tambah komentar";
       els.commentDialog.hidden = false;
       els.commentText.focus();
@@ -4417,6 +4826,7 @@
       };
       els.commentIdentityText.textContent = `Reviewer: ${collaboration.user.name}`;
       els.commentText.value = comment.text || "";
+      autoResizeTextarea(els.commentText);
       document.getElementById("commentDialogTitle").textContent = comment.resolved ? "Follow up komentar" : "Edit komentar";
       els.commentDialog.hidden = false;
       els.commentText.focus();
@@ -4441,6 +4851,7 @@
       if (els.commentTargetLabel) els.commentTargetLabel.textContent = comment.label || "Area terkait";
       els.commentIdentityText.textContent = `Reviewer: ${collaboration.user.name}`;
       els.commentText.value = "";
+      autoResizeTextarea(els.commentText);
       document.getElementById("commentDialogTitle").textContent = "Reply komentar";
       els.commentDialog.hidden = false;
       els.commentText.focus();
@@ -4471,6 +4882,7 @@
       if (els.commentTargetLabel) els.commentTargetLabel.textContent = comment.label || "Area terkait";
       els.commentIdentityText.textContent = `Reviewer: ${collaboration.user.name}`;
       els.commentText.value = reply.text || "";
+      autoResizeTextarea(els.commentText);
       document.getElementById("commentDialogTitle").textContent = "Edit reply";
       els.commentDialog.hidden = false;
       els.commentText.focus();
@@ -4710,6 +5122,13 @@
       const resolved = normalized.length - unresolved;
       updateFloatingCommentBadge(unresolved);
       if (els.commentSummary) els.commentSummary.textContent = `${unresolved} unresolved, ${resolved} resolved`;
+      const renderSignature = JSON.stringify({
+        filter: els.commentFilter?.value || "all",
+        user: normalizeCommentUserName(collaboration.user.name),
+        comments: normalized
+      });
+      if (appState.commentRenderSignature === renderSignature) return;
+      appState.commentRenderSignature = renderSignature;
       if (!comments.length) {
         els.commentList.innerHTML = `<div class="comment-empty">Belum ada komentar review.</div>`;
         return;
@@ -4759,10 +5178,8 @@
     function saveDraft() {
       const data = collectData();
       saveUserSettings(data);
-      const base = [data.featureName, data.branchName].filter(Boolean).join(" ") || "draft-berita-acara";
-      const name = sanitizeFilename(`${base} ${timestampForFilename()}`);
       const blob = new Blob([JSON.stringify({ ...data, exportedAt: new Date().toISOString() }, null, 2)], { type: "application/json" });
-      downloadBlob(blob, `${name}.json`);
+      downloadBlob(blob, draftFilename(data.featureName));
       setMessage("ok", "Draft JSON diekspor.");
       setStatus("Draft JSON diekspor.");
     }
@@ -4829,10 +5246,13 @@
       const createPaper = (withTable = true) => {
         const article = document.createElement("article");
         article.className = "paper";
+        const headerEntries = pdfLayout?.pageHeaderEntries || [
+          { text: buildHeaderLineOne(data), targetId: "featureName" },
+          { text: buildHeaderLineTwo(data), targetId: "branchName" }
+        ];
         article.innerHTML = `
           <div class="doc-header">
-            <div>${escapeHtml(buildHeaderLineOne(data))}</div>
-            <div>${escapeHtml(buildHeaderLineTwo(data))}</div>
+            ${headerEntries.map((entry) => `<div role="link" tabindex="0" data-preview-target-id="${escapeHtml(entry.targetId)}">${escapeHtml(entry.text)}</div>`).join("")}
           </div>
           ${withTable ? `
           <table class="doc-table">
@@ -4869,13 +5289,13 @@
         getPdfClosingLeadHeight(pdfLayout)
       );
 
-      const makeDateRow = (dateText) => {
+      const makeDateRow = (dateText, groupIndex) => {
         const row = document.createElement("tr");
         row.className = "date-row";
-        row.innerHTML = `<td colspan="4">${escapeHtml(dateText)}</td>`;
+        row.innerHTML = `<td colspan="4" role="link" tabindex="0" data-preview-group-index="${groupIndex}">${escapeHtml(dateText)}</td>`;
         return row;
       };
-      const makeActivityRow = (rowData, displayIndex, rows, spans, localIndex = displayIndex) => {
+      const makeActivityRow = (rowData, displayIndex, rows, spans, groupIndex, localIndex = displayIndex) => {
         const row = document.createElement("tr");
         const rowNumber = getPdfRowNumber(rowData, displayIndex);
         const mergedCell = (key, width, align = "left") => {
@@ -4884,10 +5304,10 @@
           const isMerged = span.lengths[localIndex] > 1;
           const rowspan = isMerged ? ` rowspan="${span.lengths[localIndex]}"` : "";
           const verticalAlign = isMerged && (key === "result" || key === "pic") ? "middle" : "top";
-          return `<td${rowspan} style="width:${width}; text-align:${align}; vertical-align:${verticalAlign};">${richTextToPreviewHtml(rows[localIndex][key], rows[localIndex][`${key}Formats`], key)}</td>`;
+          return `<td${rowspan} role="link" tabindex="0" data-preview-group-index="${groupIndex}" data-preview-row-index="${rowData.sourceRowIndex ?? rowData.originalIndex ?? localIndex}" data-preview-field="${key}" style="width:${width}; text-align:${align}; vertical-align:${verticalAlign};">${richTextToPreviewHtml(rows[localIndex][key], rows[localIndex][`${key}Formats`], key)}</td>`;
         };
         row.innerHTML = `
-          <td style="width:6%; text-align:center;">${rowNumber}</td>
+          <td role="link" tabindex="0" data-preview-group-index="${groupIndex}" data-preview-row-index="${rowData.sourceRowIndex ?? rowData.originalIndex ?? localIndex}" data-preview-field="activity" style="width:6%; text-align:center;">${rowNumber}</td>
           ${mergedCell("activity", "42%")}
           ${mergedCell("result", "38%")}
           ${mergedCell("pic", "14%", "center")}`;
@@ -4895,8 +5315,9 @@
       };
 
       const makers = data.makers
+        .map((maker, makerIndex) => ({ ...maker, makerIndex }))
         .filter((maker) => maker.name || maker.role)
-        .map((maker) => `<p>${escapeHtml(formatPersonText(maker))}</p>`)
+        .map((maker) => `<p><span role="link" tabindex="0" data-preview-maker-index="${maker.makerIndex}" data-preview-field="name">${escapeHtml(maker.name)}</span>${maker.name && maker.role ? " – " : ""}<span role="link" tabindex="0" data-preview-maker-index="${maker.makerIndex}" data-preview-field="role">${escapeHtml(maker.role)}</span></p>`)
         .join("");
 
       const makeClosingLead = () => {
@@ -4904,9 +5325,9 @@
         closing.innerHTML = `
         <p class="doc-body">Demikian Berita Acara ini dibuat, atas perhatian dan kerja sama Bapak/Ibu, kami ucapkan terima kasih.</p>
         <div class="doc-body">
-          <div><strong>${escapeHtml(data.divisionLine || defaultDivisionLine())}</strong></div>
-          <div><strong>${escapeHtml(data.applicationLine || defaultApplicationLine())}</strong></div>
-          <div>${escapeHtml(data.city)}, ${escapeHtml(formatDate(data.signDate))}</div>
+          <div role="link" tabindex="0" data-preview-target-id="divisionLine"><strong>${escapeHtml(data.divisionLine || defaultDivisionLine())}</strong></div>
+          <div role="link" tabindex="0" data-preview-target-id="applicationLine"><strong>${escapeHtml(data.applicationLine || defaultApplicationLine())}</strong></div>
+          <div role="link" tabindex="0" data-preview-target-id="city">${escapeHtml(data.city)}, <span data-preview-target-id="signDate">${escapeHtml(formatDate(data.signDate))}</span></div>
         </div>`;
         return closing;
       };
@@ -4917,7 +5338,7 @@
           <p class="role">Pembuat :</p>
           ${makers || "<p>-</p>"}
           <p class="role">Menyetujui :</p>
-          <p>${escapeHtml(formatPersonText({ name: data.approverName, role: data.approverRole }))}</p>`;
+          <p><span role="link" tabindex="0" data-preview-target-id="approverName">${escapeHtml(data.approverName)}</span>${data.approverName && data.approverRole ? " – " : ""}<span role="link" tabindex="0" data-preview-target-id="approverRole">${escapeHtml(data.approverRole)}</span></p>`;
         return signature;
       };
 
@@ -4926,7 +5347,7 @@
         if (pagePlan.withTable) {
           const tbody = page.querySelector("tbody");
           pagePlan.segments.forEach((segment) => {
-            tbody.appendChild(makeDateRow(segment.dateText));
+            tbody.appendChild(makeDateRow(segment.dateText, segment.groupIndex));
             const spans = buildPdfSpans(segment.rows);
             segment.rows.forEach((rowData, localIndex) => {
               tbody.appendChild(makeActivityRow(
@@ -4934,6 +5355,7 @@
                 segment.displayStart + localIndex,
                 segment.rows,
                 spans,
+                segment.groupIndex,
                 localIndex
               ));
             });
@@ -4992,7 +5414,7 @@
     }
 
     function splitPreviewCell(value, formats = [], key = "activity") {
-      const text = normalizeText(value);
+      const text = normalizeCellText(value);
       const safeFormats = sanitizeRichFormats(formats, text.length);
       if (!text) return [{ text: "", formats: [] }];
       const chunks = [];
@@ -5126,18 +5548,24 @@
     function setPdfPageHeaderMetrics(pdf, data, layout) {
       pdf.setFont(layout.fontFamily, "bold");
       pdf.setFontSize(layout.headerSize);
-      layout.pageHeaderLines = [
-        ...pdf.splitTextToSize(buildHeaderLineOne(data), layout.contentWidth),
+      layout.pageHeaderEntries = [
+        ...pdf.splitTextToSize(buildHeaderLineOne(data), layout.contentWidth)
+          .map((text) => ({ text, targetId: "featureName" })),
         ...pdf.splitTextToSize(buildHeaderLineTwo(data), layout.contentWidth)
+          .map((text) => ({ text, targetId: "branchName" }))
       ];
+      layout.pageHeaderLines = layout.pageHeaderEntries.map((entry) => entry.text);
       layout.pageHeaderBottom = layout.top + 57 + Math.max(0, layout.pageHeaderLines.length - 2) * layout.headerLine;
       return layout.pageHeaderLines;
     }
 
     function preparePdfGroups(pdf, data, layout) {
       return data.groups
-        .map((group) => {
-          const rows = splitPdfRows(pdf, layout, group.rows.filter((row) => row.activity || row.result || row.pic));
+        .map((group, groupIndex) => {
+          const sourceRows = group.rows
+            .map((row, sourceRowIndex) => ({ ...row, sourceRowIndex }))
+            .filter((row) => row.activity || row.result || row.pic);
+          const rows = splitPdfRows(pdf, layout, sourceRows);
           const measuredRows = rows.map((row) => ({
             ...row,
             continuedActivityHeight: row.continuedActivity
@@ -5145,6 +5573,7 @@
               : 0
           }));
           return {
+            groupIndex,
             dateText: formatActivityDate(group.date, group.dates),
             rows: measuredRows,
             rowHeights: measuredRows.map((row) => pdfRowHeight(pdf, layout, row))
@@ -5195,7 +5624,7 @@
       const pageHeaderBottom = layout.pageHeaderBottom || layout.top + 57;
       const tableStartY = pageHeaderBottom + layout.tableHeaderHeight;
       const freshFinalRowY = tableStartY + layout.dateHeight;
-      const closingGap = layout.bodyLine;
+      const closingGap = layout.bodyLine * 2;
       const getPageRowHeight = (row, rowHeight, startsPageChunk) => {
         if (!startsPageChunk || !row.continuedActivity) return rowHeight;
         return Math.max(rowHeight, row.continuedActivityHeight || rowHeight);
@@ -5276,6 +5705,7 @@
           const compactedPageRows = compactPdfPageRows(pageRows, pageRowHeights);
 
           page.segments.push({
+            groupIndex: group.groupIndex,
             dateText: group.dateText,
             rows: compactedPageRows.rows,
             rowHeights: compactedPageRows.rowHeights,
@@ -5447,16 +5877,17 @@
 
     function splitPdfRichText(pdf, value, width, layoutOverride = null, formats = []) {
       const layout = layoutOverride || { fontFamily: "helvetica", bodySize: 10.5 };
-      const rawText = normalizeText(value);
+      const rawText = normalizeCellText(value);
       const rawLines = rawText.split("\n");
       const output = [];
-      let listNumber = 1;
       let offset = 0;
       rawLines.forEach((rawLine) => {
-        const listItem = rawLine.match(/^\s*(?:(\d+)[.)]|-)\s+(.*)$/);
-        if (listItem?.[1]) listNumber = Number(listItem[1]);
-        const prefix = listItem ? (listItem[1] ? `${listNumber}. ` : "\u2022 ") : "";
-        const contentStart = listItem ? rawLine.indexOf(listItem[2]) : 0;
+        const listItem = parseListLine(rawLine);
+        const marker = listItem
+          ? (listItem.kind === "bullet" ? ["•", "o", "-"][listItem.depth - 1] : `${listItem.marker}.`)
+          : "";
+        const prefix = listItem ? `${"  ".repeat(listItem.depth - 1)}${marker} ` : "";
+        const contentStart = listItem ? listItem.prefixLength : 0;
         const tokens = pdfSegmentsForRange(rawText, offset + contentStart, offset + rawLine.length, formats);
         const prefixSegment = prefix ? [{ text: prefix, bold: false, italic: false, underline: false }] : [];
         const prefixWidth = measurePdfSegments(pdf, layout, prefixSegment);
@@ -5493,7 +5924,6 @@
 
         if (!segments.length || (!hasText && !prefix)) segments = [{ text: " ", bold: false, italic: false, underline: false }];
         output.push(segments);
-        if (listItem) listNumber += 1;
         offset += rawLine.length + 1;
       });
       return output.length ? output : [[{ text: " ", bold: false, italic: false, underline: false }]];
@@ -5611,6 +6041,7 @@
             picFormats: values[2][chunkIndex]?.formats || [],
             continued: chunkIndex > 0,
             originalIndex: index,
+            sourceRowIndex: row.sourceRowIndex ?? index,
             continuedActivity: continuedActivity ? row.activity : "",
             continuedActivityFormats: continuedActivity ? [...(row.activityFormats || [])] : []
           };
@@ -5619,7 +6050,7 @@
     }
 
     function splitPdfRichChunks(pdf, layout, value, formats = [], width, maxLines) {
-      const raw = normalizeText(value);
+      const raw = normalizeCellText(value);
       const safeFormats = sanitizeRichFormats(formats, raw.length);
       if (!raw) return [{ text: "", formats: [] }];
       const chunks = [];
@@ -5809,6 +6240,12 @@
           return;
         }
       }
+      const previewLink = event.target.closest("#preview [data-preview-target-id], #preview [data-preview-group-index], #preview [data-preview-maker-index]");
+      if (previewLink) {
+        event.preventDefault();
+        focusInputFromPreview(previewLink);
+        return;
+      }
       if (event.target.closest("#roleMenu")) {
         const option = event.target.closest("[data-role-value]");
         if (option) chooseRole(option.dataset.roleValue);
@@ -5894,6 +6331,11 @@
           return;
         }
       }
+      if ((event.key === "Enter" || event.key === " ") && event.target.closest("#preview [role='link']")) {
+        event.preventDefault();
+        focusInputFromPreview(event.target);
+        return;
+      }
       if (!event.target.matches(".date-input")) return;
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
@@ -5904,6 +6346,7 @@
     document.addEventListener("input", (event) => {
       if (event.target.matches("input, textarea, select")) {
         setGenerateMessage("", "");
+        if (event.target.matches("textarea")) autoResizeTextarea(event.target);
         if (event.target.matches("[data-role-input]")) {
           activeRoleInput = event.target;
           renderRoleMenu();
@@ -5913,6 +6356,8 @@
         if (event.target.matches("#groups textarea")) {
           activeActivityTextarea = event.target;
           writeRichFormats(event.target, readRichFormats(event.target));
+          syncRichTextareaVisual(event.target);
+          updateRichToolbarState(event.target);
         }
         refreshNumbers();
         renderPreview();
@@ -5977,17 +6422,40 @@
     function applyTextareaFormat(textarea, type) {
       const range = getTextRange(textarea);
       if (!range.text) return;
-      const nextFormat = {
-        start: range.start,
-        end: range.end,
-        bold: type === "bold",
-        italic: type === "italic",
-        underline: type === "underline"
-      };
-      writeRichFormats(textarea, [...readRichFormats(textarea), nextFormat]);
+      const formats = readRichFormats(textarea);
+      const active = Array.from({ length: range.end - range.start }, (_, index) => range.start + index)
+        .every((index) => formats.some((format) => format[type] && index >= format.start && index < format.end));
+      if (!active) {
+        writeRichFormats(textarea, [...formats, {
+          start: range.start,
+          end: range.end,
+          bold: type === "bold",
+          italic: type === "italic",
+          underline: type === "underline"
+        }]);
+      } else {
+        const nextFormats = [];
+        formats.forEach((format) => {
+          if (!format[type] || format.end <= range.start || format.start >= range.end) {
+            nextFormats.push(format);
+            return;
+          }
+          if (format.start < range.start) nextFormats.push({ ...format, end: range.start });
+          const middle = {
+            ...format,
+            start: Math.max(format.start, range.start),
+            end: Math.min(format.end, range.end),
+            [type]: false
+          };
+          if (middle.bold || middle.italic || middle.underline) nextFormats.push(middle);
+          if (format.end > range.end) nextFormats.push({ ...format, start: range.end });
+        });
+        writeRichFormats(textarea, nextFormats);
+      }
       textarea.focus();
       textarea.setSelectionRange(range.start, range.end);
       textarea.dispatchEvent(new Event("input", { bubbles: true }));
+      updateRichToolbarState(textarea);
     }
 
     function populateMaskingTypes() {
@@ -6034,7 +6502,8 @@
       return -1;
     }
 
-    function matchingMaskingTypes() {
+    function matchingMaskingTypes(showAll = appState.maskTypeShowAll) {
+      if (showAll) return [...MASKING_TYPES];
       const query = normalizeText(els.maskTypeSearch.value).toLocaleLowerCase("id-ID");
       return MASKING_TYPES
         .map((item) => ({ item, score: maskTypeScore(item, query) }))
@@ -6075,6 +6544,7 @@
       const label = MASKING_TYPES.find(([value]) => value === type)?.[1] || "";
       if (!label) return;
       els.maskTypeSearch.value = label;
+      appState.maskTypeShowAll = false;
       closeMaskTypeMenu();
       updateMaskPreview();
     }
@@ -6115,6 +6585,7 @@
       const source = els.maskSourceText.value;
       syncCardPolicyField(type);
       els.maskPreviewText.value = type ? maskByType(type, source, selectedMaskOptions()) : "";
+      autoResizeTextarea(els.maskPreviewText);
       els.applyMaskBtn.disabled = !type || !source || !els.maskPreviewText.value;
     }
 
@@ -6149,11 +6620,14 @@
       appState.maskSelection = { textarea, range };
       const suggestion = inferMaskType(range.text);
       els.maskSourceText.value = range.text;
+      appState.maskTypeShowAll = false;
       els.maskTypeSearch.value = suggestion.label || "";
       els.cardPolicySelect.value = suggestion.cardPolicy || "default";
       setMaskSuggestionText(suggestion);
       updateMaskPreview();
       els.maskDialog.hidden = false;
+      autoResizeTextarea(els.maskSourceText);
+      autoResizeTextarea(els.maskPreviewText);
       els.maskTypeSearch.focus();
       return true;
     }
@@ -6161,6 +6635,7 @@
     function closeMaskDialog() {
       els.maskDialog.hidden = true;
       closeMaskTypeMenu();
+      appState.maskTypeShowAll = false;
       appState.maskSelection = null;
     }
 
@@ -6237,6 +6712,7 @@
     els.maskTypeSearch.addEventListener("focus", () => renderMaskTypeMenu(true));
     els.maskTypeSearch.addEventListener("input", () => {
       appState.maskTypeActiveIndex = -1;
+      appState.maskTypeShowAll = false;
       renderMaskTypeMenu(true);
       updateMaskPreview();
     });
@@ -6276,7 +6752,11 @@
       }
     });
     els.maskTypeToggle.addEventListener("click", () => {
-      if (els.maskTypeMenu.hidden) renderMaskTypeMenu(true);
+      if (els.maskTypeMenu.hidden) {
+        appState.maskTypeShowAll = true;
+        appState.maskTypeActiveIndex = -1;
+        renderMaskTypeMenu(true);
+      }
       else closeMaskTypeMenu();
       els.maskTypeSearch.focus();
     });
@@ -6413,10 +6893,39 @@
     });
 
     els.groups.addEventListener("focusin", (event) => {
-      if (event.target.matches("textarea")) activeActivityTextarea = event.target;
+      if (event.target.matches("textarea")) {
+        activeActivityTextarea = event.target;
+        updateRichToolbarState(event.target);
+      }
+    });
+
+    document.addEventListener("selectionchange", () => {
+      if (document.activeElement?.matches?.("#groups textarea")) {
+        updateRichToolbarState(document.activeElement);
+      }
+    });
+
+    els.groups.addEventListener("mousedown", (event) => {
+      if (event.target.closest("[data-rich-command]")) event.preventDefault();
     });
 
     els.groups.addEventListener("click", (event) => {
+      const richButton = event.target.closest("[data-rich-command]");
+      if (richButton) {
+        const textarea = richButton.closest("label")?.querySelector("textarea");
+        if (!textarea) return;
+        activeActivityTextarea = textarea;
+        const command = richButton.dataset.richCommand;
+        if (["bold", "italic", "underline"].includes(command)) {
+          applyTextareaFormat(textarea, command);
+        } else {
+          const edits = buildListEdits(textarea.value, textarea.selectionStart, textarea.selectionEnd, command);
+          applyRichTextEdits(textarea, edits);
+        }
+        updateRichToolbarState(textarea);
+        commitHistory(`format-${command}`);
+        return;
+      }
       const addRow = event.target.closest("[data-add-row]");
       const removeGroup = event.target.closest("[data-remove-group]");
       const removeRow = event.target.closest("[data-remove-row]");
@@ -6480,6 +6989,7 @@
     registerCollaborationActivityListeners();
     populateMaskingTypes();
     applyData(defaultData());
+    document.querySelectorAll("textarea").forEach(autoResizeTextarea);
     commitHistory("initial");
     setModeStatus("draft");
     setSyncStatus("offline");

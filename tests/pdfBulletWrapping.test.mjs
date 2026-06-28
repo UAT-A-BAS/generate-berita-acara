@@ -30,7 +30,8 @@ function extractFunction(name) {
 }
 
 const functionSource = [
-  "normalizeText",
+  "parseListLine",
+  "normalizeCellText",
   "sanitizeRichFormats",
   "pdfSegmentsForRange",
   "pdfFontStyle",
@@ -56,3 +57,11 @@ const lines = splitPdfRichText(
 assert.ok(lines.length > 1, "fixture must wrap to multiple PDF lines");
 assert.ok(lines[0].startsWith("• "), "first line keeps the bullet marker");
 assert.equal(lines.filter((line) => line.startsWith("• ")).length, 1, "wrapped continuation must not create another bullet");
+
+const nestedBullet = splitPdfRichText(pdf, "  o Sub kedua", 80, layout, [])
+  .map((segments) => segments.map((segment) => segment.text).join(""));
+assert.ok(nestedBullet[0].startsWith("  o "), "second-level bullet keeps its prescribed marker and indent");
+
+const nestedNumber = splitPdfRichText(pdf, "    1.1.1. Sub ketiga", 80, layout, [])
+  .map((segments) => segments.map((segment) => segment.text).join(""));
+assert.ok(nestedNumber[0].startsWith("    1.1.1. "), "third-level numbering keeps its prescribed marker and indent");
