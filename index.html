@@ -487,11 +487,16 @@
       line-height: 1;
     }
 
-    .rich-tool:hover,
-    .rich-tool[aria-pressed="true"] {
-      border-color: #9fc2df;
-      background: #d9e8f5;
+    .rich-tool:hover {
+      border-color: #c9d3df;
+      background: #eef3f8;
       color: #003f73;
+    }
+
+    .rich-tool[aria-pressed="true"] {
+      border-color: var(--brand);
+      background: var(--brand);
+      color: #fff;
     }
 
     .rich-tool-icon {
@@ -3054,7 +3059,7 @@
     function syncRichTextareaVisual(textarea) {
       if (!textarea?.matches?.("textarea")) return;
       const mirror = textarea.closest(".rich-text-shell")?.querySelector(".rich-text-mirror");
-      if (mirror) mirror.innerHTML = richTextToHtml(textarea.value, readRichFormats(textarea));
+      if (mirror) mirror.innerHTML = richTextToEditorHtml(textarea.value, readRichFormats(textarea));
       autoResizeTextarea(textarea);
     }
 
@@ -3172,6 +3177,11 @@
         cursor = next;
       }
       return html;
+    }
+
+    function richTextToEditorHtml(value, formats = []) {
+      const text = String(value || "").replace(/\r\n/g, "\n");
+      return richSliceToHtml(text, 0, text.length, formats);
     }
 
     function richTextToHtml(value, formats = []) {
@@ -3972,8 +3982,8 @@
       writeRichFormats(activity, rowData.activityFormats || []);
       writeRichFormats(result, rowData.resultFormats || []);
       writeRichFormats(pic, rowData.picFormats || []);
-      [activity, result, pic].forEach(enhanceRichTextarea);
       groupNode.querySelector("[data-rows]").appendChild(node);
+      [activity, result, pic].forEach(enhanceRichTextarea);
       refreshNumbers();
       return node;
     }
