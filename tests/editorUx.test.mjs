@@ -41,6 +41,13 @@ const isSelectionFormatted = Function(
   `${extractFunction("isSelectionFormatted")} return isSelectionFormatted;`
 )((textarea) => textarea.formats || []);
 
+const renderEditorRichText = Function(`
+  ${extractFunction("escapeHtml")}
+  ${extractFunction("richSliceToHtml")}
+  ${extractFunction("richTextToEditorHtml")}
+  return richTextToEditorHtml;
+`)();
+
 function applyEdits(value, edits) {
   return [...edits]
     .sort((left, right) => right.start - left.start)
@@ -113,6 +120,16 @@ assert.equal(
   true,
   "a fully formatted selection activates its formatting control"
 );
+assert.equal(
+  renderEditorRichText("\u2022 Relasi CIN\n1. Relasi ke = Pengurus", []),
+  "\u2022 Relasi CIN<br>1. Relasi ke = Pengurus",
+  "the editor mirror preserves list prefixes and exact character geometry"
+);
+assert.equal(
+  renderEditorRichText("1. Alpha", [{ start: 3, end: 8, bold: true }]),
+  "1. <strong>Alpha</strong>",
+  "the editor mirror preserves inline formatting without changing list layout"
+);
 
 const draftFilename = Function(
   "sanitizeFilename",
@@ -130,10 +147,19 @@ assert.match(html, /aria-label="Numbered list"/);
 assert.match(html, /lucide-list/);
 assert.match(html, /lucide-list-ordered/);
 assert.match(html, /\.rich-toolbar\s*\{[\s\S]*?flex-wrap:\s*nowrap/);
+assert.doesNotMatch(html, /\.rich-tool:hover,\s*\.rich-tool\[aria-pressed="true"\]/);
+assert.match(html, /\.rich-tool:hover\s*\{[\s\S]*?background:\s*#eef3f8/);
+assert.match(html, /\.rich-tool\[aria-pressed="true"\]\s*\{[\s\S]*?background:\s*var\(--brand\)/);
 assert.match(html, /function syncRichTextareaVisual/);
 assert.doesNotMatch(extractFunction("syncRichTextareaVisual"), /#groups textarea/);
 assert.match(extractFunction("syncRichTextareaVisual"), /matches\?\.\("textarea"\)/);
+assert.match(extractFunction("syncRichTextareaVisual"), /richTextToEditorHtml/);
 assert.match(html, /function autoResizeTextarea/);
+const createActivityRowSource = extractFunction("createActivityRow");
+assert.ok(
+  createActivityRowSource.indexOf('appendChild(node)') < createActivityRowSource.indexOf('forEach(enhanceRichTextarea)'),
+  "imported textareas must be attached before their auto-height is measured"
+);
 assert.match(html, /resize:\s*none/);
 assert.match(html, /class="readonly-display"/);
 assert.match(html, /\.rich-text-mirror\s*\{[\s\S]*?font-weight:\s*400/);
