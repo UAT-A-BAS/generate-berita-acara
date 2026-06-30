@@ -64,25 +64,17 @@
 
     .app {
       min-height: 100vh;
-      padding: 10px 18px 22px;
+      padding: 14px 18px 22px;
     }
 
     .topbar {
-      position: relative;
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 18px;
-      align-items: center;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: end;
       max-width: none;
       width: 100%;
-      margin: 0 auto 14px;
-      padding: 14px 18px;
-      border: 1px solid rgba(9, 23, 39, 0.1);
-      border-radius: 28px;
-      background: #184066;
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.08),
-        0 12px 28px rgba(12, 28, 46, 0.14);
+      margin: 0 auto 12px;
     }
 
     .eyebrow {
@@ -96,12 +88,9 @@
 
     h1 {
       margin: 0;
-      color: #fff;
-      font-size: clamp(28px, 2.6vw, 40px);
-      line-height: 1.04;
+      font-size: clamp(26px, 3vw, 42px);
+      line-height: 1.05;
       letter-spacing: 0;
-      font-weight: 800;
-      text-shadow: 0 1px 0 rgba(11, 25, 40, 0.15);
     }
 
     .subtitle {
@@ -124,14 +113,15 @@
       display: flex;
       min-width: 320px;
       flex-wrap: wrap;
-      gap: 7px;
+      gap: 8px;
       align-items: center;
       justify-content: flex-end;
-      padding: 6px 7px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 18px;
-      background: rgba(255, 255, 255, 0.06);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      padding: 6px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.78);
+      box-shadow: 0 10px 26px rgba(31, 45, 61, 0.08);
+      backdrop-filter: blur(8px);
     }
 
     .sync-pill {
@@ -140,10 +130,10 @@
       align-items: center;
       gap: 8px;
       padding: 6px 10px;
-      border: 1px solid rgba(255, 255, 255, 0.18);
+      border: 1px solid var(--line);
       border-radius: 999px;
-      background: rgba(248, 251, 255, 0.18);
-      color: rgba(255, 255, 255, 0.92);
+      background: var(--surface-muted);
+      color: var(--muted);
       font-size: 13px;
       font-weight: 700;
       white-space: nowrap;
@@ -153,7 +143,7 @@
       width: 9px;
       height: 9px;
       border-radius: 50%;
-      background: rgba(255, 255, 255, 0.72);
+      background: var(--muted);
     }
 
     .sync-pill.is-connected .sync-dot,
@@ -193,14 +183,7 @@
 
     .sync-pill.is-draft .sync-dot,
     .sync-pill.is-neutral .sync-dot {
-      background: rgba(255, 255, 255, 0.62);
-    }
-
-    .sync-pill.is-draft,
-    .sync-pill.is-neutral {
-      border-color: rgba(255, 255, 255, 0.14);
-      background: rgba(248, 251, 255, 0.16);
-      color: rgba(255, 255, 255, 0.92);
+      background: #94a3b8;
     }
 
     @keyframes pulse-sync {
@@ -209,47 +192,19 @@
     }
 
     .collab-button {
-      min-height: 36px;
-      padding: 7px 14px;
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.12);
-      color: rgba(255, 255, 255, 0.96);
+      min-height: 34px;
+      padding: 6px 10px;
+      border-color: var(--line);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--brand-2);
       font-size: 12px;
-      font-weight: 700;
-      box-shadow: none;
-      backdrop-filter: blur(6px);
-      transition: background 180ms ease, border-color 180ms ease, transform 180ms ease, color 180ms ease;
+      box-shadow: 0 1px 2px rgba(31, 45, 61, 0.06);
     }
 
     .collab-button:hover {
-      background: rgba(255, 255, 255, 0.2);
-      border-color: rgba(255, 255, 255, 0.24);
-      color: #fff;
-      transform: translateY(-1px);
-    }
-
-    .collab-button:focus-visible {
-      outline: 3px solid rgba(255, 255, 255, 0.22);
-      outline-offset: 2px;
-    }
-
-    #collabToggleBtn {
-      background: #ffffff;
-      border-color: rgba(255, 255, 255, 0.78);
-      color: #184066;
-      box-shadow: 0 6px 14px rgba(9, 25, 42, 0.16);
-    }
-
-    #collabToggleBtn:hover {
-      background: #f6f9fc;
-      border-color: #ffffff;
-      color: #163756;
-    }
-
-    #copyShareLinkBtn {
-      background: rgba(255, 255, 255, 0.08);
-      color: rgba(255, 255, 255, 0.94);
+      background: var(--accent-soft);
+      border-color: #a8c4da;
     }
 
     .layout {
@@ -451,117 +406,7 @@
 
     textarea {
       min-height: 92px;
-      overflow-y: hidden;
-      resize: none;
-    }
-
-    .rich-toolbar {
-      display: flex;
-      flex-wrap: nowrap;
-      gap: 2px;
-      margin-top: 6px;
-      padding: 4px;
-      border: 1px solid rgba(201, 211, 223, 0.95);
-      border-bottom: 0;
-      border-radius: 8px 8px 0 0;
-      background: #f7f9fc;
-    }
-
-    .rich-toolbar + .rich-text-shell {
-      margin-top: 0;
-    }
-
-    .rich-tool {
-      width: 28px;
-      min-width: 28px;
-      min-height: 30px;
-      border: 1px solid transparent;
-      border-radius: 6px;
-      padding: 4px;
-      background: transparent;
-      color: var(--brand-2);
-      cursor: pointer;
-      font: inherit;
-      font-size: 12px;
-      font-weight: 850;
-      line-height: 1;
-    }
-
-    .rich-tool:hover {
-      border-color: #c9d3df;
-      background: #eef3f8;
-      color: #003f73;
-    }
-
-    .rich-tool[aria-pressed="true"] {
-      border-color: var(--brand);
-      background: var(--brand);
-      color: #fff;
-    }
-
-    .rich-tool-icon {
-      display: block;
-      width: 15px;
-      height: 15px;
-      stroke-width: 2;
-    }
-
-    .rich-toolbar-divider {
-      width: 1px;
-      min-height: 22px;
-      margin: 4px 1px;
-      background: var(--line);
-    }
-
-    .rich-text-shell {
-      position: relative;
-      display: block;
-      margin-top: 6px;
-    }
-
-    .rich-text-shell textarea {
-      position: relative;
-      z-index: 2;
-      margin-top: 0;
-      background: transparent;
-      caret-color: #001b3a;
-    }
-
-    .rich-text-shell textarea.rich-text-input {
-      color: transparent !important;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .rich-text-shell textarea::placeholder {
-      color: rgba(91, 103, 120, 0.48);
-      -webkit-text-fill-color: rgba(91, 103, 120, 0.48);
-    }
-
-    .rich-text-mirror {
-      position: absolute;
-      z-index: 1;
-      inset: 1px;
-      overflow: hidden;
-      padding: 10px 11px;
-      border-radius: 7px;
-      color: #001b3a;
-      font-size: 14px;
-      font-weight: 400;
-      line-height: 1.45;
-      pointer-events: none;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-    }
-
-    .rich-text-mirror strong {
-      font-weight: 800;
-    }
-
-    .readonly-display {
-      background: #eef2f6 !important;
-      color: #66768a !important;
-      border-style: dashed !important;
-      cursor: not-allowed;
+      resize: vertical;
     }
 
     .segmented {
@@ -714,7 +559,6 @@
 
     .floating-tools-right {
       right: 18px;
-      flex-direction: row;
     }
 
     .floating-tools .btn {
@@ -722,61 +566,12 @@
       min-width: 128px;
     }
 
-    .floating-tools .btn.has-badge {
-      position: relative;
-      padding-right: 34px;
-    }
-
-    .floating-tools-right .generate-message {
-      position: absolute;
-      right: 0;
-      bottom: calc(100% + 8px);
-      width: max-content;
-      max-width: min(420px, calc(100vw - 36px));
-      min-height: 0;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 8px 10px;
-      background: #fff;
-      box-shadow: 0 10px 24px rgba(23, 32, 42, 0.14);
-    }
-
-    .floating-tools-right .generate-message:empty {
-      display: none;
-    }
-
-    #floatingCommentBtn.is-active {
-      border-color: #c28a00;
-      background: #ffd75a;
-      color: #3f2c00;
-      box-shadow: 0 0 0 3px rgba(255, 215, 90, 0.28);
-    }
-
-    .comment-badge {
-      position: absolute;
-      top: -7px;
-      right: -7px;
-      display: inline-grid;
-      min-width: 24px;
-      height: 24px;
-      place-items: center;
-      padding: 0 6px;
-      border: 2px solid #fff;
-      border-radius: 999px;
-      background: var(--danger);
-      color: #fff;
-      font-size: 11px;
-      font-weight: 900;
-      line-height: 1;
-      box-shadow: 0 8px 18px rgba(204, 36, 29, 0.28);
-    }
-
     .comment-drawer {
       position: fixed;
       right: 18px;
       bottom: 78px;
       z-index: 55;
-      width: min(560px, calc(100vw - 36px));
+      width: min(390px, calc(100vw - 36px));
       max-height: min(620px, calc(100dvh - 110px));
       display: grid;
       grid-template-rows: auto auto minmax(0, 1fr);
@@ -811,41 +606,6 @@
     .comment-toolbar select {
       min-height: 36px;
       font-size: 12px;
-    }
-
-    #commentModeBtn {
-      display: inline-flex;
-      min-height: 42px;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      border-color: #9fc2df;
-      border-radius: 12px;
-      background: #fff;
-      color: var(--brand);
-      box-shadow: 0 0 0 2px rgba(27, 77, 120, 0.08);
-      font-weight: 700;
-    }
-
-    #commentModeBtn:hover {
-      border-color: var(--brand);
-      background: #f7fbff;
-    }
-
-    #commentModeBtn.is-active {
-      border-color: var(--brand);
-      background: var(--brand);
-      color: #fff;
-      box-shadow: 0 0 0 2px rgba(0, 103, 189, 0.28);
-    }
-
-    #commentModeBtn .comment-mode-icon-on,
-    #commentModeBtn.is-active .comment-mode-icon-off {
-      display: none;
-    }
-
-    #commentModeBtn.is-active .comment-mode-icon-on {
-      display: block;
     }
 
     .activity-groups {
@@ -910,7 +670,7 @@
     .activity-row input {
       border-color: rgba(201, 211, 223, 0.98);
       color: #001b3a;
-      font-weight: 400;
+      font-weight: 650;
     }
 
     .activity-row input[readonly] {
@@ -947,28 +707,13 @@
 
     .maker-row {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(220px, 0.92fr) 132px;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
       gap: 12px;
       align-items: start;
     }
 
     .maker-actions {
-      width: 132px;
-      margin-top: 27px;
-    }
-
-    .maker-actions .btn-icon {
-      flex: 0 0 40px;
-    }
-
-    .maker-actions .move-stack {
-      width: 86px;
-    }
-
-    .maker-actions [hidden] {
-      display: inline-flex !important;
-      visibility: hidden;
-      pointer-events: none;
+      margin-top: 28px;
     }
 
     .date-range-picker {
@@ -1293,6 +1038,13 @@
       color: var(--ok);
     }
 
+    .output-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
     .generate-message {
       min-height: 20px;
       font-size: 13px;
@@ -1310,21 +1062,11 @@
     .preview-wrap {
       position: sticky;
       top: 18px;
-      display: grid;
-      height: calc(100vh - 36px);
-      grid-template-rows: auto minmax(0, 1fr);
-      overflow: hidden;
-    }
-
-    .preview-wrap > .panel-body {
-      min-height: 0;
-      overflow-x: auto;
-      overflow-y: auto;
-      overscroll-behavior: contain;
     }
 
     #preview {
       max-width: 100%;
+      overflow-x: auto;
       padding-bottom: 4px;
     }
 
@@ -1349,7 +1091,7 @@
     }
 
     .paper {
-      width: 794px;
+      width: min(100%, 794px);
       height: 1123px;
       margin: 0 auto;
       background: #fff;
@@ -1394,42 +1136,19 @@
       border: 1px solid #111;
       padding: 5px 6px;
       vertical-align: top;
-      white-space: pre-wrap;
+      white-space: normal;
       word-break: break-word;
     }
 
     .doc-table ol,
     .doc-table ul {
-      margin: 0 0 0 10px;
+      margin: 0 0 0 15px;
       padding-left: 13px;
       white-space: normal;
     }
 
     .doc-table li {
       padding-left: 2px;
-    }
-
-    .doc-list-line {
-      display: block;
-      width: 100%;
-      white-space: normal;
-    }
-
-    .doc-list-line.is-level-2 {
-      width: calc(100% - 14px);
-      margin-left: 14px;
-    }
-
-    .doc-list-line.is-level-3 {
-      width: calc(100% - 28px);
-      margin-left: 28px;
-    }
-
-    .doc-list-marker {
-      display: inline-block;
-      padding-right: 4px;
-      text-align: left;
-      white-space: nowrap;
     }
 
     .doc-table th:first-child,
@@ -1456,26 +1175,7 @@
     }
 
     .doc-body {
-      margin-top: 26px;
-    }
-
-    [data-preview-target-id],
-    [data-preview-group-index],
-    [data-preview-maker-index] {
-      border-radius: 3px;
-      cursor: pointer;
-      transition: background 180ms ease, box-shadow 180ms ease;
-    }
-
-    [data-preview-target-id]:hover,
-    [data-preview-group-index]:hover,
-    [data-preview-maker-index]:hover,
-    [data-preview-target-id]:focus-visible,
-    [data-preview-group-index]:focus-visible,
-    [data-preview-maker-index]:focus-visible {
-      background: rgba(255, 242, 0, 0.22);
-      box-shadow: 0 0 0 2px rgba(194, 138, 0, 0.28);
-      outline: none;
+      margin-top: 14px;
     }
 
     .signature {
@@ -1562,8 +1262,9 @@
 
     .comment-card {
       display: grid;
-      grid-template-columns: 1fr;
-      gap: 8px;
+      grid-template-columns: minmax(0, 1fr) auto;
+      column-gap: 12px;
+      row-gap: 8px;
       align-items: start;
       padding: 12px;
       border: 1px solid #b9c9dc;
@@ -1589,34 +1290,37 @@
       min-width: 0;
     }
 
-    .comment-card .comment-replies,
-    .comment-card .comment-audit-log {
-      grid-column: 1 / -1;
-      min-width: 0;
-    }
-
     .comment-card .actions {
-      grid-column: 1;
-      grid-row: auto;
+      grid-column: 2;
+      grid-row: 1 / span 3;
       flex-direction: row;
       align-items: center;
       align-self: start;
-      justify-self: start;
-      gap: 5px;
+      justify-self: end;
+      gap: 6px;
     }
 
     .comment-card .actions .btn {
-      min-width: 34px;
-      width: 34px;
-      min-height: 34px;
-      height: 34px;
+      min-width: 36px;
+      width: 36px;
+      min-height: 36px;
+      height: 36px;
       justify-content: center;
       padding: 0;
     }
 
     .comment-card .actions .icon {
-      width: 14px;
-      height: 14px;
+      width: 16px;
+      height: 16px;
+    }
+
+    .comment-card.is-collapsed .comment-target-link,
+    .comment-card.is-collapsed .comment-text {
+      display: none;
+    }
+
+    .comment-card.is-collapsed .actions {
+      grid-row: 1;
     }
 
     .comment-meta {
@@ -1681,96 +1385,6 @@
       font-weight: 800;
     }
 
-    .comment-replies {
-      display: grid;
-      gap: 8px;
-      margin-top: 2px;
-      padding-left: 14px;
-      border-left: 2px solid #d8e6f3;
-    }
-
-    .comment-reply {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 5px 8px;
-      padding: 8px 0 8px 2px;
-      border-top: 1px solid var(--line);
-    }
-
-    .comment-reply:first-child {
-      border-top: 0;
-    }
-
-    .comment-reply-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 7px;
-      align-items: center;
-      color: var(--brand-2);
-      font-size: 11px;
-      font-weight: 850;
-    }
-
-    .comment-reply-text {
-      grid-column: 1;
-      margin: 0;
-      color: var(--ink);
-      font-size: 12px;
-      line-height: 1.38;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-    }
-
-    .comment-reply-actions {
-      grid-column: 2;
-      grid-row: 1 / span 2;
-      display: flex;
-      gap: 6px;
-      align-items: start;
-      justify-content: end;
-    }
-
-    .comment-reply-actions .btn {
-      min-width: 32px;
-      width: 32px;
-      min-height: 32px;
-      height: 32px;
-      padding: 0;
-      justify-content: center;
-    }
-
-    .comment-reply-actions .icon {
-      width: 13px;
-      height: 13px;
-    }
-
-    .comment-audit-log {
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 750;
-    }
-
-    .comment-audit-log summary {
-      width: fit-content;
-      cursor: pointer;
-      color: var(--brand-2);
-      font-weight: 900;
-    }
-
-    .comment-audit-log ol {
-      display: grid;
-      gap: 3px;
-      margin: 6px 0 0 18px;
-      padding: 0;
-    }
-
-    .comment-action-btn:disabled,
-    .comment-reply-actions .btn:disabled {
-      cursor: not-allowed;
-      opacity: 0.45;
-      box-shadow: none;
-    }
-
     .comment-empty {
       padding: 12px;
       border: 1px dashed var(--line);
@@ -1827,7 +1441,8 @@
     #maskSourceText,
     #maskPreviewText {
       min-height: 58px;
-      max-height: none;
+      max-height: 82px;
+      resize: vertical;
     }
 
     .mask-suggestion {
@@ -1888,27 +1503,6 @@
       animation: annotation-fade 2s ease-out forwards;
     }
 
-    .preview-input-hit {
-      outline: 4px solid #fff200 !important;
-      outline-offset: 3px !important;
-      box-shadow: 0 0 0 9px rgba(255, 242, 0, 0.5), 0 12px 28px rgba(92, 67, 0, 0.18) !important;
-      animation: annotation-fade 2s ease-out forwards;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *,
-      *::before,
-      *::after {
-        scroll-behavior: auto !important;
-      }
-
-      .comment-card,
-      .annotation-hit,
-      .preview-input-hit {
-        animation: none !important;
-      }
-    }
-
     @media (max-width: 720px) {
       .comment-card {
         grid-template-columns: 1fr;
@@ -1945,12 +1539,6 @@
 
       .preview-wrap {
         position: static;
-        height: auto;
-        overflow: visible;
-      }
-
-      .preview-wrap > .panel-body {
-        overflow: auto;
       }
     }
 
@@ -1966,12 +1554,6 @@
         grid-template-columns: 1fr;
       }
 
-      .topbar {
-        gap: 14px;
-        padding: 14px;
-        border-radius: 24px;
-      }
-
       .row-actions {
         padding-top: 0;
         justify-content: flex-start;
@@ -1985,8 +1567,6 @@
       .collab-panel {
         min-width: 0;
         justify-content: flex-start;
-        width: 100%;
-        border-radius: 14px;
       }
 
       .presence-list {
@@ -2185,6 +1765,15 @@
               </div>
             </section>
 
+            <section class="section" aria-labelledby="output-section">
+              <div class="section-title">
+                <h3 id="output-section">Output</h3>
+              </div>
+              <div class="output-actions">
+                <button class="btn btn-primary" id="generateBtn" type="button">Generate PDF</button>
+                <span class="generate-message" id="generateMessage" role="status" aria-live="polite"></span>
+              </div>
+            </section>
           </div>
         </div>
       </section>
@@ -2211,16 +1800,10 @@
       </button>
     </div>
     <div class="floating-tools floating-tools-right" aria-label="Akses cepat komentar">
-      <button class="btn btn-primary" id="generateBtn" type="button" title="Generate PDF">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 15h8"/><path d="M8 18h5"/></svg>
-        Generate PDF
-      </button>
       <button class="btn btn-primary" id="floatingCommentBtn" type="button" title="Komentar review">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
         Comment
-        <span class="comment-badge" id="floatingCommentBadge" aria-hidden="true" hidden>0</span>
       </button>
-      <span class="generate-message" id="generateMessage" role="status" aria-live="polite"></span>
     </div>
     <section class="comment-drawer" id="commentDrawer" aria-labelledby="comments-title" hidden>
       <div class="comment-panel-head">
@@ -2233,11 +1816,7 @@
         </button>
       </div>
       <div class="comment-toolbar">
-        <button class="btn btn-secondary" id="commentModeBtn" type="button" aria-pressed="false">
-          <svg class="icon comment-mode-icon-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
-          <svg class="icon comment-mode-icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
-          <span>Add Comment</span>
-        </button>
+        <button class="btn btn-primary" id="commentModeBtn" type="button">Add Comment</button>
         <select id="commentFilter" aria-label="Filter komentar">
           <option value="all">All</option>
           <option value="unresolved">Unresolved</option>
@@ -2250,7 +1829,6 @@
       <div class="dialog-box">
         <h3 id="commentDialogTitle">Tambah komentar</h3>
         <p id="commentIdentityText">Reviewer: -</p>
-        <p class="comment-target" id="commentTargetLabel">Field: -</p>
         <label>Komentar <span class="required-mark">*</span>
           <textarea id="commentText" rows="4" placeholder="Tulis catatan reviewer" required></textarea>
         </label>
@@ -2281,10 +1859,10 @@
           </select>
         </label>
         <label>Text dipilih
-          <textarea class="readonly-display" id="maskSourceText" rows="2" readonly aria-readonly="true"></textarea>
+          <textarea id="maskSourceText" rows="2" readonly></textarea>
         </label>
         <label>Preview masking
-          <textarea class="readonly-display" id="maskPreviewText" rows="2" readonly aria-readonly="true"></textarea>
+          <textarea id="maskPreviewText" rows="2" readonly></textarea>
         </label>
         <div class="actions">
           <button class="btn btn-secondary" id="cancelMaskBtn" type="button">Batal</button>
@@ -2356,33 +1934,12 @@
         <input data-field="no" readonly>
       </label>
       <label>Aktivitas <span class="required-mark">*</span>
-        <span class="rich-toolbar" role="toolbar" aria-label="Format aktivitas">
-          <button class="rich-tool" data-rich-command="bold" type="button" aria-label="Bold" title="Bold (Ctrl+B)"><strong>B</strong></button>
-          <button class="rich-tool" data-rich-command="italic" type="button" aria-label="Italic" title="Italic (Ctrl+I)"><em>I</em></button>
-          <button class="rich-tool" data-rich-command="underline" type="button" aria-label="Underline" title="Underline (Ctrl+U)"><u>U</u></button>
-          <span class="rich-toolbar-divider" aria-hidden="true"></span>
-          <button class="rich-tool" data-rich-command="bullet" type="button" aria-label="Bullet list" title="Bullet list"><svg class="rich-tool-icon lucide lucide-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg></button>
-          <button class="rich-tool" data-rich-command="number" type="button" aria-label="Numbered list" title="Numbered list"><svg class="rich-tool-icon lucide lucide-list-ordered" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5h10"/><path d="M11 12h10"/><path d="M11 19h10"/><path d="M4 4h1v5"/><path d="M4 9h2"/><path d="M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02"/></svg></button>
-        </span>
         <textarea data-field="activity" placeholder="Aktivitas"></textarea>
       </label>
       <label>Hasil / Keterangan <span class="required-mark">*</span>
-        <span class="rich-toolbar" role="toolbar" aria-label="Format hasil atau keterangan">
-          <button class="rich-tool" data-rich-command="bold" type="button" aria-label="Bold" title="Bold (Ctrl+B)"><strong>B</strong></button>
-          <button class="rich-tool" data-rich-command="italic" type="button" aria-label="Italic" title="Italic (Ctrl+I)"><em>I</em></button>
-          <button class="rich-tool" data-rich-command="underline" type="button" aria-label="Underline" title="Underline (Ctrl+U)"><u>U</u></button>
-          <span class="rich-toolbar-divider" aria-hidden="true"></span>
-          <button class="rich-tool" data-rich-command="bullet" type="button" aria-label="Bullet list" title="Bullet list"><svg class="rich-tool-icon lucide lucide-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg></button>
-          <button class="rich-tool" data-rich-command="number" type="button" aria-label="Numbered list" title="Numbered list"><svg class="rich-tool-icon lucide lucide-list-ordered" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5h10"/><path d="M11 12h10"/><path d="M11 19h10"/><path d="M4 4h1v5"/><path d="M4 9h2"/><path d="M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02"/></svg></button>
-        </span>
         <textarea data-field="result" placeholder="Hasil / Keterangan"></textarea>
       </label>
       <label>PIC <span class="required-mark">*</span>
-        <span class="rich-toolbar" role="toolbar" aria-label="Format PIC">
-          <button class="rich-tool" data-rich-command="bold" type="button" aria-label="Bold" title="Bold (Ctrl+B)"><strong>B</strong></button>
-          <button class="rich-tool" data-rich-command="italic" type="button" aria-label="Italic" title="Italic (Ctrl+I)"><em>I</em></button>
-          <button class="rich-tool" data-rich-command="underline" type="button" aria-label="Underline" title="Underline (Ctrl+U)"><u>U</u></button>
-        </span>
         <textarea data-field="pic" placeholder="PIC"></textarea>
       </label>
       <div class="row-actions">
@@ -2445,13 +2002,19 @@
     const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
     const DOC_STYLE = {
       fontFamilyCss: "Calibri, Arial, sans-serif",
-      fontFamilyPdf: "helvetica",
+      fontFamilyPdf: "Carlito",
       headerSizePx: 18,
       headerSizePt: 13.5,
       headerLinePt: 16.2,
       bodySizePt: 10.5,
       bodyLinePt: 13,
       tableHeaderSizePt: 11
+    };
+    const pdfFontSources = {
+      regular: "https://raw.githubusercontent.com/googlefonts/carlito/main/fonts/ttf/Carlito-Regular.ttf",
+      bold: "https://raw.githubusercontent.com/googlefonts/carlito/main/fonts/ttf/Carlito-Bold.ttf",
+      italic: "https://raw.githubusercontent.com/googlefonts/carlito/main/fonts/ttf/Carlito-Italic.ttf",
+      boldItalic: "https://raw.githubusercontent.com/googlefonts/carlito/main/fonts/ttf/Carlito-BoldItalic.ttf"
     };
     const roleOptions = [
       "Staff",
@@ -2495,7 +2058,6 @@
       commentList: document.getElementById("commentList"),
       commentModeBtn: document.getElementById("commentModeBtn"),
       floatingCommentBtn: document.getElementById("floatingCommentBtn"),
-      floatingCommentBadge: document.getElementById("floatingCommentBadge"),
       floatingMaskBtn: document.getElementById("floatingMaskBtn"),
       commentDialog: document.getElementById("commentDialog"),
       commentTargetLabel: document.getElementById("commentTargetLabel"),
@@ -2559,13 +2121,8 @@
       historyTimer: null,
       lastHistoryReason: "",
       editingCommentId: null,
-      replyingCommentId: null,
-      editingReplyId: null,
       maskSelection: null,
-      maskTypeActiveIndex: -1,
-      maskTypeShowAll: false,
-      commentRenderSignature: "",
-      previewHighlightTimer: null
+      maskTypeActiveIndex: -1
     };
 
     let activeRoleInput = null;
@@ -2582,14 +2139,6 @@
     let pendingCollabSeed = null;
     let pendingCollabSeedMustWin = false;
     let pendingNameResolver = null;
-    let collabIdleTimer = null;
-    let collabHiddenTimer = null;
-    const COLLAB_IDLE_TIMEOUT_MS = 5 * 60 * 1000;
-    const COLLAB_HIDDEN_TIMEOUT_MS = 60 * 1000;
-    const COLLAB_AUTOSAVE_DELAY_MS = 2500;
-    const COLLAB_RECONNECT_BASE_MS = 1200;
-    const COLLAB_RECONNECT_MAX_MS = 15000;
-    const COLLAB_ACTIVITY_EVENTS = ["keydown", "input", "click", "mousemove", "scroll", "touchstart"];
     const clientId = crypto.randomUUID();
     const collaboration = {
       docId: getDocIdFromUrl(),
@@ -2598,8 +2147,6 @@
       active: false,
       connected: false,
       ready: false,
-      idle: false,
-      reconnectAttempts: 0,
       localUpdatedAt: 0
     };
 
@@ -2853,7 +2400,7 @@
         return `${start.day} ${start.month} ${start.year}`;
       }
       if (start.monthIndex === end.monthIndex && start.year === end.year) {
-        return `${start.day} - ${end.day} ${end.month} ${end.year}`;
+        return `${start.day}-${end.day} ${end.month} ${end.year}`;
       }
       if (start.year === end.year) {
         return `${start.day} ${start.month} - ${end.day} ${end.month} ${end.year}`;
@@ -2896,275 +2443,11 @@
     }
 
     function normalizeCellText(value) {
-      return String(value || "")
-        .replace(/\r\n/g, "\n")
-        .replace(/^\n+|\n+$/g, "")
+      return normalizeText(value)
         .split("\n")
-        .map((line) => parseListLine(line) ? line.trimEnd() : line.trim())
+        .map((line) => line.trim())
         .join("\n")
         .replace(/\n{3,}/g, "\n\n");
-    }
-
-    function parseListLine(line) {
-      const value = String(line || "");
-      const indent = value.match(/^\s*/)?.[0] || "";
-      const rest = value.slice(indent.length);
-      const number = rest.match(/^(\d+(?:\.\d+){0,2})\.\s+(.*)$/);
-      if (number) {
-        const numberParts = number[1].split(".").map((part) => Number(part) || 1);
-        return {
-          kind: "number",
-          depth: Math.min(3, Math.max(numberParts.length, Math.floor(indent.length / 2) + 1)),
-          marker: number[1],
-          content: number[2],
-          prefixLength: indent.length + number[1].length + 2,
-          numberParts
-        };
-      }
-      const bullet = rest.match(/^([•o-])\s+(.*)$/i);
-      if (bullet) {
-        return {
-          kind: "bullet",
-          depth: Math.min(3, Math.floor(indent.length / 2) + 1),
-          marker: bullet[1],
-          content: bullet[2],
-          prefixLength: indent.length + bullet[1].length + 1,
-          numberParts: []
-        };
-      }
-      return null;
-    }
-
-    function listPrefix(kind, depth, ordinal = 1, numberParts = []) {
-      const safeDepth = Math.max(1, Math.min(3, Number(depth) || 1));
-      const indent = "  ".repeat(safeDepth - 1);
-      if (kind === "bullet") return `${indent}${["•", "o", "-"][safeDepth - 1]} `;
-      let parts = Array.isArray(numberParts) && numberParts.length ? numberParts.slice(0, 3) : [];
-      if (!parts.length) parts = safeDepth === 1 ? [ordinal] : Array(safeDepth - 1).fill(1).concat(ordinal);
-      while (parts.length < safeDepth) parts.push(1);
-      parts = parts.slice(0, safeDepth);
-      return `${indent}${parts.join(".")}. `;
-    }
-
-    function buildListEdits(value, selectionStart, selectionEnd, command) {
-      const text = String(value || "");
-      const safeStart = Math.max(0, Math.min(text.length, Number(selectionStart) || 0));
-      const safeEnd = Math.max(safeStart, Math.min(text.length, Number(selectionEnd) || safeStart));
-      const firstLineStart = text.lastIndexOf("\n", Math.max(0, safeStart - 1)) + 1;
-      const endProbe = safeEnd > safeStart && text[safeEnd - 1] === "\n" ? safeEnd - 1 : safeEnd;
-      const nextBreak = text.indexOf("\n", endProbe);
-      const lastLineEnd = nextBreak === -1 ? text.length : nextBreak;
-      const records = [];
-      let cursor = firstLineStart;
-      while (cursor <= lastLineEnd) {
-        const breakAt = text.indexOf("\n", cursor);
-        const end = breakAt === -1 || breakAt > lastLineEnd ? lastLineEnd : breakAt;
-        const line = text.slice(cursor, end);
-        records.push({ start: cursor, end, line, info: parseListLine(line) });
-        if (end >= lastLineEnd) break;
-        cursor = end + 1;
-      }
-
-      if (command === "indent" || command === "outdent") {
-        const listRecords = records.filter((record) => record.info);
-        const firstInfo = listRecords[0]?.info;
-        if (!firstInfo) return [];
-        if (command === "indent" && firstInfo.depth >= 3) return [];
-        if (command === "outdent" && firstInfo.depth <= 1) return [];
-
-        const isUniformBlock = listRecords.every((record) => (
-          record.info.kind === firstInfo.kind && record.info.depth === firstInfo.depth
-        ));
-        let previousInfo = null;
-        if (firstLineStart > 0) {
-          const previousEnd = firstLineStart - 1;
-          const previousStart = text.lastIndexOf("\n", Math.max(0, previousEnd - 1)) + 1;
-          previousInfo = parseListLine(text.slice(previousStart, previousEnd));
-        }
-
-        let numberBaseParts = [];
-        let numberStart = 1;
-        if (firstInfo.kind === "number" && isUniformBlock) {
-          if (command === "indent") {
-            if (previousInfo?.kind === "number" && previousInfo.depth === firstInfo.depth + 1) {
-              numberBaseParts = previousInfo.numberParts.slice(0, -1);
-              numberStart = (previousInfo.numberParts.at(-1) || 0) + 1;
-            } else {
-              numberBaseParts = firstInfo.numberParts.slice(0, firstInfo.depth);
-            }
-          } else {
-            numberBaseParts = firstInfo.numberParts.slice(0, -1);
-            numberStart = numberBaseParts.at(-1) || 1;
-          }
-        }
-
-        let numberOrdinal = 0;
-        return records.flatMap((record) => {
-          const info = record.info;
-          if (!info) return [];
-          if (command === "indent" && info.depth >= 3) return [];
-          if (command === "outdent" && info.depth <= 1) return [];
-          const depth = command === "indent" ? info.depth + 1 : info.depth - 1;
-          let parts = info.numberParts;
-          if (info.kind === "number") {
-            if (isUniformBlock) {
-              if (command === "indent") {
-                parts = [...numberBaseParts, numberStart + numberOrdinal];
-              } else {
-                parts = numberBaseParts.slice();
-                parts[parts.length - 1] = numberStart + numberOrdinal;
-              }
-              numberOrdinal += 1;
-            } else {
-              parts = command === "indent"
-                ? [...info.numberParts, 1]
-                : info.numberParts.slice(0, -1);
-            }
-          }
-          return [{
-            start: record.start,
-            end: record.start + info.prefixLength,
-            text: listPrefix(info.kind, depth, numberOrdinal, parts)
-          }];
-        });
-      }
-
-      const editable = records.filter((record) => record.line.trim() || records.length === 1);
-      const togglesOff = (command === "bullet" || command === "number")
-        && editable.length > 0
-        && editable.every((record) => record.info?.kind === command);
-      let ordinal = 0;
-      return records.flatMap((record) => {
-        if ((!record.line.trim() && records.length > 1) || !["bullet", "number"].includes(command)) return [];
-        const info = record.info;
-        const prefixEnd = record.start + (info?.prefixLength || 0);
-        if (togglesOff) return [{ start: record.start, end: prefixEnd, text: "" }];
-
-        ordinal += 1;
-        return [{ start: record.start, end: prefixEnd, text: listPrefix(command, 1, ordinal) }];
-      });
-    }
-
-    function buildListEnterEdit(value, cursor) {
-      const text = String(value || "");
-      const position = Math.max(0, Math.min(text.length, Number(cursor) || 0));
-      const lineStart = text.lastIndexOf("\n", Math.max(0, position - 1)) + 1;
-      const lineBreak = text.indexOf("\n", position);
-      const lineEnd = lineBreak === -1 ? text.length : lineBreak;
-      const info = parseListLine(text.slice(lineStart, lineEnd));
-      if (!info) return null;
-      if (!info.content.trim()) {
-        return { start: lineStart, end: lineStart + info.prefixLength, text: "" };
-      }
-      if (info.kind === "bullet") {
-        return { start: position, end: position, text: `\n${listPrefix("bullet", info.depth)}` };
-      }
-      const nextParts = info.numberParts.slice(0, 3);
-      const lastIndex = Math.max(0, nextParts.length - 1);
-      nextParts[lastIndex] = (nextParts[lastIndex] || 0) + 1;
-      return {
-        start: position,
-        end: position,
-        text: `\n${listPrefix("number", info.depth, nextParts[lastIndex], nextParts)}`
-      };
-    }
-
-    function shiftRichFormatsForEdit(formats, start, end, replacementLength, nextLength) {
-      const delta = replacementLength - (end - start);
-      const shifted = [];
-      (Array.isArray(formats) ? formats : []).forEach((format) => {
-        if (format.end <= start) {
-          shifted.push({ ...format });
-          return;
-        }
-        if (format.start >= end) {
-          shifted.push({ ...format, start: format.start + delta, end: format.end + delta });
-          return;
-        }
-        if (format.start < start) shifted.push({ ...format, end: start });
-        if (format.end > end) {
-          shifted.push({ ...format, start: start + replacementLength, end: format.end + delta });
-        }
-      });
-      return sanitizeRichFormats(shifted, nextLength);
-    }
-
-    function applyRichTextEdits(textarea, edits) {
-      if (!textarea || !edits.length) return false;
-      const selectionStart = textarea.selectionStart ?? 0;
-      const selectionEnd = textarea.selectionEnd ?? selectionStart;
-      let formats = readRichFormats(textarea);
-      let value = textarea.value;
-      [...edits].sort((left, right) => right.start - left.start).forEach((edit) => {
-        value = value.slice(0, edit.start) + edit.text + value.slice(edit.end);
-        formats = shiftRichFormatsForEdit(formats, edit.start, edit.end, edit.text.length, value.length);
-      });
-      const deltaBefore = edits
-        .filter((edit) => edit.end <= selectionStart)
-        .reduce((total, edit) => total + edit.text.length - (edit.end - edit.start), 0);
-      const totalDelta = edits.reduce((total, edit) => total + edit.text.length - (edit.end - edit.start), 0);
-      textarea.value = value;
-      writeRichFormats(textarea, formats);
-      textarea.focus();
-      textarea.setSelectionRange(
-        Math.max(0, selectionStart + deltaBefore),
-        Math.max(0, selectionEnd + totalDelta)
-      );
-      textarea.dispatchEvent(new Event("input", { bubbles: true }));
-      return true;
-    }
-
-    function autoResizeTextarea(textarea) {
-      if (!textarea?.matches?.("textarea")) return;
-      textarea.style.height = "auto";
-      textarea.style.height = `${Math.max(58, textarea.scrollHeight + 2)}px`;
-    }
-
-    function syncRichTextareaVisual(textarea) {
-      if (!textarea?.matches?.("textarea")) return;
-      const mirror = textarea.closest(".rich-text-shell")?.querySelector(".rich-text-mirror");
-      if (mirror) mirror.innerHTML = richTextToEditorHtml(textarea.value, readRichFormats(textarea));
-      autoResizeTextarea(textarea);
-    }
-
-    function enhanceRichTextarea(textarea) {
-      if (!textarea || textarea.closest(".rich-text-shell")) return;
-      const shell = document.createElement("span");
-      shell.className = "rich-text-shell";
-      const mirror = document.createElement("span");
-      mirror.className = "rich-text-mirror";
-      mirror.setAttribute("aria-hidden", "true");
-      textarea.parentElement.insertBefore(shell, textarea);
-      shell.append(mirror, textarea);
-      textarea.classList.add("rich-text-input");
-      syncRichTextareaVisual(textarea);
-    }
-
-    function isSelectionFormatted(textarea, type) {
-      const formats = readRichFormats(textarea);
-      let start = textarea.selectionStart ?? 0;
-      let end = textarea.selectionEnd ?? start;
-      if (start === end) return false;
-      for (let index = start; index < end; index += 1) {
-        if (!formats.some((format) => format[type] && index >= format.start && index < format.end)) return false;
-      }
-      return true;
-    }
-
-    function updateRichToolbarState(textarea) {
-      const toolbar = textarea?.closest("label")?.querySelector(".rich-toolbar");
-      if (!toolbar) return;
-      ["bold", "italic", "underline"].forEach((type) => {
-        const button = toolbar.querySelector(`[data-rich-command="${type}"]`);
-        if (button) button.setAttribute("aria-pressed", String(isSelectionFormatted(textarea, type)));
-      });
-      const currentLineStart = textarea.value.lastIndexOf("\n", Math.max(0, (textarea.selectionStart ?? 0) - 1)) + 1;
-      const currentLineEnd = textarea.value.indexOf("\n", textarea.selectionStart ?? 0);
-      const info = parseListLine(textarea.value.slice(currentLineStart, currentLineEnd === -1 ? textarea.value.length : currentLineEnd));
-      ["bullet", "number"].forEach((type) => {
-        const button = toolbar.querySelector(`[data-rich-command="${type}"]`);
-        if (button) button.setAttribute("aria-pressed", String(info?.kind === type));
-      });
     }
 
     function readRichFormats(textarea) {
@@ -3177,7 +2460,6 @@
 
     function writeRichFormats(textarea, formats) {
       textarea.dataset.formats = JSON.stringify(sanitizeRichFormats(formats, textarea.value.length));
-      if (textarea.closest?.(".rich-text-shell")) syncRichTextareaVisual(textarea);
     }
 
     function sanitizeRichFormats(formats, length) {
@@ -3243,28 +2525,46 @@
       return html;
     }
 
-    function richTextToEditorHtml(value, formats = []) {
-      const text = String(value || "").replace(/\r\n/g, "\n");
-      return richSliceToHtml(text, 0, text.length, formats);
-    }
-
     function richTextToHtml(value, formats = []) {
-      const text = normalizeCellText(value);
+      const text = normalizeText(value);
       const lines = text.split("\n");
       const html = [];
+      let listOpen = false;
+      let listType = "";
+      let listNumber = 1;
       let offset = 0;
 
       lines.forEach((line, lineIndex) => {
-        const listItem = parseListLine(line);
+        const listItem = line.match(/^\s*(?:(\d+)[.)]|-)\s+(.*)$/);
         if (listItem) {
-          const marker = listItem.kind === "bullet" ? ["•", "o", "-"][listItem.depth - 1] : `${listItem.marker}.`;
-          html.push(`<span class="doc-list-line is-level-${listItem.depth}"><span class="doc-list-marker">${escapeHtml(marker)}</span><span>${richSliceToHtml(text, offset + listItem.prefixLength, offset + line.length, formats)}</span></span>`);
-        } else {
-          html.push(line ? richSliceToHtml(text, offset, offset + line.length, formats) : "<br>");
+          const nextType = listItem[1] ? "ol" : "ul";
+          if (listOpen && listType !== nextType) {
+            html.push(`</${listType}>`);
+            listOpen = false;
+          }
+          if (!listOpen) {
+            listNumber = listItem[1] ? Number(listItem[1]) : 1;
+            html.push(nextType === "ol" ? `<ol start="${listNumber}">` : "<ul>");
+            listOpen = true;
+            listType = nextType;
+          }
+          const contentStart = line.indexOf(listItem[2]);
+          html.push(`<li>${richSliceToHtml(text, offset + contentStart, offset + line.length, formats)}</li>`);
+          listNumber += 1;
+          offset += line.length + 1;
+          return;
         }
+        if (listOpen) {
+          html.push(`</${listType}>`);
+          listOpen = false;
+          listType = "";
+        }
+        html.push(line ? richSliceToHtml(text, offset, offset + line.length, formats) : "<br>");
         if (lineIndex < lines.length - 1) html.push("<br>");
         offset += line.length + 1;
       });
+
+      if (listOpen) html.push(`</${listType}>`);
       return html.join("");
     }
 
@@ -3288,24 +2588,50 @@
     }
 
     function richTextToPreviewHtml(value, formats = [], key = "activity") {
-      const text = normalizeCellText(value);
+      const text = normalizeText(value);
       const lines = text.split("\n");
+      const maxChars = previewWrapChars[key] || 39;
       const html = [];
+      let listOpen = false;
+      let listType = "";
+      let listNumber = 1;
       let offset = 0;
 
-      const renderWrapped = (start, end) => richSliceToHtml(text, start, end, formats);
+      const renderWrapped = (start, end) => wrapPreviewRanges(text, start, end, maxChars)
+        .map(([from, to]) => richSliceToHtml(text, from, to, formats))
+        .join("<br>");
 
       lines.forEach((line, lineIndex) => {
-        const listItem = parseListLine(line);
+        const listItem = line.match(/^\s*(?:(\d+)[.)]|-)\s+(.*)$/);
         if (listItem) {
-          const marker = listItem.kind === "bullet" ? ["•", "o", "-"][listItem.depth - 1] : `${listItem.marker}.`;
-          html.push(`<span class="doc-list-line is-level-${listItem.depth}"><span class="doc-list-marker">${escapeHtml(marker)}</span><span>${renderWrapped(offset + listItem.prefixLength, offset + line.length)}</span></span>`);
-        } else {
-          html.push(line ? renderWrapped(offset, offset + line.length) : "<br>");
+          const nextType = listItem[1] ? "ol" : "ul";
+          if (listOpen && listType !== nextType) {
+            html.push(`</${listType}>`);
+            listOpen = false;
+          }
+          if (!listOpen) {
+            listNumber = listItem[1] ? Number(listItem[1]) : 1;
+            html.push(nextType === "ol" ? `<ol start="${listNumber}">` : "<ul>");
+            listOpen = true;
+            listType = nextType;
+          }
+          const contentStart = line.indexOf(listItem[2]);
+          html.push(`<li>${renderWrapped(offset + contentStart, offset + line.length)}</li>`);
+          listNumber += 1;
+          offset += line.length + 1;
+          return;
         }
+        if (listOpen) {
+          html.push(`</${listType}>`);
+          listOpen = false;
+          listType = "";
+        }
+        html.push(line ? renderWrapped(offset, offset + line.length) : "<br>");
         if (lineIndex < lines.length - 1) html.push("<br>");
         offset += line.length + 1;
       });
+
+      if (listOpen) html.push(`</${listType}>`);
       return html.join("");
     }
 
@@ -3384,7 +2710,7 @@
       ["cardNumber", "Nomor kartu"],
       ["cardExpiry", "Tanggal expired kartu"],
       ["cvv", "CVV"],
-      ["customerNumber", "Card Number"],
+      ["customerNumber", "Customer Number"],
       ["serialNumber", "Serial Number"]
     ];
 
@@ -3409,7 +2735,7 @@
       if (length === 5) return `**${chars.slice(-3).join("")}`;
       if (length === 6) return `***${chars.slice(-3).join("")}`;
       if (length === 7) return `****${chars.slice(-3).join("")}`;
-      return `${chars.slice(0, 4).join("")}${repeatMask(length - 6)}${chars.slice(-2).join("")}`;
+      return `${chars.slice(0, 4).join("")}${repeatMask(Math.max(3, length - 6))}${chars.slice(-2).join("")}`;
     }
 
     function maskName(value) {
@@ -3500,7 +2826,6 @@
       else if (length === 5) [first, last] = [2, 1];
       else if (length === 6) [first, last] = [2, 1];
       else if (length === 7) [first, last] = [2, 2];
-      else if (length >= 10) [first, last] = [4, 2];
       return maskDigitsKeep(raw, first, last);
     }
 
@@ -3637,8 +2962,17 @@
         .slice(0, 120) || "berita-acara";
     }
 
-    function draftFilename(projectName) {
-      return `${sanitizeFilename(projectName || "draft")}_berita_acara.json`;
+    function timestampForFilename(date = new Date()) {
+      const pad = (value) => String(value).padStart(2, "0");
+      return [
+        date.getFullYear(),
+        pad(date.getMonth() + 1),
+        pad(date.getDate())
+      ].join("") + "-" + [
+        pad(date.getHours()),
+        pad(date.getMinutes()),
+        pad(date.getSeconds())
+      ].join("");
     }
 
     function setMessage(type, message) {
@@ -3697,110 +3031,6 @@
       const url = new URL(`/collab/${encodeURIComponent(collaboration.docId)}`, base);
       url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
       return url.toString();
-    }
-
-    function canReconnectCollaboration({ active, ready, idle, hidden, socketReadyState }) {
-      const socketIsOpeningOrOpen = socketReadyState === 0 || socketReadyState === 1;
-      return Boolean(active && ready && !idle && !hidden && !socketIsOpeningOrOpen);
-    }
-
-    function getCollaborationReconnectDelay(attempt, base = COLLAB_RECONNECT_BASE_MS, max = COLLAB_RECONNECT_MAX_MS) {
-      return Math.min(max, base * (2 ** Math.max(0, attempt)));
-    }
-
-    function shouldReconnectCollaboration() {
-      return canReconnectCollaboration({
-        active: collaboration.active,
-        ready: collaboration.ready,
-        idle: collaboration.idle,
-        hidden: document.hidden,
-        socketReadyState: sharedSocket?.readyState ?? 3
-      });
-    }
-
-    function scheduleCollaborationReconnect(immediate = false) {
-      clearTimeout(reconnectTimer);
-      if (!shouldReconnectCollaboration()) return;
-      const delay = immediate ? 0 : getCollaborationReconnectDelay(collaboration.reconnectAttempts);
-      if (!immediate) collaboration.reconnectAttempts += 1;
-      reconnectTimer = setTimeout(() => {
-        if (shouldReconnectCollaboration()) connectCollaborationSocket();
-      }, delay);
-    }
-
-    function scheduleCollaborationIdleTimer() {
-      clearTimeout(collabIdleTimer);
-      if (!collaboration.active) return;
-      collabIdleTimer = setTimeout(() => pauseCollaborationForIdle("idle"), COLLAB_IDLE_TIMEOUT_MS);
-    }
-
-    function flushSharedChanges() {
-      clearTimeout(sharedUpdateTimer);
-      clearTimeout(autosaveTimer);
-      const data = collectData();
-      saveUserSettings(data);
-      if (!collaboration.active || applyingRemoteData) return;
-      if (sharedState && Y) {
-        commitSharedData(data);
-      } else {
-        persistAutosave(data);
-      }
-    }
-
-    function closeSharedSocketForIdle(reason = "idle") {
-      clearTimeout(reconnectTimer);
-      const socket = sharedSocket;
-      sharedSocket = null;
-      collaboration.connected = false;
-      collaboration.users = new Map([[clientId, collaboration.user]]);
-      renderPresence();
-      setSyncStatus("offline");
-      if (socket && socket.readyState <= 1) socket.close(1000, reason);
-    }
-
-    function pauseCollaborationForIdle(reason = "idle") {
-      if (!collaboration.active) return;
-      collaboration.idle = true;
-      clearTimeout(collabIdleTimer);
-      clearTimeout(collabHiddenTimer);
-      flushSharedChanges();
-      closeSharedSocketForIdle(reason);
-      setStatus(reason === "hidden" ? "Kolaborasi dijeda saat tab tidak aktif." : "Kolaborasi dijeda karena idle.");
-    }
-
-    function markCollaborationActive() {
-      if (!collaboration.active) return;
-      collaboration.idle = false;
-      scheduleCollaborationIdleTimer();
-      if (!document.hidden && shouldReconnectCollaboration()) {
-        scheduleCollaborationReconnect(true);
-      }
-    }
-
-    function handleCollaborationVisibilityChange() {
-      if (!collaboration.active) return;
-      clearTimeout(collabHiddenTimer);
-      if (document.hidden) {
-        collabHiddenTimer = setTimeout(() => pauseCollaborationForIdle("hidden"), COLLAB_HIDDEN_TIMEOUT_MS);
-        return;
-      }
-      markCollaborationActive();
-    }
-
-    function handleCollaborationPageExit() {
-      if (!collaboration.active) return;
-      flushSharedChanges();
-      closeSharedSocketForIdle("unload");
-    }
-
-    function registerCollaborationActivityListeners() {
-      COLLAB_ACTIVITY_EVENTS.forEach((eventName) => {
-        const target = eventName === "scroll" ? window : document;
-        target.addEventListener(eventName, markCollaborationActive, { capture: true, passive: true });
-      });
-      document.addEventListener("visibilitychange", handleCollaborationVisibilityChange);
-      window.addEventListener("pagehide", handleCollaborationPageExit);
-      window.addEventListener("beforeunload", handleCollaborationPageExit);
     }
 
     function sendPresence() {
@@ -3877,8 +3107,6 @@
       pendingCollabSeedMustWin = Boolean(seedData && shouldCreateDoc);
       collaboration.active = true;
       collaboration.users.set(clientId, collaboration.user);
-      collaboration.idle = false;
-      collaboration.reconnectAttempts = 0;
       renderPresence();
       setModeStatus("live");
       setSyncStatus("syncing");
@@ -3896,7 +3124,6 @@
           sendYUpdate(update);
         });
         collaboration.ready = true;
-        scheduleCollaborationIdleTimer();
         connectCollaborationSocket();
       } catch (error) {
         setSyncStatus("offline");
@@ -3907,8 +3134,6 @@
     function stopCollaboration(resetUi = true) {
       clearTimeout(reconnectTimer);
       clearTimeout(sharedUpdateTimer);
-      clearTimeout(collabIdleTimer);
-      clearTimeout(collabHiddenTimer);
       if (sharedSocket) {
         sharedSocket.onclose = null;
         sharedSocket.close();
@@ -3921,8 +3146,6 @@
       pendingCollabSeedMustWin = false;
       collaboration.connected = false;
       collaboration.ready = false;
-      collaboration.idle = false;
-      collaboration.reconnectAttempts = 0;
       collaboration.users = new Map();
       if (resetUi) {
         collaboration.active = false;
@@ -3934,8 +3157,6 @@
     }
 
     function connectCollaborationSocket() {
-      if (!collaboration.active || !collaboration.ready || collaboration.idle) return;
-      if (sharedSocket && sharedSocket.readyState <= 1) return;
       clearTimeout(reconnectTimer);
       setSyncStatus("syncing");
       firstServerSync = false;
@@ -3951,10 +3172,7 @@
       socket.addEventListener("open", () => {
         if (socket !== sharedSocket) return;
         collaboration.connected = true;
-        collaboration.idle = false;
-        collaboration.reconnectAttempts = 0;
         setSyncStatus("connected");
-        scheduleCollaborationIdleTimer();
         sendPresence();
       });
 
@@ -3990,10 +3208,9 @@
 
       socket.addEventListener("close", () => {
         if (socket !== sharedSocket) return;
-        sharedSocket = null;
         collaboration.connected = false;
         setSyncStatus("offline");
-        scheduleCollaborationReconnect();
+        reconnectTimer = setTimeout(connectCollaborationSocket, 1800);
       });
 
       socket.addEventListener("error", () => {
@@ -4014,9 +3231,7 @@
 
     function buildHeaderLineOne(data) {
       const mode = data.baType === "pilot" ? "PILOT IMPLEMENTASI" : "IMPLEMENTASI";
-      const featureName = toUpper(data.featureName);
-      const projectName = featureName.startsWith(mode) ? featureName.slice(mode.length).trim() : featureName;
-      return `BERITA ACARA VERIFIKASI ${mode} ${projectName}`.trim();
+      return `BERITA ACARA VERIFIKASI ${mode} ${toUpper(data.featureName)}`.trim();
     }
 
     function buildHeaderLineTwo(data) {
@@ -4047,7 +3262,6 @@
       writeRichFormats(result, rowData.resultFormats || []);
       writeRichFormats(pic, rowData.picFormats || []);
       groupNode.querySelector("[data-rows]").appendChild(node);
-      [activity, result, pic].forEach(enhanceRichTextarea);
       refreshNumbers();
       return node;
     }
@@ -4632,27 +3846,6 @@
     }
 
     function targetLabelFromElement(element) {
-      const fieldLabels = {
-        activity: "Aktivitas",
-        result: "Hasil / Keterangan",
-        pic: "PIC",
-        date: "Tanggal aktivitas",
-        name: "Nama",
-        role: "Jabatan"
-      };
-      const idLabels = {
-        featureName: "Nama Project",
-        branchName: "Cabang",
-        implementationDate: "Tanggal implementasi",
-        divisionLine: "Divisi GPOL",
-        applicationLine: "Application line",
-        city: "Kota",
-        signDate: "Tanggal sign-off",
-        approverName: "Menyetujui - Nama",
-        approverRole: "Menyetujui - Jabatan"
-      };
-      if (element.dataset.field && fieldLabels[element.dataset.field]) return fieldLabels[element.dataset.field];
-      if (element.id && idLabels[element.id]) return idLabels[element.id];
       const label = element.closest("label")?.textContent?.replace(/\s+/g, " ").trim();
       if (label) return label.replace("*", "").trim();
       if (element.id) return element.id;
@@ -4676,89 +3869,25 @@
       return path.reduce((node, index) => node?.children?.[index] || null, root);
     }
 
-    function normalizeCommentUserName(value) {
-      return normalizeText(value).toLocaleLowerCase("id-ID");
-    }
-
-    function isSameCommentUserName(left, right) {
-      const leftKey = normalizeCommentUserName(left);
-      const rightKey = normalizeCommentUserName(right);
-      return Boolean(leftKey && rightKey && leftKey === rightKey);
-    }
-
-    function normalizeCommentAudit(audit = [], fallback = {}) {
-      if (Array.isArray(audit) && audit.length) {
-        return audit.map((entry) => ({
-          action: entry.action || "updated",
-          byId: entry.byId || "",
-          byName: entry.byName || "Reviewer",
-          at: entry.at || fallback.at || new Date().toISOString(),
-          replyId: entry.replyId || "",
-          replyAuthorName: entry.replyAuthorName || ""
-        }));
-      }
-      return [{
-        action: fallback.action || "created",
-        byId: fallback.byId || "",
-        byName: fallback.byName || "Reviewer",
-        at: fallback.at || new Date().toISOString(),
-        replyId: fallback.replyId || "",
-        replyAuthorName: fallback.replyAuthorName || ""
-      }];
-    }
-
-    function normalizeCommentReply(reply = {}) {
-      const rid = String(reply.rid || reply.id || "");
-      const authorName = reply.authorName || reply.author || "Reviewer";
-      const authorId = reply.authorId || "";
-      const createdAt = reply.createdAt || new Date().toISOString();
-      return {
-        ...reply,
-        rid: /^[a-z0-9_-]{6,64}$/i.test(rid) ? rid : randomId(12),
-        authorId,
-        authorName,
-        author: authorName,
-        text: String(reply.text || ""),
-        createdAt,
-        updatedAt: reply.updatedAt || "",
-        audit: normalizeCommentAudit(reply.audit, {
-          action: "reply_created",
-          byId: authorId,
-          byName: authorName,
-          at: createdAt
-        })
-      };
-    }
-
-    function normalizeCommentReplies(replies = []) {
-      const used = new Set();
-      return (Array.isArray(replies) ? replies : []).map((reply) => {
-        const normalized = normalizeCommentReply(reply);
-        while (used.has(normalized.rid)) normalized.rid = randomId(12);
-        used.add(normalized.rid);
-        return normalized;
-      });
-    }
-
     function normalizeComment(comment = {}) {
       const cid = String(comment.cid || "");
       const authorName = comment.authorName || comment.author || "Reviewer";
       const authorId = comment.authorId || "";
-      const createdAt = comment.createdAt || new Date().toISOString();
+      const audit = Array.isArray(comment.audit) && comment.audit.length
+        ? comment.audit
+        : [{
+          action: "created",
+          byId: authorId,
+          byName: authorName,
+          at: comment.createdAt || new Date().toISOString()
+        }];
       return {
         ...comment,
         cid: /^[a-z0-9_-]{6,64}$/i.test(cid) ? cid : randomId(12),
         authorId,
         authorName,
         author: authorName,
-        createdAt,
-        audit: normalizeCommentAudit(comment.audit, {
-          action: "created",
-          byId: authorId,
-          byName: authorName,
-          at: createdAt
-        }),
-        replies: normalizeCommentReplies(comment.replies),
+        audit,
         resolved: Boolean(comment.resolved)
       };
     }
@@ -4775,18 +3904,6 @@
 
     function findCommentById(commentId) {
       return appState.comments.find((comment) => comment.cid === commentId);
-    }
-
-    function findReplyById(comment, replyId) {
-      return (comment?.replies || []).find((reply) => reply.rid === replyId);
-    }
-
-    function canEditComment(comment) {
-      return isSameCommentUserName(collaboration.user.name, comment?.authorName || comment?.author);
-    }
-
-    function canEditReply(reply) {
-      return isSameCommentUserName(collaboration.user.name, reply?.authorName || reply?.author);
     }
 
     function updateCommentById(commentId, updater) {
@@ -4807,67 +3924,17 @@
       };
     }
 
-    function appendCommentAudit(comment, action, extra = {}) {
+    function appendCommentAudit(comment, action) {
       return {
         ...comment,
         audit: [
           ...(Array.isArray(comment.audit) ? comment.audit : []),
-          { action, ...currentAuditActor(), ...extra }
-        ]
-      };
-    }
-
-    function appendReplyAudit(reply, action) {
-      return {
-        ...reply,
-        audit: [
-          ...(Array.isArray(reply.audit) ? reply.audit : []),
           { action, ...currentAuditActor() }
         ]
       };
     }
 
-    function resolvePreviewLinkedInput(element) {
-      const link = element?.closest?.("[data-preview-target-id], [data-preview-group-index], [data-preview-maker-index]");
-      if (!link) return null;
-      if (link.dataset.previewTargetId) return document.getElementById(link.dataset.previewTargetId);
-      if (link.dataset.previewMakerIndex != null) {
-        const maker = els.makers.querySelectorAll("[data-maker]")[Number(link.dataset.previewMakerIndex)];
-        return maker?.querySelector(`[data-field="${CSS.escape(link.dataset.previewField || "name")}"]`) || null;
-      }
-      const group = els.groups.querySelectorAll("[data-group]")[Number(link.dataset.previewGroupIndex)];
-      if (!group) return null;
-      if (link.dataset.previewRowIndex == null) return group.querySelector("[data-field='date']");
-      const row = group.querySelectorAll("[data-row]")[Number(link.dataset.previewRowIndex)];
-      return row?.querySelector(`[data-field="${CSS.escape(link.dataset.previewField || "activity")}"]`) || null;
-    }
-
-    function focusInputFromPreview(element) {
-      const input = resolvePreviewLinkedInput(element);
-      if (!input) return false;
-      const behavior = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ? "auto" : "smooth";
-      input.scrollIntoView({ behavior, block: "center", inline: "nearest" });
-      input.focus({ preventScroll: true });
-      input.classList.remove("preview-input-hit");
-      void input.offsetWidth;
-      input.classList.add("preview-input-hit");
-      clearTimeout(appState.previewHighlightTimer);
-      appState.previewHighlightTimer = setTimeout(() => input.classList.remove("preview-input-hit"), 2200);
-      updateRichToolbarState(input);
-      return true;
-    }
-
     function getCommentTarget(event) {
-      const previewField = resolvePreviewLinkedInput(event.target);
-      if (previewField) {
-        return {
-          type: "field",
-          id: previewField.id || "",
-          field: previewField.dataset.field || "",
-          path: elementPathFrom(document.querySelector(".app"), previewField),
-          label: targetLabelFromElement(previewField)
-        };
-      }
       const field = event.target.closest("input, textarea, select");
       if (field && !field.closest(".comment-dialog") && !field.closest(".confirm-dialog")) {
         return {
@@ -4927,13 +3994,10 @@
     async function openCommentDialog(target) {
       if (!await ensureCollabUserName()) return;
       appState.editingCommentId = null;
-      appState.replyingCommentId = null;
-      appState.editingReplyId = null;
       appState.pendingCommentTarget = target;
       if (els.commentTargetLabel) els.commentTargetLabel.textContent = target.label;
       els.commentIdentityText.textContent = `Reviewer: ${collaboration.user.name}`;
       els.commentText.value = "";
-      autoResizeTextarea(els.commentText);
       document.getElementById("commentDialogTitle").textContent = "Tambah komentar";
       els.commentDialog.hidden = false;
       els.commentText.focus();
@@ -4943,14 +4007,7 @@
       if (!await ensureCollabUserName()) return;
       const comment = findCommentById(commentId);
       if (!comment) return;
-      if (!canEditComment(comment)) {
-        setMessage("error", "Komentar hanya bisa diedit oleh pembuatnya.");
-        setStatus("Edit komentar ditolak: nama user tidak cocok.");
-        return;
-      }
       appState.editingCommentId = comment.cid;
-      appState.replyingCommentId = null;
-      appState.editingReplyId = null;
       appState.pendingCommentTarget = {
         type: comment.type,
         id: comment.id || "",
@@ -4962,64 +4019,7 @@
       };
       els.commentIdentityText.textContent = `Reviewer: ${collaboration.user.name}`;
       els.commentText.value = comment.text || "";
-      autoResizeTextarea(els.commentText);
       document.getElementById("commentDialogTitle").textContent = comment.resolved ? "Follow up komentar" : "Edit komentar";
-      els.commentDialog.hidden = false;
-      els.commentText.focus();
-    }
-
-    async function openReplyComment(commentId) {
-      if (!await ensureCollabUserName()) return;
-      const comment = findCommentById(commentId);
-      if (!comment) return;
-      appState.editingCommentId = null;
-      appState.replyingCommentId = comment.cid;
-      appState.editingReplyId = null;
-      appState.pendingCommentTarget = {
-        type: comment.type,
-        id: comment.id || "",
-        field: comment.field || "",
-        path: comment.path || [],
-        label: comment.label || "Area terkait",
-        x: comment.x,
-        y: comment.y
-      };
-      if (els.commentTargetLabel) els.commentTargetLabel.textContent = comment.label || "Area terkait";
-      els.commentIdentityText.textContent = `Reviewer: ${collaboration.user.name}`;
-      els.commentText.value = "";
-      autoResizeTextarea(els.commentText);
-      document.getElementById("commentDialogTitle").textContent = "Reply komentar";
-      els.commentDialog.hidden = false;
-      els.commentText.focus();
-    }
-
-    async function openEditReply(commentId, replyId) {
-      if (!await ensureCollabUserName()) return;
-      const comment = findCommentById(commentId);
-      const reply = findReplyById(comment, replyId);
-      if (!comment || !reply) return;
-      if (!canEditReply(reply)) {
-        setMessage("error", "Reply hanya bisa diedit oleh pembuatnya.");
-        setStatus("Edit reply ditolak: nama user tidak cocok.");
-        return;
-      }
-      appState.editingCommentId = null;
-      appState.replyingCommentId = comment.cid;
-      appState.editingReplyId = reply.rid;
-      appState.pendingCommentTarget = {
-        type: comment.type,
-        id: comment.id || "",
-        field: comment.field || "",
-        path: comment.path || [],
-        label: comment.label || "Area terkait",
-        x: comment.x,
-        y: comment.y
-      };
-      if (els.commentTargetLabel) els.commentTargetLabel.textContent = comment.label || "Area terkait";
-      els.commentIdentityText.textContent = `Reviewer: ${collaboration.user.name}`;
-      els.commentText.value = reply.text || "";
-      autoResizeTextarea(els.commentText);
-      document.getElementById("commentDialogTitle").textContent = "Edit reply";
       els.commentDialog.hidden = false;
       els.commentText.focus();
     }
@@ -5028,8 +4028,6 @@
       els.commentDialog.hidden = true;
       appState.pendingCommentTarget = null;
       appState.editingCommentId = null;
-      appState.replyingCommentId = null;
-      appState.editingReplyId = null;
     }
 
     function saveComment() {
@@ -5044,69 +4042,10 @@
         return;
       }
       if (!appState.pendingCommentTarget) return;
-      if (appState.editingReplyId) {
-        const commentId = appState.replyingCommentId;
-        const replyId = appState.editingReplyId;
-        let allowed = false;
-        updateCommentById(commentId, (comment) => {
-          const reply = findReplyById(comment, replyId);
-          allowed = canEditReply(reply);
-          if (!allowed) return comment;
-          const updatedReplies = (comment.replies || []).map((item) => {
-            if (item.rid !== replyId) return item;
-            return appendReplyAudit({
-              ...item,
-              text,
-              updatedAt: new Date().toISOString()
-            }, "reply_edited");
-          });
-          return appendCommentAudit({
-            ...comment,
-            replies: updatedReplies,
-            updatedAt: new Date().toISOString()
-          }, "reply_edited", {
-            replyId,
-            replyAuthorName: reply.authorName || reply.author || "Reviewer"
-          });
-        });
-        if (!allowed) {
-          setMessage("error", "Reply hanya bisa diedit oleh pembuatnya.");
-          setStatus("Edit reply ditolak: nama user tidak cocok.");
-          return;
-        }
-      } else if (appState.replyingCommentId) {
-        const commentId = appState.replyingCommentId;
-        const now = new Date().toISOString();
-        const actor = currentAuditActor();
-        const replyId = randomId(12);
-        updateCommentById(commentId, (comment) => appendCommentAudit({
-          ...comment,
-          replies: [
-            ...(comment.replies || []),
-            {
-              rid: replyId,
-              text,
-              authorId: collaboration.user.id || clientId,
-              authorName: collaboration.user.name,
-              author: collaboration.user.name,
-              createdAt: now,
-              audit: [{ action: "reply_created", ...actor, at: now }]
-            }
-          ],
-          resolved: false,
-          updatedAt: now
-        }, "replied", {
-          replyId,
-          replyAuthorName: collaboration.user.name
-        }));
-      } else if (appState.editingCommentId) {
+      if (appState.editingCommentId) {
         const commentId = appState.editingCommentId;
-        let allowed = false;
-        updateCommentById(commentId, (comment) => {
-          allowed = canEditComment(comment);
-          if (!allowed) return comment;
-          return {
-            ...appendCommentAudit({
+        updateCommentById(commentId, (comment) => ({
+          ...appendCommentAudit({
             ...comment,
             ...appState.pendingCommentTarget,
             text,
@@ -5115,14 +4054,8 @@
             author: comment.authorName || comment.author || collaboration.user.name,
             resolved: false,
             updatedAt: new Date().toISOString()
-            }, comment.resolved ? "followed_up" : "edited")
-          };
-        });
-        if (!allowed) {
-          setMessage("error", "Komentar hanya bisa diedit oleh pembuatnya.");
-          setStatus("Edit komentar ditolak: nama user tidak cocok.");
-          return;
-        }
+          }, comment.resolved ? "followed_up" : "edited")
+        }));
       } else {
         const now = new Date().toISOString();
         const actor = currentAuditActor();
@@ -5137,7 +4070,6 @@
             author: collaboration.user.name,
             createdAt: now,
             resolved: false,
-            replies: [],
             audit: [{ action: "created", ...actor, at: now }]
           }
         ];
@@ -5169,85 +4101,21 @@
         created: "Dibuat",
         edited: "Diedit",
         followed_up: "Follow up",
-        replied: "Reply dibuat",
-        reply_created: "Reply dibuat",
-        reply_edited: "Reply diedit",
-        reply_deleted: "Reply dihapus",
         resolved: "Solved",
-        reopened: "Reopened",
-        deleted: "Dihapus",
-        updated: "Update"
+        reopened: "Reopened"
       };
-      const target = entry.replyAuthorName ? ` (${entry.replyAuthorName})` : "";
-      return `${labels[entry.action] || entry.action || "Update"}${target} oleh ${entry.byName || "Reviewer"}, ${formatCommentTime(entry.at)}`;
-    }
-
-    function renderAuditLog(entries = [], className = "comment-audit-log", label = "Audit log") {
-      const audit = Array.isArray(entries) ? entries : [];
-      if (!audit.length) return "";
-      return `
-        <details class="${className}">
-          <summary>${escapeHtml(label)} (${audit.length})</summary>
-          <ol>
-            ${audit.slice().reverse().map((entry) => `<li>${escapeHtml(formatAuditAction(entry))}</li>`).join("")}
-          </ol>
-        </details>
-      `;
-    }
-
-    function renderCommentReplies(comment) {
-      const replies = Array.isArray(comment.replies) ? comment.replies : [];
-      if (!replies.length) return "";
-      return `
-        <div class="comment-replies" aria-label="Reply komentar">
-          ${replies.map((reply) => {
-            const replyAuthor = reply.authorName || reply.author || "Reviewer";
-            const mayEditReply = canEditReply(reply);
-            const editTitle = mayEditReply ? "Edit reply" : "Tidak dapat edit reply";
-            const deleteTitle = mayEditReply ? "Hapus reply" : "Tidak dapat hapus reply";
-            return `
-              <div class="comment-reply" data-reply-id="${escapeHtml(reply.rid)}">
-                <div class="comment-reply-meta">
-                  <span>Reply</span>
-                  <span>${escapeHtml(replyAuthor)}</span>
-                  <span>${escapeHtml(formatCommentTime(reply.updatedAt || reply.createdAt))}</span>
-                </div>
-                <p class="comment-reply-text">${escapeHtml(reply.text)}</p>
-                <div class="comment-reply-actions">
-                  <button class="btn btn-secondary" type="button" data-reply-comment="${escapeHtml(comment.cid)}" data-edit-reply="${escapeHtml(reply.rid)}" aria-label="${escapeHtml(editTitle)}" title="${escapeHtml(editTitle)}" ${mayEditReply ? "" : "disabled"}>${commentActionIcon("edit")}</button>
-                  <button class="btn btn-danger" type="button" data-reply-comment="${escapeHtml(comment.cid)}" data-delete-reply="${escapeHtml(reply.rid)}" aria-label="${escapeHtml(deleteTitle)}" title="${escapeHtml(deleteTitle)}" ${mayEditReply ? "" : "disabled"}>${commentActionIcon("delete")}</button>
-                </div>
-              </div>
-            `;
-          }).join("")}
-        </div>
-      `;
+      return `${labels[entry.action] || entry.action || "Update"} by ${entry.byName || "Reviewer"}, ${formatCommentTime(entry.at)}`;
     }
 
     function commentActionIcon(name) {
       const icons = {
         resolve: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`,
         reopen: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v6h6"/></svg>`,
-        reply: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 10 4 15l5 5"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg>`,
         edit: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`,
         followup: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/><path d="M8 10h8"/><path d="M8 14h5"/></svg>`,
         delete: `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>`
       };
       return icons[name] || "";
-    }
-
-    function updateFloatingCommentBadge(unresolvedCount) {
-      const count = Number(unresolvedCount) || 0;
-      const hasUnresolved = count > 0;
-      if (!els.floatingCommentBtn || !els.floatingCommentBadge) return;
-      els.floatingCommentBadge.hidden = !hasUnresolved;
-      els.floatingCommentBadge.textContent = count > 99 ? "99+" : String(count);
-      els.floatingCommentBtn.classList.toggle("has-badge", hasUnresolved);
-      const label = hasUnresolved
-        ? `Komentar review, ${count} unresolved`
-        : "Komentar review";
-      els.floatingCommentBtn.title = label;
-      els.floatingCommentBtn.setAttribute("aria-label", label);
     }
 
     function renderComments() {
@@ -5256,15 +4124,7 @@
       appState.comments = normalized;
       const unresolved = normalized.filter((comment) => !comment.resolved).length;
       const resolved = normalized.length - unresolved;
-      updateFloatingCommentBadge(unresolved);
       if (els.commentSummary) els.commentSummary.textContent = `${unresolved} unresolved, ${resolved} resolved`;
-      const renderSignature = JSON.stringify({
-        filter: els.commentFilter?.value || "all",
-        user: normalizeCommentUserName(collaboration.user.name),
-        comments: normalized
-      });
-      if (appState.commentRenderSignature === renderSignature) return;
-      appState.commentRenderSignature = renderSignature;
       if (!comments.length) {
         els.commentList.innerHTML = `<div class="comment-empty">Belum ada komentar review.</div>`;
         return;
@@ -5280,31 +4140,21 @@
       els.commentList.innerHTML = visibleComments.map((comment) => {
         const toggleLabel = comment.resolved ? "Reopen komentar" : "Resolve komentar";
         const editLabel = comment.resolved ? "Follow up komentar" : "Edit komentar";
-        const replyLabel = "Reply komentar";
-        const commentAuthor = comment.authorName || comment.author || "Reviewer";
-        const mayEdit = canEditComment(comment);
-        const editTitle = mayEdit ? editLabel : "Tidak dapat edit komentar";
-        const deleteTitle = mayEdit ? "Hapus komentar" : "Tidak dapat hapus komentar";
         const latestAudit = comment.audit?.slice(-1)[0];
-        const replies = Array.isArray(comment.replies) ? comment.replies : [];
         return `
-        <article class="comment-card ${comment.resolved ? "is-resolved" : ""}" data-comment-id="${escapeHtml(comment.cid)}">
+        <article class="comment-card ${comment.resolved ? "is-resolved is-collapsed" : ""}" data-comment-id="${escapeHtml(comment.cid)}">
           <div class="comment-meta">
             <span class="comment-status">${escapeHtml(comment.resolved ? "Resolved" : "Unresolved")}</span>
-            <span>${escapeHtml(commentAuthor)}</span>
-            <span>${escapeHtml(replies.length ? `${replies.length} reply` : "0 reply")}</span>
+            <span>${escapeHtml(comment.authorName || comment.author || "Reviewer")}</span>
             <span>${escapeHtml(formatCommentTime(comment.updatedAt || comment.createdAt))}</span>
           </div>
           <p class="comment-audit">${escapeHtml(formatAuditAction(latestAudit))}</p>
           <button class="comment-target-link" type="button" data-focus-comment="${escapeHtml(comment.cid)}">Lihat field: ${escapeHtml(comment.label || "Area terkait")}</button>
           <p class="comment-text">${escapeHtml(comment.text)}</p>
-          ${renderCommentReplies(comment)}
-          ${renderAuditLog(comment.audit, "comment-audit-log", "Log Comment")}
           <div class="actions">
             <button class="btn btn-secondary comment-action-btn" type="button" data-toggle-comment="${escapeHtml(comment.cid)}" aria-label="${escapeHtml(toggleLabel)}" title="${escapeHtml(toggleLabel)}">${commentActionIcon(comment.resolved ? "reopen" : "resolve")}</button>
-            <button class="btn btn-secondary comment-action-btn" type="button" data-reply-root="${escapeHtml(comment.cid)}" aria-label="${escapeHtml(replyLabel)}" title="${escapeHtml(replyLabel)}">${commentActionIcon("reply")}</button>
-            <button class="btn btn-secondary comment-action-btn" type="button" data-edit-comment="${escapeHtml(comment.cid)}" aria-label="${escapeHtml(editTitle)}" title="${escapeHtml(editTitle)}" ${mayEdit ? "" : "disabled"}>${commentActionIcon(comment.resolved ? "followup" : "edit")}</button>
-            <button class="btn btn-danger comment-action-btn" type="button" data-delete-comment="${escapeHtml(comment.cid)}" aria-label="${escapeHtml(deleteTitle)}" title="${escapeHtml(deleteTitle)}" ${mayEdit ? "" : "disabled"}>${commentActionIcon("delete")}</button>
+            <button class="btn btn-secondary comment-action-btn" type="button" data-edit-comment="${escapeHtml(comment.cid)}" aria-label="${escapeHtml(editLabel)}" title="${escapeHtml(editLabel)}">${commentActionIcon(comment.resolved ? "followup" : "edit")}</button>
+            <button class="btn btn-danger comment-action-btn" type="button" data-delete-comment="${escapeHtml(comment.cid)}" aria-label="Hapus komentar" title="Hapus komentar">${commentActionIcon("delete")}</button>
           </div>
         </article>
       `;
@@ -5314,8 +4164,10 @@
     function saveDraft() {
       const data = collectData();
       saveUserSettings(data);
+      const base = [data.featureName, data.branchName].filter(Boolean).join(" ") || "draft-berita-acara";
+      const name = sanitizeFilename(`${base} ${timestampForFilename()}`);
       const blob = new Blob([JSON.stringify({ ...data, exportedAt: new Date().toISOString() }, null, 2)], { type: "application/json" });
-      downloadBlob(blob, draftFilename(data.featureName));
+      downloadBlob(blob, `${name}.json`);
       setMessage("ok", "Draft JSON diekspor.");
       setStatus("Draft JSON diekspor.");
     }
@@ -5354,7 +4206,7 @@
         if (!shouldPersistCollab) return;
         persistAutosave(data, updatedAt);
         if (shouldSync) queueSharedUpdate();
-      }, COLLAB_AUTOSAVE_DELAY_MS);
+      }, 250);
     }
 
     function maybeLoadAutosave() {
@@ -5382,13 +4234,10 @@
       const createPaper = (withTable = true) => {
         const article = document.createElement("article");
         article.className = "paper";
-        const headerEntries = pdfLayout?.pageHeaderEntries || [
-          { text: buildHeaderLineOne(data), targetId: "featureName" },
-          { text: buildHeaderLineTwo(data), targetId: "branchName" }
-        ];
         article.innerHTML = `
           <div class="doc-header">
-            ${headerEntries.map((entry) => `<div role="link" tabindex="0" data-preview-target-id="${escapeHtml(entry.targetId)}">${escapeHtml(entry.text)}</div>`).join("")}
+            <div>${escapeHtml(buildHeaderLineOne(data))}</div>
+            <div>${escapeHtml(buildHeaderLineTwo(data))}</div>
           </div>
           ${withTable ? `
           <table class="doc-table">
@@ -5408,102 +4257,122 @@
         return article;
       };
 
-      const JsPdfCtor = window.jspdf?.jsPDF;
-      if (!JsPdfCtor) {
-        els.preview.innerHTML = `<div class="empty-preview">Library PDF belum siap.</div>`;
-        return;
-      }
-      const measurePdf = new JsPdfCtor({ orientation: "portrait", unit: "pt", format: "a4" });
-      const pdfLayout = createPdfLayout(measurePdf, registerPdfFonts());
-      setPdfBaseStyle(measurePdf, pdfLayout);
-      setPdfPageHeaderMetrics(measurePdf, data, pdfLayout);
-      const preparedGroups = preparePdfGroups(measurePdf, data, pdfLayout);
-      const paginationPlan = buildPdfPaginationPlan(
-        preparedGroups,
-        pdfLayout,
-        getPdfClosingHeight(data, pdfLayout),
-        getPdfClosingLeadHeight(pdfLayout)
-      );
-
-      const makeDateRow = (dateText, groupIndex) => {
+      const overflows = (page) => page.scrollHeight > page.clientHeight + 2;
+      const makeDateRow = (group) => {
         const row = document.createElement("tr");
         row.className = "date-row";
-        row.innerHTML = `<td colspan="4" role="link" tabindex="0" data-preview-group-index="${groupIndex}">${escapeHtml(dateText)}</td>`;
+        row.innerHTML = `<td colspan="4">${escapeHtml(formatActivityDate(group.date, group.dates))}</td>`;
         return row;
       };
-      const makeActivityRow = (rowData, displayIndex, rows, spans, groupIndex, localIndex = displayIndex) => {
+      const makeActivityRow = (rowData, displayIndex, rows, spans, localIndex = displayIndex) => {
         const row = document.createElement("tr");
-        const rowNumber = getPdfRowNumber(rowData, displayIndex);
+        const rowNumber = (rowData.originalIndex ?? displayIndex) + 1;
         const mergedCell = (key, width, align = "left") => {
           const span = spans[key];
           if (span.hidden[localIndex]) return "";
           const isMerged = span.lengths[localIndex] > 1;
           const rowspan = isMerged ? ` rowspan="${span.lengths[localIndex]}"` : "";
           const verticalAlign = isMerged && (key === "result" || key === "pic") ? "middle" : "top";
-          return `<td${rowspan} role="link" tabindex="0" data-preview-group-index="${groupIndex}" data-preview-row-index="${rowData.sourceRowIndex ?? rowData.originalIndex ?? localIndex}" data-preview-field="${key}" style="width:${width}; text-align:${align}; vertical-align:${verticalAlign};">${richTextToPreviewHtml(rows[localIndex][key], rows[localIndex][`${key}Formats`], key)}</td>`;
+          return `<td${rowspan} style="width:${width}; text-align:${align}; vertical-align:${verticalAlign};">${richTextToPreviewHtml(rows[localIndex][key], rows[localIndex][`${key}Formats`], key)}</td>`;
         };
         row.innerHTML = `
-          <td role="link" tabindex="0" data-preview-group-index="${groupIndex}" data-preview-row-index="${rowData.sourceRowIndex ?? rowData.originalIndex ?? localIndex}" data-preview-field="activity" style="width:6%; text-align:center;">${rowNumber}</td>
+          <td style="width:6%; text-align:center;">${rowData.continued ? "" : rowNumber}</td>
           ${mergedCell("activity", "42%")}
           ${mergedCell("result", "38%")}
           ${mergedCell("pic", "14%", "center")}`;
         return row;
       };
+      const makePlainActivityRow = (rowData, displayIndex) => {
+        const row = document.createElement("tr");
+        const rowNumber = (rowData.originalIndex ?? displayIndex) + 1;
+        row.innerHTML = `
+          <td style="width:6%; text-align:center;">${rowData.continued ? "" : rowNumber}</td>
+          <td style="width:42%;">${richTextToPreviewHtml(rowData.activity, rowData.activityFormats, "activity")}</td>
+          <td style="width:38%;">${richTextToPreviewHtml(rowData.result, rowData.resultFormats, "result")}</td>
+          <td style="width:14%; text-align:center;">${richTextToPreviewHtml(rowData.pic, rowData.picFormats, "pic")}</td>`;
+        return row;
+      };
+
+      let page = createPaper(true);
+      let tbody = page.querySelector("tbody");
+
+      data.groups.forEach((group) => {
+        const rows = splitPreviewRows(group.rows.filter((row) => row.activity || row.result || row.pic));
+        if (!rows.length) return;
+
+        let rowStart = 0;
+        while (rowStart < rows.length) {
+          let dateRow = makeDateRow(group);
+          tbody.appendChild(dateRow);
+          if (overflows(page) && tbody.children.length > 1) {
+            dateRow.remove();
+            page = createPaper(true);
+            tbody = page.querySelector("tbody");
+            dateRow = makeDateRow(group);
+            tbody.appendChild(dateRow);
+          }
+
+          const segmentRows = [];
+          while (rowStart + segmentRows.length < rows.length) {
+            const displayIndex = rowStart + segmentRows.length;
+            const testRow = makePlainActivityRow(rows[displayIndex], displayIndex);
+            tbody.appendChild(testRow);
+            if (overflows(page) && segmentRows.length === 0 && tbody.children.length > 2) {
+              testRow.remove();
+              dateRow.remove();
+              page = createPaper(true);
+              tbody = page.querySelector("tbody");
+              dateRow = makeDateRow(group);
+              tbody.appendChild(dateRow);
+              continue;
+            }
+            if (overflows(page) && segmentRows.length > 0) {
+              testRow.remove();
+              break;
+            }
+            segmentRows.push(rows[displayIndex]);
+            if (overflows(page)) break;
+          }
+
+          while (dateRow.nextSibling) dateRow.nextSibling.remove();
+          const pageSpans = buildPdfSpans(segmentRows);
+          segmentRows.forEach((rowData, localIndex) => {
+            tbody.appendChild(makeActivityRow(rowData, rowStart + localIndex, segmentRows, pageSpans, localIndex));
+          });
+          rowStart += segmentRows.length;
+
+          if (rowStart < rows.length) {
+            page = createPaper(true);
+            tbody = page.querySelector("tbody");
+          }
+        }
+      });
 
       const makers = data.makers
-        .map((maker, makerIndex) => ({ ...maker, makerIndex }))
         .filter((maker) => maker.name || maker.role)
-        .map((maker) => `<p><span role="link" tabindex="0" data-preview-maker-index="${maker.makerIndex}" data-preview-field="name">${escapeHtml(maker.name)}</span>${maker.name && maker.role ? " – " : ""}<span role="link" tabindex="0" data-preview-maker-index="${maker.makerIndex}" data-preview-field="role">${escapeHtml(maker.role)}</span></p>`)
+        .map((maker) => `<p>${escapeHtml(formatPersonText(maker))}</p>`)
         .join("");
 
-      const makeClosingLead = () => {
-        const closing = document.createElement("div");
-        closing.innerHTML = `
+      const closing = document.createElement("div");
+      closing.innerHTML = `
         <p class="doc-body">Demikian Berita Acara ini dibuat, atas perhatian dan kerja sama Bapak/Ibu, kami ucapkan terima kasih.</p>
         <div class="doc-body">
-          <div role="link" tabindex="0" data-preview-target-id="divisionLine"><strong>${escapeHtml(data.divisionLine || defaultDivisionLine())}</strong></div>
-          <div role="link" tabindex="0" data-preview-target-id="applicationLine"><strong>${escapeHtml(data.applicationLine || defaultApplicationLine())}</strong></div>
-          <div role="link" tabindex="0" data-preview-target-id="city">${escapeHtml(data.city)}, <span data-preview-target-id="signDate">${escapeHtml(formatDate(data.signDate))}</span></div>
-        </div>`;
-        return closing;
-      };
-      const makeSignature = () => {
-        const signature = document.createElement("div");
-        signature.className = "signature";
-        signature.innerHTML = `
+          <div><strong>${escapeHtml(data.divisionLine || defaultDivisionLine())}</strong></div>
+          <div><strong>${escapeHtml(data.applicationLine || defaultApplicationLine())}</strong></div>
+          <div>${escapeHtml(data.city)}, ${escapeHtml(formatDate(data.signDate))}</div>
+        </div>
+        <div class="signature">
           <p class="role">Pembuat :</p>
           ${makers || "<p>-</p>"}
           <p class="role">Menyetujui :</p>
-          <p><span role="link" tabindex="0" data-preview-target-id="approverName">${escapeHtml(data.approverName)}</span>${data.approverName && data.approverRole ? " – " : ""}<span role="link" tabindex="0" data-preview-target-id="approverRole">${escapeHtml(data.approverRole)}</span></p>`;
-        return signature;
-      };
-
-      paginationPlan.forEach((pagePlan) => {
-        const page = createPaper(pagePlan.withTable);
-        if (pagePlan.withTable) {
-          const tbody = page.querySelector("tbody");
-          pagePlan.segments.forEach((segment) => {
-            tbody.appendChild(makeDateRow(segment.dateText, segment.groupIndex));
-            const spans = buildPdfSpans(segment.rows);
-            segment.rows.forEach((rowData, localIndex) => {
-              tbody.appendChild(makeActivityRow(
-                rowData,
-                segment.displayStart + localIndex,
-                segment.rows,
-                spans,
-                segment.groupIndex,
-                localIndex
-              ));
-            });
-          });
-        }
-        if (pagePlan.closing === "full" || pagePlan.closing === "lead") {
-          page.insertBefore(makeClosingLead(), page.querySelector(".doc-footer"));
-        }
-        if (pagePlan.closing === "full" || pagePlan.closing === "signature") {
-          page.insertBefore(makeSignature(), page.querySelector(".doc-footer"));
-        }
-      });
+          <p>${escapeHtml(formatPersonText({ name: data.approverName, role: data.approverRole }))}</p>
+        </div>`;
+      page.insertBefore(closing, page.querySelector(".doc-footer"));
+      if (overflows(page)) {
+        closing.remove();
+        page = createPaper(false);
+        page.insertBefore(closing, page.querySelector(".doc-footer"));
+      }
 
       pages.forEach((paper, index) => {
         paper.querySelector(".doc-footer").textContent = `Halaman ${index + 1}/${pages.length}`;
@@ -5550,7 +4419,7 @@
     }
 
     function splitPreviewCell(value, formats = [], key = "activity") {
-      const text = normalizeCellText(value);
+      const text = normalizeText(value);
       const safeFormats = sanitizeRichFormats(formats, text.length);
       if (!text) return [{ text: "", formats: [] }];
       const chunks = [];
@@ -5634,7 +4503,8 @@
         renderPreview();
         const filename = sanitizeFilename(`Form Berita Acara ${data.featureName}`) + ".pdf";
         const pdf = new JsPdfCtor({ unit: "pt", format: "a4", orientation: "portrait" });
-        buildSelectablePdf(pdf, data, registerPdfFonts());
+        const pdfFont = await registerPdfFonts(pdf);
+        buildSelectablePdf(pdf, data, pdfFont);
         pdf.save(filename);
         setGenerateMessage("ok", "PDF berhasil dibuat.");
         setStatus("PDF selesai.");
@@ -5647,11 +4517,46 @@
       }
     }
 
-    function registerPdfFonts() {
-      return DOC_STYLE.fontFamilyPdf;
+    async function registerPdfFonts(pdf) {
+      try {
+        const [regular, bold, italic, boldItalic] = await Promise.all([
+          fetchFontAsBase64(pdfFontSources.regular),
+          fetchFontAsBase64(pdfFontSources.bold),
+          fetchFontAsBase64(pdfFontSources.italic),
+          fetchFontAsBase64(pdfFontSources.boldItalic)
+        ]);
+        pdf.addFileToVFS("Carlito-Regular.ttf", regular);
+        pdf.addFileToVFS("Carlito-Bold.ttf", bold);
+        pdf.addFileToVFS("Carlito-Italic.ttf", italic);
+        pdf.addFileToVFS("Carlito-BoldItalic.ttf", boldItalic);
+        pdf.addFont("Carlito-Regular.ttf", "Carlito", "normal");
+        pdf.addFont("Carlito-Bold.ttf", "Carlito", "bold");
+        pdf.addFont("Carlito-Italic.ttf", "Carlito", "italic");
+        pdf.addFont("Carlito-BoldItalic.ttf", "Carlito", "bolditalic");
+        return "Carlito";
+      } catch {
+        return "helvetica";
+      }
     }
 
-    function createPdfLayout(pdf, fontFamily = "helvetica") {
+    async function fetchFontAsBase64(url) {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Font gagal load: ${response.status}`);
+      const buffer = await response.arrayBuffer();
+      return arrayBufferToBase64(buffer);
+    }
+
+    function arrayBufferToBase64(buffer) {
+      const bytes = new Uint8Array(buffer);
+      let binary = "";
+      const chunkSize = 0x8000;
+      for (let index = 0; index < bytes.length; index += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+      }
+      return btoa(binary);
+    }
+
+    function buildSelectablePdf(pdf, data, fontFamily = "helvetica") {
       const layout = {
         pageWidth: pdf.internal.pageSize.getWidth(),
         pageHeight: pdf.internal.pageSize.getHeight(),
@@ -5678,228 +4583,69 @@
         layout.contentWidth * 0.38,
         layout.contentWidth * 0.14
       ];
-      return layout;
-    }
+      setPdfBaseStyle(pdf, layout);
+      let y = drawPdfPageHeader(pdf, data, layout);
+      y = drawPdfTableHeader(pdf, layout, y);
 
-    function setPdfPageHeaderMetrics(pdf, data, layout) {
-      pdf.setFont(layout.fontFamily, "bold");
-      pdf.setFontSize(layout.headerSize);
-      layout.pageHeaderEntries = [
-        ...pdf.splitTextToSize(buildHeaderLineOne(data), layout.contentWidth)
-          .map((text) => ({ text, targetId: "featureName" })),
-        ...pdf.splitTextToSize(buildHeaderLineTwo(data), layout.contentWidth)
-          .map((text) => ({ text, targetId: "branchName" }))
-      ];
-      layout.pageHeaderLines = layout.pageHeaderEntries.map((entry) => entry.text);
-      layout.pageHeaderBottom = layout.top + 57 + Math.max(0, layout.pageHeaderLines.length - 2) * layout.headerLine;
-      return layout.pageHeaderLines;
-    }
-
-    function preparePdfGroups(pdf, data, layout) {
-      return data.groups
-        .map((group, groupIndex) => {
-          const sourceRows = group.rows
-            .map((row, sourceRowIndex) => ({ ...row, sourceRowIndex }))
-            .filter((row) => row.activity || row.result || row.pic);
-          const rows = splitPdfRows(pdf, layout, sourceRows);
-          const measuredRows = rows.map((row) => ({
-            ...row,
-            continuedActivityHeight: row.continuedActivity
-              ? pdfRowHeight(pdf, layout, { ...row, activity: row.continuedActivity, activityFormats: row.continuedActivityFormats })
-              : 0
-          }));
-          return {
-            groupIndex,
-            dateText: formatActivityDate(group.date, group.dates),
-            rows: measuredRows,
-            rowHeights: measuredRows.map((row) => pdfRowHeight(pdf, layout, row))
-          };
-        })
-        .filter((group) => group.rows.length);
-    }
-
-    function compactPdfPageRows(rows, rowHeights) {
-      const compactedRows = [];
-      const compactedHeights = [];
-
-      rows.forEach((row, index) => {
-        const previous = compactedRows[compactedRows.length - 1];
-        if (previous && row.originalIndex != null && previous.originalIndex === row.originalIndex) {
-          ["activity", "result", "pic"].forEach((key) => {
-            const incoming = row[key] || "";
-            if (!incoming) return;
-            const separator = previous[key] ? "\n" : "";
-            const offset = previous[key].length + separator.length;
-            previous[key] += separator + incoming;
-            previous[`${key}Formats`] = [
-              ...(previous[`${key}Formats`] || []),
-              ...(row[`${key}Formats`] || []).map((format) => ({
-                ...format,
-                start: format.start + offset,
-                end: format.end + offset
-              }))
-            ];
-          });
-          compactedHeights[compactedHeights.length - 1] += rowHeights[index];
-          return;
-        }
-
-        compactedRows.push({
-          ...row,
-          activityFormats: [...(row.activityFormats || [])],
-          resultFormats: [...(row.resultFormats || [])],
-          picFormats: [...(row.picFormats || [])]
-        });
-        compactedHeights.push(rowHeights[index]);
-      });
-
-      return { rows: compactedRows, rowHeights: compactedHeights };
-    }
-
-    function buildPdfPaginationPlan(preparedGroups, layout, closingHeight, closingLeadHeight) {
-      const pageHeaderBottom = layout.pageHeaderBottom || layout.top + 57;
-      const tableStartY = pageHeaderBottom + layout.tableHeaderHeight;
-      const freshFinalRowY = tableStartY + layout.dateHeight;
-      const closingGap = layout.bodyLine * 2;
-      const getPageRowHeight = (row, rowHeight, startsPageChunk) => {
-        if (!startsPageChunk || !row.continuedActivity) return rowHeight;
-        return Math.max(rowHeight, row.continuedActivityHeight || rowHeight);
-      };
-      const fillPageContinuedActivity = (row) => {
-        if (!row.continuedActivity || row.activity) return row;
-        return {
-          ...row,
-          activity: row.continuedActivity,
-          activityFormats: [...(row.continuedActivityFormats || [])]
-        };
-      };
-      const pages = [];
-      const addPage = (withTable = true) => {
-        const page = {
-          withTable,
-          segments: [],
-          y: withTable ? tableStartY : layout.top + 57,
-          closing: "",
-          closingY: 0
-        };
-        pages.push(page);
-        return page;
-      };
-      let page = addPage(true);
-
-      preparedGroups.forEach((group, groupIndex) => {
+      data.groups.forEach((group) => {
+        const rows = splitPdfRows(pdf, layout, group.rows.filter((row) => row.activity || row.result || row.pic));
+        if (!rows.length) return;
+        const rowHeights = rows.map((row) => pdfRowHeight(pdf, layout, row));
+        const dateText = formatActivityDate(group.date, group.dates);
         let rowStart = 0;
-        while (rowStart < group.rows.length) {
-          const firstHeight = group.rowHeights[rowStart];
-          if (page.segments.length && page.y + layout.dateHeight + firstHeight > layout.bottomLimit) {
-            page = addPage(true);
-          }
 
-          const rowY = page.y + layout.dateHeight;
+        while (rowStart < rows.length) {
+          if (y + layout.dateHeight > layout.bottomLimit) {
+            pdf.addPage();
+            setPdfBaseStyle(pdf, layout);
+            y = drawPdfPageHeader(pdf, data, layout);
+            y = drawPdfTableHeader(pdf, layout, y);
+          }
+          y = drawPdfDateRow(pdf, layout, y, dateText);
+
           const pageRows = [];
           const pageRowHeights = [];
-          let restartOnNewPage = false;
-
-          while (rowStart + pageRows.length < group.rows.length) {
+          while (rowStart + pageRows.length < rows.length) {
             const sourceIndex = rowStart + pageRows.length;
-            const startsPageChunk = pageRows.length === 0;
-            const nextHeight = getPageRowHeight(group.rows[sourceIndex], group.rowHeights[sourceIndex], startsPageChunk);
-            const queuedHeight = pageRowHeights.reduce((total, height) => total + height, 0);
-            const finalRow = groupIndex === preparedGroups.length - 1 && sourceIndex === group.rows.length - 1;
-            const reservedClosingHeight = closingHeight;
-            const requiredBottom = rowY + queuedHeight + nextHeight + closingGap + reservedClosingHeight;
-            const freshRequiredBottom = freshFinalRowY + nextHeight + closingGap + reservedClosingHeight;
-            const moveFinalRow = finalRow && requiredBottom > layout.bottomLimit && freshRequiredBottom <= layout.bottomLimit;
-
-            if (moveFinalRow) {
-              if (pageRows.length) break;
-              if (page.segments.length) {
-                page = addPage(true);
-                restartOnNewPage = true;
-                break;
-              }
+            const nextHeight = rowHeights[sourceIndex];
+            if (pageRows.length === 0 && y + nextHeight > layout.bottomLimit && y > layout.top + 57 + layout.tableHeaderHeight + layout.dateHeight) {
+              pdf.addPage();
+              setPdfBaseStyle(pdf, layout);
+              y = drawPdfPageHeader(pdf, data, layout);
+              y = drawPdfTableHeader(pdf, layout, y);
+              y = drawPdfDateRow(pdf, layout, y, dateText);
+              continue;
             }
-
-            if (!pageRows.length && rowY + nextHeight > layout.bottomLimit && page.segments.length) {
-              page = addPage(true);
-              restartOnNewPage = true;
+            if (pageRows.length > 0 && y + sumRange(pageRowHeights, 0, pageRowHeights.length) + nextHeight > layout.bottomLimit) {
               break;
             }
-            if (pageRows.length && rowY + queuedHeight + nextHeight > layout.bottomLimit) break;
-
-            pageRows.push(startsPageChunk ? fillPageContinuedActivity(group.rows[sourceIndex]) : group.rows[sourceIndex]);
+            pageRows.push(rows[sourceIndex]);
             pageRowHeights.push(nextHeight);
-            if (rowY + queuedHeight + nextHeight > layout.bottomLimit) break;
+            if (y + sumRange(pageRowHeights, 0, pageRowHeights.length) > layout.bottomLimit) break;
           }
 
-          if (restartOnNewPage) continue;
-          if (!pageRows.length) {
-            pageRows.push(fillPageContinuedActivity(group.rows[rowStart]));
-            pageRowHeights.push(getPageRowHeight(group.rows[rowStart], group.rowHeights[rowStart], true));
-          }
-
-          const compactedPageRows = compactPdfPageRows(pageRows, pageRowHeights);
-
-          page.segments.push({
-            groupIndex: group.groupIndex,
-            dateText: group.dateText,
-            rows: compactedPageRows.rows,
-            rowHeights: compactedPageRows.rowHeights,
-            displayStart: rowStart
+          const pageSpans = buildPdfSpans(pageRows);
+          pageRows.forEach((row, localIndex) => {
+            y = drawPdfActivityRow(pdf, layout, row, localIndex, pageRows, pageRowHeights, pageSpans, y, rowStart + localIndex);
           });
-          page.y = rowY + compactedPageRows.rowHeights.reduce((total, height) => total + height, 0);
           rowStart += pageRows.length;
-          if (rowStart < group.rows.length) page = addPage(true);
+
+          if (rowStart < rows.length) {
+            pdf.addPage();
+            setPdfBaseStyle(pdf, layout);
+            y = drawPdfPageHeader(pdf, data, layout);
+            y = drawPdfTableHeader(pdf, layout, y);
+          }
         }
       });
 
-      let closingY = page.y + closingGap;
-      if (closingY + closingHeight > layout.bottomLimit) {
-        page = addPage(false);
-        closingY = pageHeaderBottom;
-      }
-      page.closing = "full";
-      page.closingY = closingY;
-      return pages;
-    }
-
-    function buildSelectablePdf(pdf, data, fontFamily = "helvetica") {
-      const layout = createPdfLayout(pdf, fontFamily);
-      setPdfBaseStyle(pdf, layout);
-      setPdfPageHeaderMetrics(pdf, data, layout);
-      const closingHeight = getPdfClosingHeight(data, layout);
-      const closingLeadHeight = getPdfClosingLeadHeight(layout);
-      const preparedGroups = preparePdfGroups(pdf, data, layout);
-      const pages = buildPdfPaginationPlan(preparedGroups, layout, closingHeight, closingLeadHeight);
-
-      pages.forEach((page, pageIndex) => {
-        if (pageIndex) pdf.addPage();
+      y += 18;
+      if (y + 185 > layout.bottomLimit) {
+        pdf.addPage();
         setPdfBaseStyle(pdf, layout);
-        let y = drawPdfPageHeader(pdf, data, layout);
-        if (page.withTable) {
-          y = drawPdfTableHeader(pdf, layout, y);
-          page.segments.forEach((segment) => {
-            y = drawPdfDateRow(pdf, layout, y, segment.dateText);
-            const spans = buildPdfSpans(segment.rows);
-            segment.rows.forEach((row, localIndex) => {
-              y = drawPdfActivityRow(
-                pdf,
-                layout,
-                row,
-                localIndex,
-                segment.rows,
-                segment.rowHeights,
-                spans,
-                y,
-                segment.displayStart + localIndex
-              );
-            });
-          });
-        }
-        if (page.closing === "full") drawPdfClosing(pdf, data, layout, page.closingY);
-        if (page.closing === "lead") drawPdfClosingLead(pdf, data, layout, page.closingY);
-        if (page.closing === "signature") drawPdfSignature(pdf, data, layout, page.closingY);
-      });
+        y = drawPdfPageHeader(pdf, data, layout);
+      }
+      drawPdfClosing(pdf, data, layout, y);
       drawPdfFooters(pdf, layout);
     }
 
@@ -5913,11 +4659,9 @@
     function drawPdfPageHeader(pdf, data, layout) {
       pdf.setFont(layout.fontFamily, "bold");
       pdf.setFontSize(layout.headerSize);
-      const lines = layout.pageHeaderLines || setPdfPageHeaderMetrics(pdf, data, layout);
-      lines.forEach((line, index) => {
-        pdf.text(line, layout.pageWidth / 2, layout.top + 12 + index * layout.headerLine, { align: "center" });
-      });
-      return layout.pageHeaderBottom;
+      pdf.text(buildHeaderLineOne(data), layout.pageWidth / 2, layout.top + 12, { align: "center" });
+      pdf.text(buildHeaderLineTwo(data), layout.pageWidth / 2, layout.top + 12 + layout.headerLine, { align: "center" });
+      return layout.top + 57;
     }
 
     function drawPdfTableHeader(pdf, layout, y) {
@@ -6013,26 +4757,18 @@
 
     function splitPdfRichText(pdf, value, width, layoutOverride = null, formats = []) {
       const layout = layoutOverride || { fontFamily: "helvetica", bodySize: 10.5 };
-      const rawText = normalizeCellText(value);
+      const rawText = normalizeText(value);
       const rawLines = rawText.split("\n");
       const output = [];
+      let listNumber = 1;
       let offset = 0;
       rawLines.forEach((rawLine) => {
-        const listItem = parseListLine(rawLine);
-        const marker = listItem
-          ? (listItem.kind === "bullet" ? ["•", "o", "-"][listItem.depth - 1] : `${listItem.marker}.`)
-          : "";
-        const prefix = listItem ? `${"  ".repeat(listItem.depth - 1)}${marker} ` : "";
-        const contentStart = listItem ? listItem.prefixLength : 0;
+        const listItem = rawLine.match(/^\s*(?:(\d+)[.)]|-)\s+(.*)$/);
+        if (listItem?.[1]) listNumber = Number(listItem[1]);
+        const prefix = listItem ? (listItem[1] ? `${listNumber}. ` : "\u2022 ") : "";
+        const contentStart = listItem ? rawLine.indexOf(listItem[2]) : 0;
         const tokens = pdfSegmentsForRange(rawText, offset + contentStart, offset + rawLine.length, formats);
         const prefixSegment = prefix ? [{ text: prefix, bold: false, italic: false, underline: false }] : [];
-        const prefixWidth = measurePdfSegments(pdf, layout, prefixSegment);
-        pdf.setFont(layout.fontFamily, "normal");
-        pdf.setFontSize(layout.bodySize);
-        const spaceWidth = Math.max(0.1, pdf.getTextWidth(" "));
-        const continuationSegment = prefix
-          ? [{ text: " ".repeat(Math.ceil(prefixWidth / spaceWidth)), bold: false, italic: false, underline: false }]
-          : [];
         let segments = [...prefixSegment];
         let hasText = false;
 
@@ -6045,8 +4781,7 @@
             const testSegments = [...segments, next];
             if (hasText && measurePdfSegments(pdf, layout, testSegments) > Math.max(8, width)) {
               output.push(segments);
-              segments = [...continuationSegment];
-              hasText = false;
+              segments = [...prefixSegment];
               if (!isSpace) {
                 segments.push(next);
                 hasText = true;
@@ -6060,6 +4795,7 @@
 
         if (!segments.length || (!hasText && !prefix)) segments = [{ text: " ", bold: false, italic: false, underline: false }];
         output.push(segments);
+        if (listItem) listNumber += 1;
         offset += rawLine.length + 1;
       });
       return output.length ? output : [[{ text: " ", bold: false, italic: false, underline: false }]];
@@ -6088,17 +4824,13 @@
       return { lengths, hidden };
     }
 
-    function getPdfRowNumber(row, displayIndex) {
-      return (row.originalIndex ?? displayIndex) + 1;
-    }
-
     function drawPdfActivityRow(pdf, layout, row, index, rows, rowHeights, spans, y, displayIndex = index) {
       const rowHeight = rowHeights[index];
       let x = layout.left;
       pdf.setFont(layout.fontFamily, "normal");
       pdf.setFontSize(layout.bodySize);
-      const rowNumber = getPdfRowNumber(row, displayIndex);
-      drawPdfCell(pdf, layout, x, y, layout.columns[0], rowHeight, [String(rowNumber)], "center");
+      const rowNumber = (row.originalIndex ?? displayIndex) + 1;
+      drawPdfCell(pdf, layout, x, y, layout.columns[0], rowHeight, [row.continued ? "" : String(rowNumber)], "center");
       x += layout.columns[0];
 
       ["activity", "result", "pic"].forEach((key, offset) => {
@@ -6146,47 +4878,28 @@
       return values.slice(start, end).reduce((total, value) => total + value, 0);
     }
 
-    function getPdfMaxLinesPerRow(pdf, layout, row) {
-      const pageCapacity = Math.max(1, Math.floor((layout.bottomLimit - drawPdfPageHeaderHeight(layout) - layout.tableHeaderHeight - layout.dateHeight - layout.padY * 2) / layout.bodyLine));
-      const balancedChunkTarget = Math.max(1, Math.floor(pageCapacity / 2));
-      const lineCounts = ["activity", "result", "pic"].map((key, offset) =>
-        splitPdfRichText(pdf, row[key], layout.columns[offset + 1] - layout.padX * 2, layout, row[`${key}Formats`]).length
-      );
-      const rowLines = Math.max(...lineCounts);
-      const chunkCount = Math.max(1, Math.ceil(rowLines / balancedChunkTarget));
-      const balancedLines = Math.ceil(rowLines / chunkCount) + (chunkCount > 1 ? 1 : 0);
-      return Math.max(1, Math.min(rowLines, balancedLines));
-    }
-
     function splitPdfRows(pdf, layout, rows) {
+      const maxLines = Math.max(1, Math.floor((layout.bottomLimit - drawPdfPageHeaderHeight(layout) - layout.tableHeaderHeight - layout.dateHeight - layout.padY * 2) / layout.bodyLine));
       return rows.flatMap((row, index) => {
-        const maxLines = getPdfMaxLinesPerRow(pdf, layout, row);
         const values = ["activity", "result", "pic"].map((key, offset) =>
           splitPdfRichChunks(pdf, layout, row[key], row[`${key}Formats`], layout.columns[offset + 1] - layout.padX * 2, maxLines)
         );
         const chunkCount = Math.max(...values.map((chunks) => chunks.length));
-        return Array.from({ length: chunkCount }, (_, chunkIndex) => {
-          const activityChunk = values[0][chunkIndex];
-          const continuedActivity = chunkIndex > 0 && !activityChunk?.text && Boolean(String(row.activity || "").trim());
-          return {
-            activity: activityChunk?.text || "",
-            activityFormats: activityChunk?.formats || [],
-            result: values[1][chunkIndex]?.text || "",
-            resultFormats: values[1][chunkIndex]?.formats || [],
-            pic: values[2][chunkIndex]?.text || "",
-            picFormats: values[2][chunkIndex]?.formats || [],
-            continued: chunkIndex > 0,
-            originalIndex: index,
-            sourceRowIndex: row.sourceRowIndex ?? index,
-            continuedActivity: continuedActivity ? row.activity : "",
-            continuedActivityFormats: continuedActivity ? [...(row.activityFormats || [])] : []
-          };
-        });
+        return Array.from({ length: chunkCount }, (_, chunkIndex) => ({
+          activity: values[0][chunkIndex]?.text || "",
+          activityFormats: values[0][chunkIndex]?.formats || [],
+          result: values[1][chunkIndex]?.text || "",
+          resultFormats: values[1][chunkIndex]?.formats || [],
+          pic: values[2][chunkIndex]?.text || "",
+          picFormats: values[2][chunkIndex]?.formats || [],
+          continued: chunkIndex > 0,
+          originalIndex: index
+        }));
       });
     }
 
     function splitPdfRichChunks(pdf, layout, value, formats = [], width, maxLines) {
-      const raw = normalizeCellText(value);
+      const raw = normalizeText(value);
       const safeFormats = sanitizeRichFormats(formats, raw.length);
       if (!raw) return [{ text: "", formats: [] }];
       const chunks = [];
@@ -6229,47 +4942,10 @@
     }
 
     function drawPdfPageHeaderHeight(layout) {
-      return layout.pageHeaderBottom || layout.top + 57;
-    }
-
-    function getPdfClosingLeadHeight(layout) {
-      return 34 + 15 + 15 + layout.bodyLine;
-    }
-
-    function getPdfClosingHeight(data, layout) {
-      const makers = (data.makers || []).filter((maker) => maker.name || maker.role);
-      const makerCount = Math.max(1, makers.length);
-      return 156 + makerCount * 15 + layout.bodyLine;
-    }
-
-    function getPdfSignatureHeight(data, layout) {
-      const makers = (data.makers || []).filter((maker) => maker.name || maker.role);
-      const makerCount = Math.max(1, makers.length);
-      return 92 + makerCount * 15 + layout.bodyLine;
-    }
-
-    function shouldStartFinalPdfRowOnNewPage({
-      finalRow,
-      currentY,
-      queuedHeight,
-      rowHeight,
-      closingGap,
-      closingHeight,
-      bottomLimit,
-      freshY
-    }) {
-      if (!finalRow) return false;
-      const requiredBottom = currentY + queuedHeight + rowHeight + closingGap + closingHeight;
-      const freshRequiredBottom = freshY + rowHeight + closingGap + closingHeight;
-      return requiredBottom > bottomLimit && freshRequiredBottom <= bottomLimit;
+      return layout.top + 57;
     }
 
     function drawPdfClosing(pdf, data, layout, y) {
-      y = drawPdfClosingLead(pdf, data, layout, y);
-      drawPdfSignature(pdf, data, layout, y + 44);
-    }
-
-    function drawPdfClosingLead(pdf, data, layout, y) {
       pdf.setFont(layout.fontFamily, "normal");
       pdf.setFontSize(layout.bodySize);
       pdf.text("Demikian Berita Acara ini dibuat, atas perhatian dan kerja sama Bapak/Ibu, kami ucapkan terima kasih.", layout.left, y);
@@ -6282,10 +4958,8 @@
       y += 15;
       pdf.setFont(layout.fontFamily, "normal");
       pdf.text(`${data.city}, ${formatDate(data.signDate)}`, layout.left, y);
-      return y;
-    }
 
-    function drawPdfSignature(pdf, data, layout, y) {
+      y += 44;
       pdf.setFont(layout.fontFamily, "bold");
       pdf.text("Pembuat :", layout.left, y);
       y += 15;
@@ -6376,12 +5050,6 @@
           return;
         }
       }
-      const previewLink = event.target.closest("#preview [data-preview-target-id], #preview [data-preview-group-index], #preview [data-preview-maker-index]");
-      if (previewLink) {
-        event.preventDefault();
-        focusInputFromPreview(previewLink);
-        return;
-      }
       if (event.target.closest("#roleMenu")) {
         const option = event.target.closest("[data-role-value]");
         if (option) chooseRole(option.dataset.roleValue);
@@ -6458,29 +5126,6 @@
         openRoleMenu(event.target);
         return;
       }
-      if (event.key === "Tab" && event.target.matches("#groups textarea") && !event.ctrlKey && !event.metaKey && !event.altKey) {
-        const command = event.shiftKey ? "outdent" : "indent";
-        const edits = buildListEdits(event.target.value, event.target.selectionStart, event.target.selectionEnd, command);
-        if (edits.length) {
-          event.preventDefault();
-          activeActivityTextarea = event.target;
-          applyRichTextEdits(event.target, edits);
-          updateRichToolbarState(event.target);
-          commitHistory(`list-${command}`);
-          return;
-        }
-      }
-      if (event.key === "Enter" && event.target.matches("#groups textarea") && event.target.selectionStart === event.target.selectionEnd) {
-        const edit = buildListEnterEdit(event.target.value, event.target.selectionStart);
-        if (edit) {
-          event.preventDefault();
-          activeActivityTextarea = event.target;
-          applyRichTextEdits(event.target, [edit]);
-          updateRichToolbarState(event.target);
-          commitHistory("list-enter");
-          return;
-        }
-      }
       if (event.target.matches("#groups textarea") && (event.ctrlKey || event.metaKey)) {
         const formatMap = { b: "bold", i: "italic", u: "underline" };
         if (formatMap[shortcut]) {
@@ -6489,11 +5134,6 @@
           applyTextareaFormat(event.target, formatMap[shortcut]);
           return;
         }
-      }
-      if ((event.key === "Enter" || event.key === " ") && event.target.closest("#preview [role='link']")) {
-        event.preventDefault();
-        focusInputFromPreview(event.target);
-        return;
       }
       if (!event.target.matches(".date-input")) return;
       if (event.key === "Enter" || event.key === " ") {
@@ -6505,7 +5145,6 @@
     document.addEventListener("input", (event) => {
       if (event.target.matches("input, textarea, select")) {
         setGenerateMessage("", "");
-        if (event.target.matches("textarea")) autoResizeTextarea(event.target);
         if (event.target.matches("[data-role-input]")) {
           activeRoleInput = event.target;
           renderRoleMenu();
@@ -6515,8 +5154,6 @@
         if (event.target.matches("#groups textarea")) {
           activeActivityTextarea = event.target;
           writeRichFormats(event.target, readRichFormats(event.target));
-          syncRichTextareaVisual(event.target);
-          updateRichToolbarState(event.target);
         }
         refreshNumbers();
         renderPreview();
@@ -6581,40 +5218,17 @@
     function applyTextareaFormat(textarea, type) {
       const range = getTextRange(textarea);
       if (!range.text) return;
-      const formats = readRichFormats(textarea);
-      const active = Array.from({ length: range.end - range.start }, (_, index) => range.start + index)
-        .every((index) => formats.some((format) => format[type] && index >= format.start && index < format.end));
-      if (!active) {
-        writeRichFormats(textarea, [...formats, {
-          start: range.start,
-          end: range.end,
-          bold: type === "bold",
-          italic: type === "italic",
-          underline: type === "underline"
-        }]);
-      } else {
-        const nextFormats = [];
-        formats.forEach((format) => {
-          if (!format[type] || format.end <= range.start || format.start >= range.end) {
-            nextFormats.push(format);
-            return;
-          }
-          if (format.start < range.start) nextFormats.push({ ...format, end: range.start });
-          const middle = {
-            ...format,
-            start: Math.max(format.start, range.start),
-            end: Math.min(format.end, range.end),
-            [type]: false
-          };
-          if (middle.bold || middle.italic || middle.underline) nextFormats.push(middle);
-          if (format.end > range.end) nextFormats.push({ ...format, start: range.end });
-        });
-        writeRichFormats(textarea, nextFormats);
-      }
+      const nextFormat = {
+        start: range.start,
+        end: range.end,
+        bold: type === "bold",
+        italic: type === "italic",
+        underline: type === "underline"
+      };
+      writeRichFormats(textarea, [...readRichFormats(textarea), nextFormat]);
       textarea.focus();
       textarea.setSelectionRange(range.start, range.end);
       textarea.dispatchEvent(new Event("input", { bubbles: true }));
-      updateRichToolbarState(textarea);
     }
 
     function populateMaskingTypes() {
@@ -6661,8 +5275,7 @@
       return -1;
     }
 
-    function matchingMaskingTypes(showAll = appState.maskTypeShowAll) {
-      if (showAll) return [...MASKING_TYPES];
+    function matchingMaskingTypes() {
       const query = normalizeText(els.maskTypeSearch.value).toLocaleLowerCase("id-ID");
       return MASKING_TYPES
         .map((item) => ({ item, score: maskTypeScore(item, query) }))
@@ -6703,7 +5316,6 @@
       const label = MASKING_TYPES.find(([value]) => value === type)?.[1] || "";
       if (!label) return;
       els.maskTypeSearch.value = label;
-      appState.maskTypeShowAll = false;
       closeMaskTypeMenu();
       updateMaskPreview();
     }
@@ -6744,7 +5356,6 @@
       const source = els.maskSourceText.value;
       syncCardPolicyField(type);
       els.maskPreviewText.value = type ? maskByType(type, source, selectedMaskOptions()) : "";
-      autoResizeTextarea(els.maskPreviewText);
       els.applyMaskBtn.disabled = !type || !source || !els.maskPreviewText.value;
     }
 
@@ -6779,14 +5390,11 @@
       appState.maskSelection = { textarea, range };
       const suggestion = inferMaskType(range.text);
       els.maskSourceText.value = range.text;
-      appState.maskTypeShowAll = false;
       els.maskTypeSearch.value = suggestion.label || "";
       els.cardPolicySelect.value = suggestion.cardPolicy || "default";
       setMaskSuggestionText(suggestion);
       updateMaskPreview();
       els.maskDialog.hidden = false;
-      autoResizeTextarea(els.maskSourceText);
-      autoResizeTextarea(els.maskPreviewText);
       els.maskTypeSearch.focus();
       return true;
     }
@@ -6794,7 +5402,6 @@
     function closeMaskDialog() {
       els.maskDialog.hidden = true;
       closeMaskTypeMenu();
-      appState.maskTypeShowAll = false;
       appState.maskSelection = null;
     }
 
@@ -6871,7 +5478,6 @@
     els.maskTypeSearch.addEventListener("focus", () => renderMaskTypeMenu(true));
     els.maskTypeSearch.addEventListener("input", () => {
       appState.maskTypeActiveIndex = -1;
-      appState.maskTypeShowAll = false;
       renderMaskTypeMenu(true);
       updateMaskPreview();
     });
@@ -6911,11 +5517,7 @@
       }
     });
     els.maskTypeToggle.addEventListener("click", () => {
-      if (els.maskTypeMenu.hidden) {
-        appState.maskTypeShowAll = true;
-        appState.maskTypeActiveIndex = -1;
-        renderMaskTypeMenu(true);
-      }
+      if (els.maskTypeMenu.hidden) renderMaskTypeMenu(true);
       else closeMaskTypeMenu();
       els.maskTypeSearch.focus();
     });
@@ -6979,49 +5581,6 @@
         openEditComment(edit.dataset.editComment);
         return;
       }
-      const replyRoot = event.target.closest("[data-reply-root]");
-      if (replyRoot) {
-        openReplyComment(replyRoot.dataset.replyRoot);
-        return;
-      }
-      const editReply = event.target.closest("[data-edit-reply]");
-      if (editReply) {
-        openEditReply(editReply.dataset.replyComment, editReply.dataset.editReply);
-        return;
-      }
-      const deleteReply = event.target.closest("[data-delete-reply]");
-      if (deleteReply) {
-        const commentId = deleteReply.dataset.replyComment;
-        const replyId = deleteReply.dataset.deleteReply;
-        let allowed = false;
-        let replyAuthorName = "Reviewer";
-        updateCommentById(commentId, (comment) => {
-          const reply = findReplyById(comment, replyId);
-          replyAuthorName = reply?.authorName || reply?.author || "Reviewer";
-          allowed = canEditReply(reply);
-          if (!allowed) return comment;
-          return appendCommentAudit({
-            ...comment,
-            replies: (comment.replies || []).filter((item) => item.rid !== replyId),
-            updatedAt: new Date().toISOString()
-          }, "reply_deleted", {
-            replyId,
-            replyAuthorName
-          });
-        });
-        if (!allowed) {
-          setMessage("error", "Reply hanya bisa dihapus oleh pembuatnya.");
-          setStatus("Hapus reply ditolak: nama user tidak cocok.");
-          return;
-        }
-        renderComments();
-        autosave();
-        if (collaboration.active) commitSharedData();
-        else queueSharedUpdate();
-        commitHistory("delete-reply");
-        setStatus("Reply dihapus.");
-        return;
-      }
       const toggle = event.target.closest("[data-toggle-comment]");
       const remove = event.target.closest("[data-delete-comment]");
       if (!toggle && !remove) return;
@@ -7035,12 +5594,6 @@
         }, comment.resolved ? "reopened" : "resolved"));
       }
       if (remove) {
-        const comment = findCommentById(commentId);
-        if (!canEditComment(comment)) {
-          setMessage("error", "Komentar hanya bisa dihapus oleh pembuatnya.");
-          setStatus("Hapus komentar ditolak: nama user tidak cocok.");
-          return;
-        }
         appState.comments = appState.comments.filter((comment) => comment.cid !== commentId);
       }
       renderComments();
@@ -7052,39 +5605,10 @@
     });
 
     els.groups.addEventListener("focusin", (event) => {
-      if (event.target.matches("textarea")) {
-        activeActivityTextarea = event.target;
-        updateRichToolbarState(event.target);
-      }
-    });
-
-    document.addEventListener("selectionchange", () => {
-      if (document.activeElement?.matches?.("#groups textarea")) {
-        updateRichToolbarState(document.activeElement);
-      }
-    });
-
-    els.groups.addEventListener("mousedown", (event) => {
-      if (event.target.closest("[data-rich-command]")) event.preventDefault();
+      if (event.target.matches("textarea")) activeActivityTextarea = event.target;
     });
 
     els.groups.addEventListener("click", (event) => {
-      const richButton = event.target.closest("[data-rich-command]");
-      if (richButton) {
-        const textarea = richButton.closest("label")?.querySelector("textarea");
-        if (!textarea) return;
-        activeActivityTextarea = textarea;
-        const command = richButton.dataset.richCommand;
-        if (["bold", "italic", "underline"].includes(command)) {
-          applyTextareaFormat(textarea, command);
-        } else {
-          const edits = buildListEdits(textarea.value, textarea.selectionStart, textarea.selectionEnd, command);
-          applyRichTextEdits(textarea, edits);
-        }
-        updateRichToolbarState(textarea);
-        commitHistory(`format-${command}`);
-        return;
-      }
       const addRow = event.target.closest("[data-add-row]");
       const removeGroup = event.target.closest("[data-remove-group]");
       const removeRow = event.target.closest("[data-remove-row]");
@@ -7145,10 +5669,8 @@
     }
 
     enableSplitter();
-    registerCollaborationActivityListeners();
     populateMaskingTypes();
     applyData(defaultData());
-    document.querySelectorAll("textarea").forEach(autoResizeTextarea);
     commitHistory("initial");
     setModeStatus("draft");
     setSyncStatus("offline");
