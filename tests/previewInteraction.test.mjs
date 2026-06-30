@@ -31,3 +31,16 @@ assert.match(html, /#commentModeBtn\.is-active/);
 assert.match(html, /id="commentModeBtn"[\s\S]*comment-mode-icon-off[\s\S]*comment-mode-icon-on[\s\S]*Add Comment/);
 assert.match(html, /#commentModeBtn\.is-active[\s\S]*background:\s*var\(--brand\)/);
 assert.doesNotMatch(html, /Comment Mode On/);
+
+const listLineCss = html.slice(
+  html.indexOf(".doc-list-line {"),
+  html.indexOf(".doc-list-line.is-level-2")
+);
+const listMarkerCss = html.slice(
+  html.indexOf(".doc-list-marker {"),
+  html.indexOf(".doc-table th:first-child")
+);
+assert.match(listLineCss, /display:\s*block/);
+assert.doesNotMatch(listLineCss, /grid-template-columns/);
+assert.match(listMarkerCss, /white-space:\s*nowrap/);
+assert.match(listMarkerCss, /text-align:\s*left/);
