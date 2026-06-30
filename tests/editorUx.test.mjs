@@ -32,7 +32,8 @@ const listHelpers = Function(`
   ${extractFunction("parseListLine")}
   ${extractFunction("listPrefix")}
   ${extractFunction("buildListEdits")}
-  return { parseListLine, buildListEdits };
+  ${extractFunction("buildListEnterEdit")}
+  return { parseListLine, buildListEdits, buildListEnterEdit };
 `)();
 
 function applyEdits(value, edits) {
@@ -54,7 +55,7 @@ assert.deepEqual(
 );
 assert.equal(
   applyEdits("Alpha\nBeta", listHelpers.buildListEdits("Alpha\nBeta", 0, 10, "bullet")),
-  "• Alpha\n• Beta",
+  "\u2022 Alpha\n\u2022 Beta",
   "bullet button formats all selected lines"
 );
 assert.equal(
@@ -63,19 +64,29 @@ assert.equal(
   "number button formats all selected lines"
 );
 assert.equal(
-  applyEdits("• Alpha", listHelpers.buildListEdits("• Alpha", 0, 7, "indent")),
-  "  o Alpha",
-  "chunk down uses the second-level bullet"
+  applyEdits("", listHelpers.buildListEdits("", 0, 0, "bullet")),
+  "\u2022 ",
+  "bullet button starts a list on an empty line"
 );
 assert.equal(
-  applyEdits("  o Alpha", listHelpers.buildListEdits("  o Alpha", 0, 9, "indent")),
-  "    - Alpha",
-  "chunk down stops at the third-level bullet format"
+  applyEdits("\u2022 Alpha", listHelpers.buildListEdits("\u2022 Alpha", 0, 7, "bullet")),
+  "Alpha",
+  "pressing an active list button toggles the list off"
 );
 assert.equal(
-  applyEdits("    1.1.1. Alpha", listHelpers.buildListEdits("    1.1.1. Alpha", 0, 18, "outdent")),
-  "  1.1. Alpha",
-  "chunk up removes one numbering level"
+  applyEdits("\u2022 Alpha", [listHelpers.buildListEnterEdit("\u2022 Alpha", 7)]),
+  "\u2022 Alpha\n\u2022 ",
+  "Enter continues a bullet list"
+);
+assert.equal(
+  applyEdits("3. Alpha", [listHelpers.buildListEnterEdit("3. Alpha", 8)]),
+  "3. Alpha\n4. ",
+  "Enter continues numbered lists with the next number"
+);
+assert.equal(
+  applyEdits("\u2022 ", [listHelpers.buildListEnterEdit("\u2022 ", 2)]),
+  "",
+  "Enter on an empty list item exits the list"
 );
 
 const draftFilename = Function(
@@ -87,9 +98,18 @@ assert.equal(draftFilename(""), "draft_berita_acara.json");
 
 assert.match(html, /data-rich-command="bullet"/);
 assert.match(html, /data-rich-command="number"/);
-assert.match(html, /data-rich-command="outdent"/);
-assert.match(html, /data-rich-command="indent"/);
+assert.doesNotMatch(html, /data-rich-command="outdent"/);
+assert.doesNotMatch(html, /data-rich-command="indent"/);
+assert.match(html, /aria-label="Bullet list"/);
+assert.match(html, /aria-label="Numbered list"/);
+assert.match(html, /lucide-list/);
+assert.match(html, /lucide-list-ordered/);
+assert.match(html, /\.rich-toolbar\s*\{[\s\S]*?flex-wrap:\s*nowrap/);
 assert.match(html, /function syncRichTextareaVisual/);
+assert.doesNotMatch(extractFunction("syncRichTextareaVisual"), /#groups textarea/);
+assert.match(extractFunction("syncRichTextareaVisual"), /matches\?\.\("textarea"\)/);
 assert.match(html, /function autoResizeTextarea/);
 assert.match(html, /resize:\s*none/);
 assert.match(html, /class="readonly-display"/);
+assert.match(html, /\.rich-text-mirror\s*\{[\s\S]*?font-weight:\s*400/);
+assert.match(html, /\.rich-text-mirror strong\s*\{[\s\S]*?font-weight:\s*800/);

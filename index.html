@@ -457,8 +457,8 @@
 
     .rich-toolbar {
       display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
+      flex-wrap: nowrap;
+      gap: 2px;
       margin-top: 6px;
       padding: 4px;
       border: 1px solid rgba(201, 211, 223, 0.95);
@@ -472,11 +472,12 @@
     }
 
     .rich-tool {
-      min-width: 30px;
+      width: 28px;
+      min-width: 28px;
       min-height: 30px;
       border: 1px solid transparent;
       border-radius: 6px;
-      padding: 4px 7px;
+      padding: 4px;
       background: transparent;
       color: var(--brand-2);
       cursor: pointer;
@@ -491,6 +492,20 @@
       border-color: #9fc2df;
       background: #d9e8f5;
       color: #003f73;
+    }
+
+    .rich-tool-icon {
+      display: block;
+      width: 15px;
+      height: 15px;
+      stroke-width: 2;
+    }
+
+    .rich-toolbar-divider {
+      width: 1px;
+      min-height: 22px;
+      margin: 4px 1px;
+      background: var(--line);
     }
 
     .rich-text-shell {
@@ -526,11 +541,15 @@
       border-radius: 7px;
       color: #001b3a;
       font-size: 14px;
-      font-weight: 650;
+      font-weight: 400;
       line-height: 1.45;
       pointer-events: none;
       white-space: pre-wrap;
       overflow-wrap: anywhere;
+    }
+
+    .rich-text-mirror strong {
+      font-weight: 800;
     }
 
     .readonly-display {
@@ -721,7 +740,6 @@
       display: none;
     }
 
-    #commentModeBtn.is-active,
     #floatingCommentBtn.is-active {
       border-color: #c28a00;
       background: #ffd75a;
@@ -790,6 +808,41 @@
       font-size: 12px;
     }
 
+    #commentModeBtn {
+      display: inline-flex;
+      min-height: 42px;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-color: #9fc2df;
+      border-radius: 12px;
+      background: #fff;
+      color: var(--brand);
+      box-shadow: 0 0 0 2px rgba(27, 77, 120, 0.08);
+      font-weight: 700;
+    }
+
+    #commentModeBtn:hover {
+      border-color: var(--brand);
+      background: #f7fbff;
+    }
+
+    #commentModeBtn.is-active {
+      border-color: var(--brand);
+      background: var(--brand);
+      color: #fff;
+      box-shadow: 0 0 0 2px rgba(0, 103, 189, 0.28);
+    }
+
+    #commentModeBtn .comment-mode-icon-on,
+    #commentModeBtn.is-active .comment-mode-icon-off {
+      display: none;
+    }
+
+    #commentModeBtn.is-active .comment-mode-icon-on {
+      display: block;
+    }
+
     .activity-groups {
       display: grid;
       gap: 12px;
@@ -852,7 +905,7 @@
     .activity-row input {
       border-color: rgba(201, 211, 223, 0.98);
       color: #001b3a;
-      font-weight: 650;
+      font-weight: 400;
     }
 
     .activity-row input[readonly] {
@@ -2175,7 +2228,11 @@
         </button>
       </div>
       <div class="comment-toolbar">
-        <button class="btn btn-secondary" id="commentModeBtn" type="button">Add Comment</button>
+        <button class="btn btn-secondary" id="commentModeBtn" type="button" aria-pressed="false">
+          <svg class="icon comment-mode-icon-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
+          <svg class="icon comment-mode-icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
+          <span>Add Comment</span>
+        </button>
         <select id="commentFilter" aria-label="Filter komentar">
           <option value="all">All</option>
           <option value="unresolved">Unresolved</option>
@@ -2298,10 +2355,9 @@
           <button class="rich-tool" data-rich-command="bold" type="button" aria-label="Bold" title="Bold (Ctrl+B)"><strong>B</strong></button>
           <button class="rich-tool" data-rich-command="italic" type="button" aria-label="Italic" title="Italic (Ctrl+I)"><em>I</em></button>
           <button class="rich-tool" data-rich-command="underline" type="button" aria-label="Underline" title="Underline (Ctrl+U)"><u>U</u></button>
-          <button class="rich-tool" data-rich-command="bullet" type="button" aria-label="Bullet" title="Bullet">•</button>
-          <button class="rich-tool" data-rich-command="number" type="button" aria-label="Numbering" title="Numbering">1.</button>
-          <button class="rich-tool" data-rich-command="outdent" type="button" aria-label="Chunk up" title="Chunk up">←</button>
-          <button class="rich-tool" data-rich-command="indent" type="button" aria-label="Chunk down" title="Chunk down">→</button>
+          <span class="rich-toolbar-divider" aria-hidden="true"></span>
+          <button class="rich-tool" data-rich-command="bullet" type="button" aria-label="Bullet list" title="Bullet list"><svg class="rich-tool-icon lucide lucide-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg></button>
+          <button class="rich-tool" data-rich-command="number" type="button" aria-label="Numbered list" title="Numbered list"><svg class="rich-tool-icon lucide lucide-list-ordered" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5h10"/><path d="M11 12h10"/><path d="M11 19h10"/><path d="M4 4h1v5"/><path d="M4 9h2"/><path d="M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02"/></svg></button>
         </span>
         <textarea data-field="activity" placeholder="Aktivitas"></textarea>
       </label>
@@ -2310,10 +2366,9 @@
           <button class="rich-tool" data-rich-command="bold" type="button" aria-label="Bold" title="Bold (Ctrl+B)"><strong>B</strong></button>
           <button class="rich-tool" data-rich-command="italic" type="button" aria-label="Italic" title="Italic (Ctrl+I)"><em>I</em></button>
           <button class="rich-tool" data-rich-command="underline" type="button" aria-label="Underline" title="Underline (Ctrl+U)"><u>U</u></button>
-          <button class="rich-tool" data-rich-command="bullet" type="button" aria-label="Bullet" title="Bullet">•</button>
-          <button class="rich-tool" data-rich-command="number" type="button" aria-label="Numbering" title="Numbering">1.</button>
-          <button class="rich-tool" data-rich-command="outdent" type="button" aria-label="Chunk up" title="Chunk up">←</button>
-          <button class="rich-tool" data-rich-command="indent" type="button" aria-label="Chunk down" title="Chunk down">→</button>
+          <span class="rich-toolbar-divider" aria-hidden="true"></span>
+          <button class="rich-tool" data-rich-command="bullet" type="button" aria-label="Bullet list" title="Bullet list"><svg class="rich-tool-icon lucide lucide-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg></button>
+          <button class="rich-tool" data-rich-command="number" type="button" aria-label="Numbered list" title="Numbered list"><svg class="rich-tool-icon lucide lucide-list-ordered" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5h10"/><path d="M11 12h10"/><path d="M11 19h10"/><path d="M4 4h1v5"/><path d="M4 9h2"/><path d="M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02"/></svg></button>
         </span>
         <textarea data-field="result" placeholder="Hasil / Keterangan"></textarea>
       </label>
@@ -2905,32 +2960,44 @@
         cursor = end + 1;
       }
 
-      const editable = records.filter((record) => record.line.trim());
+      const editable = records.filter((record) => record.line.trim() || records.length === 1);
       const togglesOff = (command === "bullet" || command === "number")
         && editable.length > 0
         && editable.every((record) => record.info?.kind === command);
       let ordinal = 0;
       return records.flatMap((record) => {
-        if (!record.line.trim()) return [];
+        if ((!record.line.trim() && records.length > 1) || !["bullet", "number"].includes(command)) return [];
         const info = record.info;
         const prefixEnd = record.start + (info?.prefixLength || 0);
         if (togglesOff) return [{ start: record.start, end: prefixEnd, text: "" }];
 
-        if (command === "bullet" || command === "number") {
-          ordinal += 1;
-          const depth = info?.depth || 1;
-          const parts = command === "number" && info?.kind === "number" ? info.numberParts : [];
-          return [{ start: record.start, end: prefixEnd, text: listPrefix(command, depth, ordinal, parts) }];
-        }
-
-        if (!info || (command !== "indent" && command !== "outdent")) return [];
-        const depth = command === "indent" ? Math.min(3, info.depth + 1) : Math.max(1, info.depth - 1);
-        return [{
-          start: record.start,
-          end: prefixEnd,
-          text: listPrefix(info.kind, depth, ordinal + 1, info.numberParts)
-        }];
+        ordinal += 1;
+        return [{ start: record.start, end: prefixEnd, text: listPrefix(command, 1, ordinal) }];
       });
+    }
+
+    function buildListEnterEdit(value, cursor) {
+      const text = String(value || "");
+      const position = Math.max(0, Math.min(text.length, Number(cursor) || 0));
+      const lineStart = text.lastIndexOf("\n", Math.max(0, position - 1)) + 1;
+      const lineBreak = text.indexOf("\n", position);
+      const lineEnd = lineBreak === -1 ? text.length : lineBreak;
+      const info = parseListLine(text.slice(lineStart, lineEnd));
+      if (!info) return null;
+      if (!info.content.trim()) {
+        return { start: lineStart, end: lineStart + info.prefixLength, text: "" };
+      }
+      if (info.kind === "bullet") {
+        return { start: position, end: position, text: `\n${listPrefix("bullet", info.depth)}` };
+      }
+      const nextParts = info.numberParts.slice(0, 3);
+      const lastIndex = Math.max(0, nextParts.length - 1);
+      nextParts[lastIndex] = (nextParts[lastIndex] || 0) + 1;
+      return {
+        start: position,
+        end: position,
+        text: `\n${listPrefix("number", info.depth, nextParts[lastIndex], nextParts)}`
+      };
     }
 
     function shiftRichFormatsForEdit(formats, start, end, replacementLength, nextLength) {
@@ -2985,7 +3052,7 @@
     }
 
     function syncRichTextareaVisual(textarea) {
-      if (!textarea?.matches?.("#groups textarea")) return;
+      if (!textarea?.matches?.("textarea")) return;
       const mirror = textarea.closest(".rich-text-shell")?.querySelector(".rich-text-mirror");
       if (mirror) mirror.innerHTML = richTextToHtml(textarea.value, readRichFormats(textarea));
       autoResizeTextarea(textarea);
@@ -4491,7 +4558,6 @@
         button.classList.toggle("is-active", appState.annotationMode);
         button.setAttribute("aria-pressed", String(appState.annotationMode));
       });
-      els.commentModeBtn.textContent = appState.annotationMode ? "Comment Mode On" : "Add Comment";
       setStatus(appState.annotationMode ? "Mode komentar aktif. Klik field atau preview." : "Mode komentar nonaktif.");
     }
 
@@ -6321,6 +6387,17 @@
         event.preventDefault();
         openRoleMenu(event.target);
         return;
+      }
+      if (event.key === "Enter" && event.target.matches("#groups textarea") && event.target.selectionStart === event.target.selectionEnd) {
+        const edit = buildListEnterEdit(event.target.value, event.target.selectionStart);
+        if (edit) {
+          event.preventDefault();
+          activeActivityTextarea = event.target;
+          applyRichTextEdits(event.target, [edit]);
+          updateRichToolbarState(event.target);
+          commitHistory("list-enter");
+          return;
+        }
       }
       if (event.target.matches("#groups textarea") && (event.ctrlKey || event.metaKey)) {
         const formatMap = { b: "bold", i: "italic", u: "underline" };
