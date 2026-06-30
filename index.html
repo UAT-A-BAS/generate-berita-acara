@@ -3075,11 +3075,7 @@
       const formats = readRichFormats(textarea);
       let start = textarea.selectionStart ?? 0;
       let end = textarea.selectionEnd ?? start;
-      if (start === end) {
-        if (!textarea.value.length) return false;
-        start = Math.max(0, start - 1);
-        end = Math.max(start + 1, end);
-      }
+      if (start === end) return false;
       for (let index = start; index < end; index += 1) {
         if (!formats.some((format) => format[type] && index >= format.start && index < format.end)) return false;
       }
