@@ -3262,7 +3262,7 @@
         } else {
           html.push(line ? richSliceToHtml(text, offset, offset + line.length, formats) : "");
         }
-        if (lineIndex < lines.length - 1) html.push("<br>");
+        if (lineIndex < lines.length - 1 && !listItem) html.push("<br>");
         offset += line.length + 1;
       });
       return html.join("");
@@ -3303,7 +3303,7 @@
         } else {
           html.push(line ? renderWrapped(offset, offset + line.length) : "");
         }
-        if (lineIndex < lines.length - 1) html.push("<br>");
+        if (lineIndex < lines.length - 1 && !listItem) html.push("<br>");
         offset += line.length + 1;
       });
       return html.join("");
