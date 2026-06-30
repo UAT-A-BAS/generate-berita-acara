@@ -36,6 +36,11 @@ const listHelpers = Function(`
   return { parseListLine, buildListEdits, buildListEnterEdit };
 `)();
 
+const isSelectionFormatted = Function(
+  "readRichFormats",
+  `${extractFunction("isSelectionFormatted")} return isSelectionFormatted;`
+)((textarea) => textarea.formats || []);
+
 function applyEdits(value, edits) {
   return [...edits]
     .sort((left, right) => right.start - left.start)
@@ -87,6 +92,26 @@ assert.equal(
   applyEdits("\u2022 ", [listHelpers.buildListEnterEdit("\u2022 ", 2)]),
   "",
   "Enter on an empty list item exits the list"
+);
+assert.equal(
+  isSelectionFormatted({
+    value: "Alpha",
+    selectionStart: 3,
+    selectionEnd: 3,
+    formats: [{ start: 0, end: 5, bold: true }]
+  }, "bold"),
+  false,
+  "a caret without selected text must not activate formatting controls"
+);
+assert.equal(
+  isSelectionFormatted({
+    value: "Alpha",
+    selectionStart: 0,
+    selectionEnd: 5,
+    formats: [{ start: 0, end: 5, bold: true }]
+  }, "bold"),
+  true,
+  "a fully formatted selection activates its formatting control"
 );
 
 const draftFilename = Function(
