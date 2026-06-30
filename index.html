@@ -3260,7 +3260,7 @@
           const marker = listItem.kind === "bullet" ? ["•", "o", "-"][listItem.depth - 1] : `${listItem.marker}.`;
           html.push(`<span class="doc-list-line is-level-${listItem.depth}"><span class="doc-list-marker">${escapeHtml(marker)}</span><span>${richSliceToHtml(text, offset + listItem.prefixLength, offset + line.length, formats)}</span></span>`);
         } else {
-          html.push(line ? richSliceToHtml(text, offset, offset + line.length, formats) : "<br>");
+          html.push(line ? richSliceToHtml(text, offset, offset + line.length, formats) : "");
         }
         if (lineIndex < lines.length - 1) html.push("<br>");
         offset += line.length + 1;
@@ -3301,7 +3301,7 @@
           const marker = listItem.kind === "bullet" ? ["•", "o", "-"][listItem.depth - 1] : `${listItem.marker}.`;
           html.push(`<span class="doc-list-line is-level-${listItem.depth}"><span class="doc-list-marker">${escapeHtml(marker)}</span><span>${renderWrapped(offset + listItem.prefixLength, offset + line.length)}</span></span>`);
         } else {
-          html.push(line ? renderWrapped(offset, offset + line.length) : "<br>");
+          html.push(line ? renderWrapped(offset, offset + line.length) : "");
         }
         if (lineIndex < lines.length - 1) html.push("<br>");
         offset += line.length + 1;
