@@ -28,4 +28,6 @@ const outputSection = html.slice(
 assert.equal(outputSection, "", "the old non-floating PDF output section is removed");
 assert.match(html, /floating-tools-right[\s\S]*id="generateBtn"[\s\S]*id="floatingCommentBtn"/);
 assert.match(html, /#commentModeBtn\.is-active/);
-
+assert.match(html, /id="commentModeBtn"[\s\S]*comment-mode-icon-off[\s\S]*comment-mode-icon-on[\s\S]*Add Comment/);
+assert.match(html, /#commentModeBtn\.is-active[\s\S]*background:\s*var\(--brand\)/);
+assert.doesNotMatch(html, /Comment Mode On/);
