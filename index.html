@@ -1410,10 +1410,8 @@
     }
 
     .doc-list-line {
-      display: inline-grid;
+      display: block;
       width: 100%;
-      grid-template-columns: 28px minmax(0, 1fr);
-      align-items: start;
       white-space: normal;
     }
 
@@ -1428,8 +1426,10 @@
     }
 
     .doc-list-marker {
+      display: inline-block;
       padding-right: 4px;
-      text-align: right;
+      text-align: left;
+      white-space: nowrap;
     }
 
     .doc-table th:first-child,

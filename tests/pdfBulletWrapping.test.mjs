@@ -65,3 +65,8 @@ assert.ok(nestedBullet[0].startsWith("  o "), "second-level bullet keeps its pre
 const nestedNumber = splitPdfRichText(pdf, "    1.1.1. Sub ketiga", 80, layout, [])
   .map((segments) => segments.map((segment) => segment.text).join(""));
 assert.ok(nestedNumber[0].startsWith("    1.1.1. "), "third-level numbering keeps its prescribed marker and indent");
+
+const doubleDigitNumber = splitPdfRichText(pdf, "  1.10. Nomor dua digit", 80, layout, [])
+  .map((segments) => segments.map((segment) => segment.text).join(""));
+assert.equal(doubleDigitNumber.length, 1, "a two-digit nested marker stays on one PDF line when content fits");
+assert.ok(doubleDigitNumber[0].startsWith("  1.10. "), "PDF keeps the complete two-digit marker intact");
