@@ -85,6 +85,33 @@ assert.equal(
   "Alpha",
   "pressing an active list button toggles the list off"
 );
+const numberedBlock = "1. Satu\n2. Dua\n3. Tiga\n4. Empat";
+const numberedNestedStart = numberedBlock.indexOf("3. Tiga");
+assert.equal(
+  applyEdits(numberedBlock, listHelpers.buildListEdits(numberedBlock, numberedNestedStart, numberedBlock.length, "indent")),
+  "1. Satu\n2. Dua\n  3.1. Tiga\n  3.2. Empat",
+  "Tab turns a selected numbered block into sequential children of its first number"
+);
+assert.equal(
+  applyEdits("\u2022 Satu\n\u2022 Dua", listHelpers.buildListEdits("\u2022 Satu\n\u2022 Dua", 0, 13, "indent")),
+  "  o Satu\n  o Dua",
+  "Tab indents selected bullets using the prescribed second-level marker"
+);
+assert.equal(
+  applyEdits("  o Dua", listHelpers.buildListEdits("  o Dua", 0, 7, "indent")),
+  "    - Dua",
+  "Tab indents a second-level bullet to the third level"
+);
+assert.equal(
+  applyEdits("    - Tiga", listHelpers.buildListEdits("    - Tiga", 0, 10, "indent")),
+  "    - Tiga",
+  "Tab cannot indent beyond three levels"
+);
+assert.equal(
+  applyEdits("  3.1. Tiga\n  3.2. Empat", listHelpers.buildListEdits("  3.1. Tiga\n  3.2. Empat", 0, 25, "outdent")),
+  "3. Tiga\n4. Empat",
+  "Shift+Tab promotes a selected numbered block and keeps it sequential"
+);
 assert.equal(
   applyEdits("\u2022 Alpha", [listHelpers.buildListEnterEdit("\u2022 Alpha", 7)]),
   "\u2022 Alpha\n\u2022 ",
@@ -142,6 +169,8 @@ assert.match(html, /data-rich-command="bullet"/);
 assert.match(html, /data-rich-command="number"/);
 assert.doesNotMatch(html, /data-rich-command="outdent"/);
 assert.doesNotMatch(html, /data-rich-command="indent"/);
+assert.match(html, /event\.key === "Tab"/);
+assert.match(html, /event\.shiftKey \? "outdent" : "indent"/);
 assert.match(html, /aria-label="Bullet list"/);
 assert.match(html, /aria-label="Numbered list"/);
 assert.match(html, /lucide-list/);
