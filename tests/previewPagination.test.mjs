@@ -26,9 +26,15 @@ const previewRenderer = Function(`
 const receiverName = "- Nama penerima kuasa: Agustina Rosi Divina";
 assert.equal(
   previewRenderer(receiverName, [], "result"),
-  '<span class="doc-list-line is-level-1"><span class="doc-list-marker">•</span><span>Nama penerima kuasa: Agustina Rosi Divina</span></span>',
-  "preview must leave proportional-font wrapping to CSS instead of injecting a character-count break"
+  '<span class="doc-list-line is-level-1"><span class="doc-list-marker">-</span><span>Nama penerima kuasa: Agustina Rosi Divina</span></span>',
+  "preview preserves a manually entered legacy marker and leaves wrapping to CSS"
 );
+
+const memoStyleNestedList = previewRenderer("1. Satu\n  1. Dua\n    1. Tiga\n    \u2022 Bullet", [], "activity");
+assert.doesNotMatch(memoStyleNestedList, /<br>/, "adjacent list rows must not gain Enter-like spacer lines");
+assert.equal((memoStyleNestedList.match(/doc-list-line/g) || []).length, 4);
+assert.match(memoStyleNestedList, /is-level-3[^>]*><span class="doc-list-marker">1\.<\/span>/);
+assert.match(memoStyleNestedList, /is-level-3[^>]*><span class="doc-list-marker">\u2022<\/span>/);
 
 const previewBlock = html.slice(
   html.indexOf("function splitPreviewRows"),

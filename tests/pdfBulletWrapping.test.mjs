@@ -55,12 +55,20 @@ const lines = splitPdfRichText(
 ).map((segments) => segments.map((segment) => segment.text).join(""));
 
 assert.ok(lines.length > 1, "fixture must wrap to multiple PDF lines");
-assert.ok(lines[0].startsWith("• "), "first line keeps the bullet marker");
-assert.equal(lines.filter((line) => line.startsWith("• ")).length, 1, "wrapped continuation must not create another bullet");
+assert.ok(lines[0].startsWith("- "), "first line keeps the manually entered marker");
+assert.equal(lines.filter((line) => line.startsWith("- ")).length, 1, "wrapped continuation must not create another marker");
 
 const nestedBullet = splitPdfRichText(pdf, "  o Sub kedua", 80, layout, [])
   .map((segments) => segments.map((segment) => segment.text).join(""));
-assert.ok(nestedBullet[0].startsWith("  o "), "second-level bullet keeps its prescribed marker and indent");
+assert.ok(nestedBullet[0].startsWith("  o "), "legacy nested bullets keep their input marker");
+
+const memoStyleNestedNumber = splitPdfRichText(pdf, "    1. Sub ketiga", 80, layout, [])
+  .map((segments) => segments.map((segment) => segment.text).join(""));
+assert.ok(memoStyleNestedNumber[0].startsWith("    1. "), "third-level numbering keeps its local marker and indent");
+
+const compactNestedBlock = splitPdfRichText(pdf, "1. Satu\n  1. Dua\n    1. Tiga\n    \u2022 Bullet", 80, layout, [])
+  .map((segments) => segments.map((segment) => segment.text).join(""));
+assert.equal(compactNestedBlock.length, 4, "PDF produces exactly one row per unwrapped list item without spacer rows");
 
 const nestedNumber = splitPdfRichText(pdf, "    1.1.1. Sub ketiga", 80, layout, [])
   .map((segments) => segments.map((segment) => segment.text).join(""));

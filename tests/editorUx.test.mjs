@@ -33,7 +33,7 @@ const listHelpers = Function(`
   ${extractFunction("listPrefix")}
   ${extractFunction("buildListEdits")}
   ${extractFunction("buildListEnterEdit")}
-  return { parseListLine, buildListEdits, buildListEnterEdit };
+  return { parseListLine, listPrefix, buildListEdits, buildListEnterEdit };
 `)();
 
 const isSelectionFormatted = Function(
@@ -89,29 +89,31 @@ const numberedBlock = "1. Satu\n2. Dua\n3. Tiga\n4. Empat";
 const numberedNestedStart = numberedBlock.indexOf("3. Tiga");
 assert.equal(
   applyEdits(numberedBlock, listHelpers.buildListEdits(numberedBlock, numberedNestedStart, numberedBlock.length, "indent")),
-  "1. Satu\n2. Dua\n  3.1. Tiga\n  3.2. Empat",
-  "Tab turns a selected numbered block into sequential children of its first number"
+  "1. Satu\n2. Dua\n  1. Tiga\n  2. Empat",
+  "Tab starts a local nested numbering sequence like Generate Memo"
 );
 assert.equal(
   applyEdits("\u2022 Satu\n\u2022 Dua", listHelpers.buildListEdits("\u2022 Satu\n\u2022 Dua", 0, 13, "indent")),
-  "  o Satu\n  o Dua",
-  "Tab indents selected bullets using the prescribed second-level marker"
+  "  \u2022 Satu\n  \u2022 Dua",
+  "Tab keeps round bullets at the second level like Generate Memo"
 );
 assert.equal(
-  applyEdits("  o Dua", listHelpers.buildListEdits("  o Dua", 0, 7, "indent")),
-  "    - Dua",
-  "Tab indents a second-level bullet to the third level"
+  applyEdits("  \u2022 Dua", listHelpers.buildListEdits("  \u2022 Dua", 0, 8, "indent")),
+  "    \u2022 Dua",
+  "Tab keeps round bullets at the third level like Generate Memo"
 );
 assert.equal(
-  applyEdits("    - Tiga", listHelpers.buildListEdits("    - Tiga", 0, 10, "indent")),
-  "    - Tiga",
+  applyEdits("    \u2022 Tiga", listHelpers.buildListEdits("    \u2022 Tiga", 0, 11, "indent")),
+  "    \u2022 Tiga",
   "Tab cannot indent beyond three levels"
 );
 assert.equal(
-  applyEdits("  3.1. Tiga\n  3.2. Empat", listHelpers.buildListEdits("  3.1. Tiga\n  3.2. Empat", 0, 25, "outdent")),
-  "3. Tiga\n4. Empat",
-  "Shift+Tab promotes a selected numbered block and keeps it sequential"
+  applyEdits("  1. Tiga\n  2. Empat", listHelpers.buildListEdits("  1. Tiga\n  2. Empat", 0, 21, "outdent")),
+  "1. Tiga\n2. Empat",
+  "Shift+Tab promotes a local nested numbering block"
 );
+assert.equal(listHelpers.listPrefix("number", 3, 1), "    1. ");
+assert.equal(listHelpers.listPrefix("bullet", 3), "    \u2022 ");
 assert.equal(
   applyEdits("\u2022 Alpha", [listHelpers.buildListEnterEdit("\u2022 Alpha", 7)]),
   "\u2022 Alpha\n\u2022 ",
@@ -126,6 +128,16 @@ assert.equal(
   applyEdits("\u2022 ", [listHelpers.buildListEnterEdit("\u2022 ", 2)]),
   "",
   "Enter on an empty list item exits the list"
+);
+assert.equal(
+  applyEdits("1. Root\n  1. Child\n    1. ", [listHelpers.buildListEnterEdit("1. Root\n  1. Child\n    1. ", 28)]),
+  "1. Root\n  1. Child\n  2. ",
+  "Enter on an empty third-level item lifts it one level like Generate Memo"
+);
+assert.equal(
+  applyEdits("\u2022 Root\n  \u2022 Child\n    \u2022 ", [listHelpers.buildListEnterEdit("\u2022 Root\n  \u2022 Child\n    \u2022 ", 24)]),
+  "\u2022 Root\n  \u2022 Child\n  \u2022 ",
+  "Enter on an empty nested bullet lifts it one level like Generate Memo"
 );
 assert.equal(
   isSelectionFormatted({

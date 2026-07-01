@@ -1412,6 +1412,8 @@
     .doc-list-line {
       display: block;
       width: 100%;
+      margin: 0;
+      line-height: inherit;
       white-space: normal;
     }
 
@@ -2938,12 +2940,10 @@
     function listPrefix(kind, depth, ordinal = 1, numberParts = []) {
       const safeDepth = Math.max(1, Math.min(3, Number(depth) || 1));
       const indent = "  ".repeat(safeDepth - 1);
-      if (kind === "bullet") return `${indent}${["•", "o", "-"][safeDepth - 1]} `;
-      let parts = Array.isArray(numberParts) && numberParts.length ? numberParts.slice(0, 3) : [];
-      if (!parts.length) parts = safeDepth === 1 ? [ordinal] : Array(safeDepth - 1).fill(1).concat(ordinal);
-      while (parts.length < safeDepth) parts.push(1);
-      parts = parts.slice(0, safeDepth);
-      return `${indent}${parts.join(".")}. `;
+      if (kind === "bullet") return `${indent}• `;
+      const legacyParts = Array.isArray(numberParts) ? numberParts.slice(0, 3) : [];
+      const marker = legacyParts.length > 1 ? legacyParts.join(".") : Math.max(1, Number(ordinal) || 1);
+      return `${indent}${marker}. `;
     }
 
     function buildListEdits(value, selectionStart, selectionEnd, command) {
@@ -2972,9 +2972,6 @@
         if (command === "indent" && firstInfo.depth >= 3) return [];
         if (command === "outdent" && firstInfo.depth <= 1) return [];
 
-        const isUniformBlock = listRecords.every((record) => (
-          record.info.kind === firstInfo.kind && record.info.depth === firstInfo.depth
-        ));
         let previousInfo = null;
         if (firstLineStart > 0) {
           const previousEnd = firstLineStart - 1;
@@ -2982,20 +2979,10 @@
           previousInfo = parseListLine(text.slice(previousStart, previousEnd));
         }
 
-        let numberBaseParts = [];
         let numberStart = 1;
-        if (firstInfo.kind === "number" && isUniformBlock) {
-          if (command === "indent") {
-            if (previousInfo?.kind === "number" && previousInfo.depth === firstInfo.depth + 1) {
-              numberBaseParts = previousInfo.numberParts.slice(0, -1);
-              numberStart = (previousInfo.numberParts.at(-1) || 0) + 1;
-            } else {
-              numberBaseParts = firstInfo.numberParts.slice(0, firstInfo.depth);
-            }
-          } else {
-            numberBaseParts = firstInfo.numberParts.slice(0, -1);
-            numberStart = numberBaseParts.at(-1) || 1;
-          }
+        const targetDepth = command === "indent" ? firstInfo.depth + 1 : firstInfo.depth - 1;
+        if (command === "outdent" && previousInfo?.kind === "number" && previousInfo.depth === targetDepth) {
+          numberStart = (previousInfo.numberParts.at(-1) || 0) + 1;
         }
 
         let numberOrdinal = 0;
@@ -3005,26 +2992,11 @@
           if (command === "indent" && info.depth >= 3) return [];
           if (command === "outdent" && info.depth <= 1) return [];
           const depth = command === "indent" ? info.depth + 1 : info.depth - 1;
-          let parts = info.numberParts;
-          if (info.kind === "number") {
-            if (isUniformBlock) {
-              if (command === "indent") {
-                parts = [...numberBaseParts, numberStart + numberOrdinal];
-              } else {
-                parts = numberBaseParts.slice();
-                parts[parts.length - 1] = numberStart + numberOrdinal;
-              }
-              numberOrdinal += 1;
-            } else {
-              parts = command === "indent"
-                ? [...info.numberParts, 1]
-                : info.numberParts.slice(0, -1);
-            }
-          }
+          const ordinal = info.kind === "number" ? numberStart + numberOrdinal++ : 1;
           return [{
             start: record.start,
             end: record.start + info.prefixLength,
-            text: listPrefix(info.kind, depth, numberOrdinal, parts)
+            text: listPrefix(info.kind, depth, ordinal)
           }];
         });
       }
@@ -3054,6 +3026,18 @@
       const info = parseListLine(text.slice(lineStart, lineEnd));
       if (!info) return null;
       if (!info.content.trim()) {
+        if (info.depth > 1) {
+          const parentDepth = info.depth - 1;
+          const previousParent = text.slice(0, Math.max(0, lineStart - 1)).split("\n").reverse()
+            .map(parseListLine)
+            .find((item) => item?.kind === info.kind && item.depth === parentDepth);
+          const ordinal = info.kind === "number" ? (previousParent?.numberParts.at(-1) || 0) + 1 : 1;
+          return {
+            start: lineStart,
+            end: lineStart + info.prefixLength,
+            text: listPrefix(info.kind, parentDepth, ordinal)
+          };
+        }
         return { start: lineStart, end: lineStart + info.prefixLength, text: "" };
       }
       if (info.kind === "bullet") {
@@ -3257,7 +3241,7 @@
       lines.forEach((line, lineIndex) => {
         const listItem = parseListLine(line);
         if (listItem) {
-          const marker = listItem.kind === "bullet" ? ["•", "o", "-"][listItem.depth - 1] : `${listItem.marker}.`;
+          const marker = listItem.kind === "bullet" ? listItem.marker : `${listItem.marker}.`;
           html.push(`<span class="doc-list-line is-level-${listItem.depth}"><span class="doc-list-marker">${escapeHtml(marker)}</span><span>${richSliceToHtml(text, offset + listItem.prefixLength, offset + line.length, formats)}</span></span>`);
         } else {
           html.push(line ? richSliceToHtml(text, offset, offset + line.length, formats) : "");
@@ -3298,7 +3282,7 @@
       lines.forEach((line, lineIndex) => {
         const listItem = parseListLine(line);
         if (listItem) {
-          const marker = listItem.kind === "bullet" ? ["•", "o", "-"][listItem.depth - 1] : `${listItem.marker}.`;
+          const marker = listItem.kind === "bullet" ? listItem.marker : `${listItem.marker}.`;
           html.push(`<span class="doc-list-line is-level-${listItem.depth}"><span class="doc-list-marker">${escapeHtml(marker)}</span><span>${renderWrapped(offset + listItem.prefixLength, offset + line.length)}</span></span>`);
         } else {
           html.push(line ? renderWrapped(offset, offset + line.length) : "");
@@ -6020,7 +6004,7 @@
       rawLines.forEach((rawLine) => {
         const listItem = parseListLine(rawLine);
         const marker = listItem
-          ? (listItem.kind === "bullet" ? ["•", "o", "-"][listItem.depth - 1] : `${listItem.marker}.`)
+          ? (listItem.kind === "bullet" ? listItem.marker : `${listItem.marker}.`)
           : "";
         const prefix = listItem ? `${"  ".repeat(listItem.depth - 1)}${marker} ` : "";
         const contentStart = listItem ? listItem.prefixLength : 0;
