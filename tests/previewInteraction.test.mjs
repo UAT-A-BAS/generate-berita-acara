@@ -42,5 +42,7 @@ const listMarkerCss = html.slice(
 );
 assert.match(listLineCss, /display:\s*block/);
 assert.doesNotMatch(listLineCss, /grid-template-columns/);
+assert.match(listLineCss, /line-height:\s*inherit/);
+assert.match(listLineCss, /margin:\s*0/);
 assert.match(listMarkerCss, /white-space:\s*nowrap/);
 assert.match(listMarkerCss, /text-align:\s*left/);
