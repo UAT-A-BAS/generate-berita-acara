@@ -1453,6 +1453,7 @@
 
     .doc-table td[data-preview-field="pic"] {
       text-align: center !important;
+      vertical-align: middle !important;
     }
 
     .doc-table .date-row td {
@@ -5427,7 +5428,7 @@
           if (span.hidden[localIndex]) return "";
           const isMerged = span.lengths[localIndex] > 1;
           const rowspan = isMerged ? ` rowspan="${span.lengths[localIndex]}"` : "";
-          const verticalAlign = isMerged && (key === "result" || key === "pic") ? "middle" : "top";
+          const verticalAlign = key === "pic" || (isMerged && key === "result") ? "middle" : "top";
           return `<td${rowspan} role="link" tabindex="0" data-preview-group-index="${groupIndex}" data-preview-row-index="${rowData.sourceRowIndex ?? rowData.originalIndex ?? localIndex}" data-preview-field="${key}" style="width:${width}; text-align:${align}; vertical-align:${verticalAlign};">${richTextToPreviewHtml(rows[localIndex][key], rows[localIndex][`${key}Formats`], key)}</td>`;
         };
         row.innerHTML = `
@@ -6097,7 +6098,7 @@
           const height = sumRange(rowHeights, index, index + span.lengths[index]);
           const isMerged = span.lengths[index] > 1;
           const align = key === "pic" ? "center" : "left";
-          const verticalAlign = isMerged && (key === "result" || key === "pic") ? "middle" : "top";
+          const verticalAlign = key === "pic" || (isMerged && key === "result") ? "middle" : "top";
           drawPdfCell(pdf, layout, x, y, width, height, rows[index][key], align, rows[index][`${key}Formats`], verticalAlign);
         }
         x += width;
