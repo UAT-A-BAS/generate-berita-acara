@@ -46,3 +46,5 @@ assert.match(listLineCss, /line-height:\s*inherit/);
 assert.match(listLineCss, /margin:\s*0/);
 assert.match(listMarkerCss, /white-space:\s*nowrap/);
 assert.match(listMarkerCss, /text-align:\s*left/);
+assert.match(html, /mergedCell\("pic",\s*"14%",\s*"center"\)/);
+assert.match(html, /data-preview-field="pic"[\s\S]*text-align:\s*center\s*!important/);
