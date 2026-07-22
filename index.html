@@ -974,7 +974,10 @@
     .date-range-picker {
       position: fixed;
       z-index: 60;
-      width: 294px;
+      width: min(340px, calc(100vw - 24px));
+      max-height: calc(100vh - 24px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
       border: 1px solid rgba(201, 211, 223, 0.92);
       border-radius: 18px;
       padding: 16px;
@@ -991,6 +994,24 @@
       color: var(--muted);
       font-size: 12px;
       font-weight: 700;
+    }
+
+    .date-picker-summary {
+      display: grid;
+      gap: 2px;
+      margin-top: 12px;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface-muted);
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .date-picker-summary strong {
+      color: var(--brand-2);
+      font-size: 12px;
+      line-height: 1.35;
     }
 
     .date-picker-header {
@@ -1051,7 +1072,7 @@
     .date-picker-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 6px;
+      gap: 5px;
       text-align: center;
     }
 
@@ -1073,12 +1094,30 @@
     }
 
     .date-picker-day {
-      width: 34px;
-      min-width: 34px;
-      height: 30px;
+      width: 100%;
+      min-width: 0;
+      height: 34px;
       border-radius: 8px;
       font-weight: 500;
       cursor: pointer;
+    }
+
+    .date-range-picker.is-mixed .date-picker-day {
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .date-range-picker.is-mixed.is-pointer-down,
+    .date-range-picker.is-mixed.is-dragging {
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .date-range-picker.is-mixed.is-pointer-down .date-picker-day,
+    .date-range-picker.is-mixed.is-dragging .date-picker-day {
+      cursor: grabbing;
     }
 
     .date-picker-choice {
@@ -1113,6 +1152,20 @@
     .date-picker-day.is-selected {
       background: #0067bd;
       color: #fff;
+    }
+
+    .date-range-picker.is-mixed .date-picker-day.is-selected.is-range-edge,
+    .date-range-picker.is-mixed .date-picker-day.is-preview-edge {
+      background: var(--brand);
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .date-range-picker.is-mixed .date-picker-day.is-selected.is-range-middle,
+    .date-range-picker.is-mixed .date-picker-day.is-preview-middle {
+      background: var(--accent-soft);
+      color: var(--brand-2);
+      box-shadow: inset 0 0 0 1px rgba(27, 77, 120, 0.12);
     }
 
     .date-picker-day:focus {
@@ -2012,6 +2065,15 @@
         display: none;
       }
 
+      .date-range-picker {
+        padding: 12px;
+        border-radius: 14px;
+      }
+
+      .date-picker-grid {
+        gap: 4px;
+      }
+
       .floating-tools {
         bottom: 12px;
         flex-direction: row;
@@ -2553,7 +2615,12 @@
       viewDate: new Date(),
       rangeStart: null,
       rangeEnd: null,
-      selectedDates: []
+      selectedDates: [],
+      dragPointerId: null,
+      dragStart: "",
+      dragEnd: "",
+      dragActive: false,
+      suppressDayClick: false
     };
 
     const appState = {
@@ -2797,6 +2864,17 @@
         dates.push(dateToInput(day));
       }
       return dates;
+    }
+
+    function toggleDateSelection(values, value) {
+      const selected = normalizeDateList(values);
+      return selected.includes(formatDateInput(value))
+        ? selected.filter((date) => date !== formatDateInput(value))
+        : normalizeDateList([...selected, value]);
+    }
+
+    function addDateRangeSelection(values, start, end) {
+      return normalizeDateList([...normalizeDateList(values), ...datesBetween(start, end)]);
     }
 
     function readDateList(input) {
@@ -4229,25 +4307,37 @@
       const base = parseDate(datePickerState.selectedDates[0]) || datePickerState.rangeStart || parseDate(input.value) || new Date();
       datePickerState.viewDate = new Date(base.getFullYear(), base.getMonth(), 1);
       datePickerState.panel = "day";
+      resetDatePickerDrag();
       renderDatePicker();
-      positionDatePicker(input);
       els.datePicker.hidden = false;
+      positionDatePicker(input);
     }
 
     function closeDatePicker() {
+      resetDatePickerDrag();
       els.datePicker.hidden = true;
       datePickerState.target = null;
     }
 
     function positionDatePicker(input) {
       const rect = input.getBoundingClientRect();
-      const pickerWidth = 294;
-      const left = Math.min(window.innerWidth - pickerWidth - 12, Math.max(12, rect.left));
-      const below = rect.bottom + 8;
-      const above = rect.top - 372;
-      const top = below + 360 > window.innerHeight && above > 12 ? above : below;
+      const margin = 12;
+      const gap = 8;
+      const pickerWidth = els.datePicker.offsetWidth;
+      const pickerHeight = Math.min(els.datePicker.offsetHeight, window.innerHeight - (margin * 2));
+      const left = Math.min(window.innerWidth - pickerWidth - margin, Math.max(margin, rect.left));
+      const spaceBelow = window.innerHeight - rect.bottom - gap - margin;
+      const spaceAbove = rect.top - gap - margin;
+      const preferredTop = spaceBelow >= pickerHeight || spaceBelow >= spaceAbove
+        ? rect.bottom + gap
+        : rect.top - pickerHeight - gap;
+      const top = Math.min(window.innerHeight - pickerHeight - margin, Math.max(margin, preferredTop));
       els.datePicker.style.left = `${left}px`;
-      els.datePicker.style.top = `${Math.max(12, top)}px`;
+      els.datePicker.style.top = `${top}px`;
+    }
+
+    function repositionOpenDatePicker() {
+      if (!els.datePicker.hidden && datePickerState.target) positionDatePicker(datePickerState.target);
     }
 
     function renderDatePicker() {
@@ -4265,6 +4355,9 @@
       const first = new Date(year, month, 1);
       const start = new Date(year, month, 1 - first.getDay());
       const weekdays = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+      const isMixed = datePickerState.mode === "multiRange";
+      const selectedSet = new Set(datePickerState.selectedDates);
+      els.datePicker.classList.toggle("is-mixed", isMixed);
       const days = Array.from({ length: 42 }, (_, index) => {
         const day = new Date(start.getFullYear(), start.getMonth(), start.getDate() + index);
         const value = dateToInput(day);
@@ -4275,16 +4368,22 @@
           : sameDate(day, parseDate(datePickerState.target?.value));
         const inRange = datePickerState.mode === "range" && datePickerState.rangeStart && datePickerState.rangeEnd
           && compareDates(day, datePickerState.rangeStart) > 0 && compareDates(day, datePickerState.rangeEnd) < 0;
+        const previous = dateToInput(new Date(day.getFullYear(), day.getMonth(), day.getDate() - 1));
+        const next = dateToInput(new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1));
+        const rangeMiddle = isMixed && selected && selectedSet.has(previous) && selectedSet.has(next);
         const classes = [
           "date-picker-day",
           day.getMonth() !== month ? "is-muted" : "",
           selected ? "is-selected" : "",
+          isMixed && selected ? (rangeMiddle ? "is-range-middle" : "is-range-edge") : "",
           inRange ? "is-in-range" : ""
         ].filter(Boolean).join(" ");
-        return `<button class="${classes}" type="button" data-date-day="${value}">${day.getDate()}</button>`;
+        const describedBy = isMixed ? ` aria-describedby="datePickerInstruction datePickerSummary"` : "";
+        return `<button class="${classes}" type="button" data-date-day="${value}" aria-pressed="${selected}"${describedBy}>${day.getDate()}</button>`;
       }).join("");
 
       els.datePicker.innerHTML = `
+        ${isMixed ? `<p class="date-picker-hint" id="datePickerInstruction" data-date-instruction role="status" aria-live="polite">Klik satu tanggal &middot; tahan dan geser untuk rentang</p>` : ""}
         <div class="date-picker-header">
           <button class="date-picker-nav" type="button" data-date-nav="-1" aria-label="Bulan sebelumnya">&lsaquo;</button>
           <div class="date-picker-title">
@@ -4297,11 +4396,117 @@
           ${weekdays.map((day) => `<div class="date-picker-weekday">${day}</div>`).join("")}
           ${days}
         </div>
+        ${isMixed ? `<div class="date-picker-summary" id="datePickerSummary" data-date-summary aria-live="polite"><span>Pilihan</span><strong>${escapeHtml(formatMultiDateRange(datePickerState.selectedDates) || "Belum ada tanggal dipilih")}</strong></div>` : ""}
         <div class="date-picker-footer">
           <button class="btn btn-secondary" type="button" data-date-clear>Clear</button>
           <button class="btn btn-secondary" type="button" data-date-today>Today</button>
           ${(datePickerState.mode === "multi" || datePickerState.mode === "multiRange") ? `<button class="btn btn-primary" type="button" data-date-done>Done</button>` : ""}
         </div>`;
+    }
+
+    function setDatePickerInstruction(message) {
+      const instruction = els.datePicker.querySelector("[data-date-instruction]");
+      if (instruction) instruction.textContent = message;
+    }
+
+    function clearDatePickerDragPreview() {
+      els.datePicker.querySelectorAll("[data-date-day]").forEach((day) => {
+        day.classList.remove("is-preview-edge", "is-preview-middle");
+      });
+    }
+
+    function resetDatePickerDrag() {
+      datePickerState.dragPointerId = null;
+      datePickerState.dragStart = "";
+      datePickerState.dragEnd = "";
+      datePickerState.dragActive = false;
+      els.datePicker.classList.remove("is-pointer-down", "is-dragging");
+      clearDatePickerDragPreview();
+    }
+
+    function dateDayAtPointer(event) {
+      const pointed = document.elementFromPoint(event.clientX, event.clientY)?.closest?.("[data-date-day]");
+      return pointed && els.datePicker.contains(pointed) ? pointed : null;
+    }
+
+    function updateDatePickerDragPreview() {
+      clearDatePickerDragPreview();
+      if (!datePickerState.dragActive) {
+        setDatePickerInstruction("Geser ke tanggal akhir untuk membuat rentang");
+        return;
+      }
+      const previewDates = datesBetween(datePickerState.dragStart, datePickerState.dragEnd);
+      const first = previewDates[0];
+      const last = previewDates.slice(-1)[0];
+      const previewSet = new Set(previewDates);
+      els.datePicker.querySelectorAll("[data-date-day]").forEach((day) => {
+        const value = day.dataset.dateDay;
+        if (!previewSet.has(value)) return;
+        day.classList.add(value === first || value === last ? "is-preview-edge" : "is-preview-middle");
+      });
+      setDatePickerInstruction(`Lepas untuk menambahkan ${formatMultiDateRange(previewDates)}`);
+    }
+
+    function handleDatePickerPointerDown(event) {
+      const day = event.target.closest?.("[data-date-day]");
+      if (!day || !els.datePicker.contains(day) || datePickerState.mode !== "multiRange") return;
+      if (event.pointerType === "mouse" && event.button !== 0) return;
+      datePickerState.dragPointerId = event.pointerId;
+      datePickerState.dragStart = day.dataset.dateDay;
+      datePickerState.dragEnd = day.dataset.dateDay;
+      datePickerState.dragActive = false;
+      els.datePicker.classList.add("is-pointer-down");
+      try {
+        day.setPointerCapture?.(event.pointerId);
+      } catch {
+        // The global pointer-up listener still completes the gesture when capture is unavailable.
+      }
+      setDatePickerInstruction("Geser ke tanggal akhir untuk membuat rentang");
+    }
+
+    function handleDatePickerPointerMove(event) {
+      if (event.pointerId !== datePickerState.dragPointerId) return;
+      const day = dateDayAtPointer(event);
+      if (!day) return;
+      const value = day.dataset.dateDay;
+      if (value !== datePickerState.dragStart) datePickerState.dragActive = true;
+      datePickerState.dragEnd = value;
+      els.datePicker.classList.toggle("is-dragging", datePickerState.dragActive);
+      updateDatePickerDragPreview();
+      if (datePickerState.dragActive) event.preventDefault();
+    }
+
+    function handleDatePickerPointerUp(event) {
+      if (event.pointerId !== datePickerState.dragPointerId) return;
+      const day = dateDayAtPointer(event);
+      if (day) {
+        datePickerState.dragEnd = day.dataset.dateDay;
+        if (datePickerState.dragEnd !== datePickerState.dragStart) datePickerState.dragActive = true;
+      }
+      if (!datePickerState.dragActive) {
+        resetDatePickerDrag();
+        setDatePickerInstruction("Klik satu tanggal · tahan dan geser untuk rentang");
+        return;
+      }
+      event.preventDefault();
+      datePickerState.selectedDates = addDateRangeSelection(
+        datePickerState.selectedDates,
+        datePickerState.dragStart,
+        datePickerState.dragEnd
+      );
+      writeDateList(datePickerState.target, datePickerState.selectedDates);
+      datePickerState.suppressDayClick = true;
+      setTimeout(() => {
+        datePickerState.suppressDayClick = false;
+      }, 0);
+      resetDatePickerDrag();
+      renderDatePicker();
+    }
+
+    function handleDatePickerPointerCancel(event) {
+      if (event.pointerId !== datePickerState.dragPointerId) return;
+      resetDatePickerDrag();
+      setDatePickerInstruction("Klik satu tanggal · tahan dan geser untuk rentang");
     }
 
     function renderMonthPicker(year, selectedMonth) {
@@ -4470,26 +4675,8 @@
         return;
       }
       if (datePickerState.mode === "multiRange") {
-        if (datePickerState.selectedDates.includes(selectedValue)) {
-          datePickerState.selectedDates = datePickerState.selectedDates.filter((value) => value !== selectedValue);
-          writeDateList(datePickerState.target, datePickerState.selectedDates);
-          datePickerState.rangeStart = null;
-          renderDatePicker();
-          return;
-        }
-        if (!datePickerState.rangeStart) {
-          datePickerState.rangeStart = selected;
-          datePickerState.selectedDates = normalizeDateList([...datePickerState.selectedDates, selectedValue]);
-          writeDateList(datePickerState.target, datePickerState.selectedDates);
-          renderDatePicker();
-          return;
-        }
-        datePickerState.selectedDates = normalizeDateList([
-          ...datePickerState.selectedDates,
-          ...datesBetween(dateToInput(datePickerState.rangeStart), selectedValue)
-        ]);
+        datePickerState.selectedDates = toggleDateSelection(datePickerState.selectedDates, selectedValue);
         writeDateList(datePickerState.target, datePickerState.selectedDates);
-        datePickerState.rangeStart = null;
         renderDatePicker();
         return;
       }
@@ -6355,7 +6542,20 @@
       };
     }
 
+    document.addEventListener("pointerdown", handleDatePickerPointerDown);
+    document.addEventListener("pointermove", handleDatePickerPointerMove);
+    document.addEventListener("pointerup", handleDatePickerPointerUp);
+    document.addEventListener("pointercancel", handleDatePickerPointerCancel);
+    window.addEventListener("resize", repositionOpenDatePicker);
+    window.visualViewport?.addEventListener("resize", repositionOpenDatePicker);
+
     document.addEventListener("click", (event) => {
+      if (datePickerState.suppressDayClick) {
+        event.preventDefault();
+        event.stopPropagation();
+        datePickerState.suppressDayClick = false;
+        return;
+      }
       if (appState.annotationMode && !event.target.closest("#commentDialog") && !event.target.closest("#resetConfirmDialog") && !event.target.closest("#maskDialog") && !event.target.closest("#collabNameDialog") && !event.target.closest(".floating-tools") && !event.target.closest(".comment-drawer")) {
         const target = getCommentTarget(event);
         if (target) {
