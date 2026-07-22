@@ -4340,6 +4340,10 @@
       if (!els.datePicker.hidden && datePickerState.target) positionDatePicker(datePickerState.target);
     }
 
+    function supportsDatePickerDrag() {
+      return datePickerState.mode === "multi" || datePickerState.mode === "multiRange";
+    }
+
     function renderDatePicker() {
       const view = datePickerState.viewDate;
       const month = view.getMonth();
@@ -4355,7 +4359,7 @@
       const first = new Date(year, month, 1);
       const start = new Date(year, month, 1 - first.getDay());
       const weekdays = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
-      const isMixed = datePickerState.mode === "multiRange";
+      const isMixed = supportsDatePickerDrag();
       const selectedSet = new Set(datePickerState.selectedDates);
       els.datePicker.classList.toggle("is-mixed", isMixed);
       const days = Array.from({ length: 42 }, (_, index) => {
@@ -4449,7 +4453,7 @@
 
     function handleDatePickerPointerDown(event) {
       const day = event.target.closest?.("[data-date-day]");
-      if (!day || !els.datePicker.contains(day) || datePickerState.mode !== "multiRange") return;
+      if (!day || !els.datePicker.contains(day) || !supportsDatePickerDrag()) return;
       if (event.pointerType === "mouse" && event.button !== 0) return;
       datePickerState.dragPointerId = event.pointerId;
       datePickerState.dragStart = day.dataset.dateDay;
@@ -4495,6 +4499,10 @@
         datePickerState.dragEnd
       );
       writeDateList(datePickerState.target, datePickerState.selectedDates);
+      if (datePickerState.target === fields.implementationDate) {
+        fields.implementationStartDate.value = datePickerState.selectedDates[0] || "";
+        fields.implementationEndDate.value = datePickerState.selectedDates.slice(-1)[0] || "";
+      }
       datePickerState.suppressDayClick = true;
       setTimeout(() => {
         datePickerState.suppressDayClick = false;

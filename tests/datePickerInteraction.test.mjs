@@ -59,6 +59,9 @@ assert.match(html, /Lepas untuk menambahkan \$\{formatMultiDateRange\(previewDat
 assert.match(html, /setPointerCapture\?\.\(event\.pointerId\)/);
 assert.match(html, /document\.addEventListener\("pointercancel", handleDatePickerPointerCancel\)/);
 assert.doesNotMatch(extractFunction("handleDatePickerPointerCancel"), /writeDateList/);
+assert.match(extractFunction("supportsDatePickerDrag"), /mode === "multi" \|\| datePickerState\.mode === "multiRange"/);
+assert.match(extractFunction("handleDatePickerPointerDown"), /supportsDatePickerDrag\(\)/);
+assert.match(extractFunction("handleDatePickerPointerUp"), /datePickerState\.target === fields\.implementationDate/);
 assert.match(html, /aria-pressed="\$\{selected\}"/);
 assert.match(html, /datePickerState\.suppressDayClick/);
 assert.match(html, /width:\s*min\(340px, calc\(100vw - 24px\)\)/);
