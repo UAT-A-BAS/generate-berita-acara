@@ -2639,6 +2639,7 @@
       maskTypeActiveIndex: -1,
       maskTypeShowAll: false,
       commentRenderSignature: "",
+      previewHighlightedInput: null,
       previewHighlightTimer: null
     };
 
@@ -5032,11 +5033,20 @@
       const behavior = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ? "auto" : "smooth";
       input.scrollIntoView({ behavior, block: "center", inline: "nearest" });
       input.focus({ preventScroll: true });
+      clearTimeout(appState.previewHighlightTimer);
+      if (appState.previewHighlightedInput) {
+        appState.previewHighlightedInput.classList.remove("preview-input-hit");
+      }
       input.classList.remove("preview-input-hit");
       void input.offsetWidth;
       input.classList.add("preview-input-hit");
-      clearTimeout(appState.previewHighlightTimer);
-      appState.previewHighlightTimer = setTimeout(() => input.classList.remove("preview-input-hit"), 2200);
+      appState.previewHighlightedInput = input;
+      appState.previewHighlightTimer = setTimeout(() => {
+        input.classList.remove("preview-input-hit");
+        if (appState.previewHighlightedInput !== input) return;
+        appState.previewHighlightedInput = null;
+        appState.previewHighlightTimer = null;
+      }, 2200);
       updateRichToolbarState(input);
       return true;
     }
