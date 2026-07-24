@@ -75,6 +75,7 @@ const inferenceCases = [
   ["01-12-2023", "date"],
   ["09/20", "cardExpiry"],
   ["5289 1900 0155 6972", "cardNumber"],
+  ["3313091704330000", "identityNumber"],
   ["081210001294", "phone"],
   ["Rp. 60,000,123.52", "balance"],
   ["532", "cvv"],
@@ -86,3 +87,5 @@ const inferenceCases = [
 for (const [input, expected] of inferenceCases) {
   assert.equal(inferMaskType(input).type, expected, `infer: ${input}`);
 }
+
+assert.equal(maskByType("all", "José１２３"), "*******", "mask all covers Unicode letters and numbers");

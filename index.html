@@ -2499,6 +2499,7 @@
     </div>
   </template>
 
+  <script src="./src/sharedData.js"></script>
   <script>
     const AUTOSAVE_KEY = "ba-generator-autosave-v1";
     const AUTOSAVE_META_KEY = "ba-generator-autosave-meta-v1";
@@ -2507,6 +2508,7 @@
     const WORKER_BASE_URL = window.BA_COLLAB_WORKER_URL || document.querySelector("meta[name='ba-collab-worker-url']")?.content || "";
     const LOCAL_ORIGIN = "local-form";
     const REMOTE_ORIGIN = "remote-form";
+    const { hasSharedData, readSharedData, syncSharedData } = globalThis.SharedDataCodec;
     const monthNames = [
       "Januari", "Februari", "Maret", "April", "Mei", "Juni",
       "Juli", "Agustus", "September", "Oktober", "November", "Desember"
@@ -3489,7 +3491,7 @@
     }
 
     function maskAll(value) {
-      return String(value || "").replace(/[A-Za-z0-9]/g, "*");
+      return String(value || "").replace(/[\p{L}\p{N}]/gu, "*");
     }
 
     function maskDigitsKeep(value, first, last) {
@@ -3505,8 +3507,8 @@
       const chars = Array.from(text);
       let visible = count;
       return chars.map((char, index) => {
-        if (!/[A-Za-z0-9]/.test(char)) return char;
-        const tail = chars.slice(index).filter((item) => /[A-Za-z0-9]/.test(item)).length;
+        if (!/[\p{L}\p{N}]/u.test(char)) return char;
+        const tail = chars.slice(index).filter((item) => /[\p{L}\p{N}]/u.test(item)).length;
         if (tail <= visible) return char;
         return "*";
       }).join("");
@@ -3622,6 +3624,21 @@
       return sum % 10 === 0;
     }
 
+    function looksLikeIdentityNumber(value) {
+      const digits = String(value || "");
+      if (!/^\d{16}$/.test(digits) || luhnValid(digits)) return false;
+      let day = Number(digits.slice(6, 8));
+      const month = Number(digits.slice(8, 10));
+      const year = Number(digits.slice(10, 12));
+      if (day > 40) day -= 40;
+      const date = new Date(2000 + year, month - 1, day);
+      return day >= 1
+        && month >= 1
+        && month <= 12
+        && date.getDate() === day
+        && date.getMonth() === month - 1;
+    }
+
     function maskSuggestion(type, confidence, reason, options = {}) {
       return {
         type,
@@ -3646,11 +3663,11 @@
       if (/^\+?\d[\d\s-]{7,}$/.test(text) && /^(0|62|\+62)/.test(text.replace(/\s/g, "")) && digits.length >= 8 && digits.length <= 15) {
         return maskSuggestion("phone", "tinggi", "format telepon");
       }
+      if (looksLikeIdentityNumber(text)) return maskSuggestion("identityNumber", "tinggi", "format NIK 16 digit");
       if (digits.length >= 13 && digits.length <= 19 && (luhnValid(digits) || /^\d{4}([\s-]?\d{4}){2,4}$/.test(text))) {
         return maskSuggestion("cardNumber", luhnValid(digits) ? "tinggi" : "sedang", "format nomor kartu", { cardPolicy: "default" });
       }
       if (/^\d{3,4}$/.test(text)) return maskSuggestion("cvv", "rendah", "3-4 digit");
-      if (/^\d{16}$/.test(digits) && digits === text) return maskSuggestion("identityNumber", "sedang", "16 digit");
       if (/^\d{22}$/.test(digits) && digits === text) return maskSuggestion("npwpNitku", "sedang", "22 digit");
       if (/^[A-Z]\s?\d{6,8}$/i.test(text)) return maskSuggestion("passport", "sedang", "format paspor");
       if (/^[A-Z]{2,}[A-Z0-9]{4,}$/i.test(text) && !/\s/.test(text)) return maskSuggestion("bcaUserId", "sedang", "format user id");
@@ -3892,12 +3909,12 @@
       collaboration.localUpdatedAt = updatedAt;
     }
 
-    function commitSharedData(data = collectData()) {
+    function commitSharedData(data = collectData(), options = {}) {
       if (!collaboration.active || !sharedState || !Y || applyingRemoteData) return;
       const updatedAt = Date.now();
-      persistAutosave(data, updatedAt);
+      if (options.persist !== false) persistAutosave(data, updatedAt);
       sharedDoc.transact(() => {
-        sharedState.set("data", data);
+        syncSharedData(sharedState, data);
         sharedState.set("updatedAt", updatedAt);
         sharedState.set("updatedBy", clientId);
       }, LOCAL_ORIGIN);
@@ -3907,17 +3924,13 @@
     function queueSharedUpdate() {
       if (!collaboration.active || !sharedState || suppressSharedUpdate || applyingRemoteData) return;
       clearTimeout(sharedUpdateTimer);
-      sharedUpdateTimer = setTimeout(() => commitSharedData(), 180);
+      commitSharedData(collectData(), { persist: false });
     }
 
     function applySharedDataIfNewer() {
-      const data = sharedState?.get("data");
+      const data = readSharedData(sharedState);
       if (!data) return false;
       const remoteUpdatedAt = Number(sharedState.get("updatedAt") || "0");
-      if (remoteUpdatedAt && collaboration.localUpdatedAt > remoteUpdatedAt && sharedSocket?.readyState === WebSocket.OPEN) {
-        commitSharedData(collectData());
-        return true;
-      }
       applyingRemoteData = true;
       applyData(data, { fromShared: true });
       applyingRemoteData = false;
@@ -4042,7 +4055,8 @@
         Y.applyUpdate(sharedDoc, new Uint8Array(buffer), REMOTE_ORIGIN);
         if (!firstServerSync) {
           firstServerSync = true;
-          const hasRemoteData = Boolean(sharedState?.get("data"));
+          const hadLegacyData = Boolean(sharedState?.get("data"));
+          const hasRemoteData = hasSharedData(sharedState);
           if (pendingCollabSeed && (!hasRemoteData || pendingCollabSeedMustWin)) {
             commitSharedData(pendingCollabSeed);
           } else if (!applySharedDataIfNewer() && pendingCollabSeed) {
@@ -4050,6 +4064,7 @@
           } else if (hasRemoteData) {
             applySharedDataIfNewer();
           }
+          if (hadLegacyData) commitSharedData(collectData(), { persist: false });
           pendingCollabSeed = null;
           pendingCollabSeedMustWin = false;
           sendYUpdate(Y.encodeStateAsUpdate(sharedDoc));
@@ -4095,6 +4110,7 @@
 
     function createGroup(groupData = {}) {
       const node = document.getElementById("groupTemplate").content.firstElementChild.cloneNode(true);
+      node.dataset.uid = groupData.uid || randomId(12);
       writeDateList(node.querySelector("[data-field='date']"), groupData.dates?.length ? groupData.dates : groupData.date || "");
       els.groups.appendChild(node);
       const rows = groupData.rows?.length ? groupData.rows : [{ activity: "", result: "", pic: "" }];
@@ -4105,6 +4121,7 @@
 
     function createActivityRow(groupNode, rowData = {}) {
       const node = document.getElementById("rowTemplate").content.firstElementChild.cloneNode(true);
+      node.dataset.uid = rowData.uid || randomId(12);
       const activity = node.querySelector("[data-field='activity']");
       const result = node.querySelector("[data-field='result']");
       const pic = node.querySelector("[data-field='pic']");
@@ -4122,6 +4139,7 @@
 
     function createMaker(makerData = {}) {
       const node = document.getElementById("makerTemplate").content.firstElementChild.cloneNode(true);
+      node.dataset.uid = makerData.uid || randomId(12);
       node.querySelector("[data-field='name']").value = makerData.name || "";
       node.querySelector("[data-field='role']").value = makerData.role || "";
       els.makers.appendChild(node);
@@ -4174,6 +4192,7 @@
 
     function collectData() {
       const groups = [...els.groups.querySelectorAll("[data-group]")].map((group) => ({
+        uid: group.dataset.uid || (group.dataset.uid = randomId(12)),
         date: readDateList(group.querySelector("[data-field='date']"))[0] || "",
         dates: readDateList(group.querySelector("[data-field='date']")),
         rows: [...group.querySelectorAll("[data-row]")].map((row) => {
@@ -4181,6 +4200,7 @@
           const result = readRichCell(row.querySelector("[data-field='result']"));
           const pic = readRichCell(row.querySelector("[data-field='pic']"));
           return {
+            uid: row.dataset.uid || (row.dataset.uid = randomId(12)),
             activity: activity.text,
             activityFormats: activity.formats,
             result: result.text,
@@ -4192,6 +4212,7 @@
       }));
 
       const makers = [...els.makers.querySelectorAll("[data-maker]")].map((maker) => ({
+        uid: maker.dataset.uid || (maker.dataset.uid = randomId(12)),
         name: normalizeText(maker.querySelector("[data-field='name']").value),
         role: normalizeText(maker.querySelector("[data-field='role']").value)
       }));
@@ -5542,12 +5563,12 @@
       const shouldSync = !applyingRemoteData && !suppressSharedUpdate;
       const shouldPersistCollab = collaboration.active;
       const updatedAt = applyingRemoteData ? Number(sharedState?.get("updatedAt") || Date.now()) : Date.now();
+      if (shouldSync) queueSharedUpdate();
       autosaveTimer = setTimeout(() => {
         const data = collectData();
         saveUserSettings(data);
         if (!shouldPersistCollab) return;
         persistAutosave(data, updatedAt);
-        if (shouldSync) queueSharedUpdate();
       }, COLLAB_AUTOSAVE_DELAY_MS);
     }
 
