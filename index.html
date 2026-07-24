@@ -1879,6 +1879,54 @@
       font-weight: 700;
     }
 
+    .draft-comment-dialog .dialog-box {
+      width: min(500px, 100%);
+      gap: 0;
+      padding: 24px;
+      border: 1px solid rgba(27, 77, 120, 0.14);
+      animation: dialog-enter 160ms ease-out;
+    }
+
+    .draft-comment-heading {
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1fr);
+      gap: 12px;
+      align-items: start;
+    }
+
+    .draft-comment-icon {
+      display: grid;
+      width: 40px;
+      height: 40px;
+      place-items: center;
+      border-radius: 10px;
+      background: var(--accent-soft);
+      color: var(--brand);
+    }
+
+    .draft-comment-icon .icon {
+      width: 19px;
+      height: 19px;
+    }
+
+    .draft-comment-dialog .dialog-box p {
+      margin-top: 8px;
+      font-weight: 650;
+      line-height: 1.55;
+    }
+
+    .draft-comment-dialog .actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .draft-comment-dialog .btn {
+      width: 100%;
+      min-height: 42px;
+    }
+
     #maskDialog .dialog-box {
       width: min(420px, 100%);
       gap: 10px;
@@ -1912,6 +1960,17 @@
       from {
         opacity: 0;
         transform: translateY(6px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes dialog-enter {
+      from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.985);
       }
       to {
         opacity: 1;
@@ -2107,6 +2166,10 @@
       .maker-actions {
         margin-top: 0;
         justify-self: start;
+      }
+
+      .draft-comment-dialog .dialog-box {
+        padding: 18px;
       }
     }
   </style>
@@ -2374,6 +2437,23 @@
         </div>
       </div>
     </div>
+    <div class="confirm-dialog draft-comment-dialog" id="draftCommentDialog" role="dialog" aria-modal="true" aria-labelledby="draftCommentDialogTitle" aria-describedby="draftCommentDialogDescription" hidden>
+      <div class="dialog-box">
+        <div class="draft-comment-heading">
+          <span class="draft-comment-icon" aria-hidden="true">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/><path d="M8 10h8"/><path d="M8 14h5"/></svg>
+          </span>
+          <div>
+            <h3 id="draftCommentDialogTitle">Komentar ditemukan</h3>
+            <p id="draftCommentDialogDescription">Draft yang akan dimuat mengandung komentar. Apakah Anda ingin tetap menyimpan komentar tersebut di dalam dokumen?</p>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-secondary" id="removeDraftCommentsBtn" type="button">Hapus Komentar</button>
+          <button class="btn btn-primary" id="keepDraftCommentsBtn" type="button">Simpan Komentar</button>
+        </div>
+      </div>
+    </div>
     <div class="confirm-dialog" id="resetConfirmDialog" role="dialog" aria-modal="true" aria-labelledby="resetDialogTitle" hidden>
       <div class="dialog-box">
         <h3 id="resetDialogTitle">Reset form aktif?</h3>
@@ -2550,6 +2630,7 @@
       preview: document.getElementById("preview"),
       splitter: document.getElementById("splitter"),
       generateBtn: document.getElementById("generateBtn"),
+      loadDraftBtn: document.getElementById("loadDraftBtn"),
       importDraftInput: document.getElementById("importDraftInput"),
       collabToggleBtn: document.getElementById("collabToggleBtn"),
       copyShareLinkBtn: document.getElementById("copyShareLinkBtn"),
@@ -2590,6 +2671,9 @@
       collabNameInput: document.getElementById("collabNameInput"),
       saveCollabNameBtn: document.getElementById("saveCollabNameBtn"),
       cancelCollabNameBtn: document.getElementById("cancelCollabNameBtn"),
+      draftCommentDialog: document.getElementById("draftCommentDialog"),
+      removeDraftCommentsBtn: document.getElementById("removeDraftCommentsBtn"),
+      keepDraftCommentsBtn: document.getElementById("keepDraftCommentsBtn"),
       resetConfirmDialog: document.getElementById("resetConfirmDialog"),
       confirmResetBtn: document.getElementById("confirmResetBtn"),
       cancelResetBtn: document.getElementById("cancelResetBtn")
@@ -2642,7 +2726,9 @@
       maskTypeShowAll: false,
       commentRenderSignature: "",
       previewHighlightedInput: null,
-      previewHighlightTimer: null
+      previewHighlightTimer: null,
+      pendingDraftImport: null,
+      draftImportReturnFocus: null
     };
 
     let activeRoleInput = null;
@@ -5540,20 +5626,93 @@
       els.importDraftInput.click();
     }
 
+    function setDraftReadPending(pending) {
+      els.loadDraftBtn.disabled = pending;
+      els.loadDraftBtn.setAttribute("aria-busy", String(pending));
+    }
+
+    function openDraftCommentDialog(data) {
+      appState.pendingDraftImport = data;
+      appState.draftImportReturnFocus = els.loadDraftBtn;
+      els.removeDraftCommentsBtn.disabled = false;
+      els.keepDraftCommentsBtn.disabled = false;
+      els.draftCommentDialog.hidden = false;
+      requestAnimationFrame(() => els.keepDraftCommentsBtn.focus());
+    }
+
+    function closeDraftCommentDialog(restoreFocus = true) {
+      els.draftCommentDialog.hidden = true;
+      appState.pendingDraftImport = null;
+      els.removeDraftCommentsBtn.disabled = false;
+      els.keepDraftCommentsBtn.disabled = false;
+      if (restoreFocus) appState.draftImportReturnFocus?.focus();
+      appState.draftImportReturnFocus = null;
+    }
+
+    function applyImportedDraft(data, commentChoice = "") {
+      applyData(data);
+      commitHistory("load-draft");
+      const message = commentChoice === "removed"
+        ? "Draft JSON berhasil diimpor tanpa komentar."
+        : commentChoice === "kept"
+          ? "Draft JSON berhasil diimpor beserta komentar."
+          : "Draft JSON berhasil diimpor.";
+      setMessage("ok", message);
+      setStatus("Draft impor aktif.");
+    }
+
+    function completeDraftCommentImport(keepComments) {
+      const data = appState.pendingDraftImport;
+      if (!data) return;
+      els.removeDraftCommentsBtn.disabled = true;
+      els.keepDraftCommentsBtn.disabled = true;
+      try {
+        applyImportedDraft(
+          keepComments ? data : { ...data, comments: [] },
+          keepComments ? "kept" : "removed"
+        );
+        closeDraftCommentDialog();
+      } catch (error) {
+        els.removeDraftCommentsBtn.disabled = false;
+        els.keepDraftCommentsBtn.disabled = false;
+        setMessage("error", `Import gagal: ${error.message}`);
+      }
+    }
+
+    function trapFocusInDialog(event, dialog) {
+      const focusable = [...dialog.querySelectorAll("button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex='-1'])")];
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
     function importDraft(file) {
       if (!file) return;
+      setDraftReadPending(true);
       const reader = new FileReader();
       reader.onload = () => {
         try {
           const data = JSON.parse(reader.result);
-          applyData(data);
-          commitHistory("load-draft");
-          setMessage("ok", "Draft JSON berhasil diimpor.");
-          setStatus("Draft impor aktif.");
+          if (Array.isArray(data.comments) && data.comments.length) {
+            openDraftCommentDialog(data);
+            return;
+          }
+          applyImportedDraft(data);
         } catch (error) {
           setMessage("error", `Import gagal: ${error.message}`);
         }
       };
+      reader.onerror = () => {
+        setMessage("error", "Import gagal: file draft tidak dapat dibaca.");
+      };
+      reader.onloadend = () => setDraftReadPending(false);
       reader.readAsText(file);
     }
 
@@ -6637,6 +6796,17 @@
 
     document.addEventListener("keydown", (event) => {
       const shortcut = event.key.toLowerCase();
+      if (!els.draftCommentDialog.hidden) {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          closeDraftCommentDialog();
+          return;
+        }
+        if (event.key === "Tab") {
+          trapFocusInDialog(event, els.draftCommentDialog);
+          return;
+        }
+      }
       if ((event.ctrlKey || event.metaKey) && shortcut === "m") {
         event.preventDefault();
         applyMasking();
@@ -7076,9 +7246,11 @@
     });
 
     document.getElementById("saveDraftBtn").addEventListener("click", saveDraft);
-    document.getElementById("loadDraftBtn").addEventListener("click", loadDraft);
+    els.loadDraftBtn.addEventListener("click", loadDraft);
     document.getElementById("generateBtn").addEventListener("click", generatePdf);
     document.getElementById("resetBtn").addEventListener("click", resetForm);
+    els.removeDraftCommentsBtn.addEventListener("click", () => completeDraftCommentImport(false));
+    els.keepDraftCommentsBtn.addEventListener("click", () => completeDraftCommentImport(true));
     els.confirmResetBtn.addEventListener("click", performReset);
     els.cancelResetBtn.addEventListener("click", closeResetConfirm);
     els.commentModeBtn.addEventListener("click", async () => {
