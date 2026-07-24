@@ -57,7 +57,7 @@
   }
 
   function maskAll(value) {
-    return String(value || "").replace(/[A-Za-z0-9]/g, "*");
+    return String(value || "").replace(/[\p{L}\p{N}]/gu, "*");
   }
 
   function maskDigitsKeep(value, first, last) {
@@ -72,8 +72,8 @@
     const text = String(value || "");
     const chars = Array.from(text);
     return chars.map((char, index) => {
-      if (!/[A-Za-z0-9]/.test(char)) return char;
-      const tail = chars.slice(index).filter((item) => /[A-Za-z0-9]/.test(item)).length;
+      if (!/[\p{L}\p{N}]/u.test(char)) return char;
+      const tail = chars.slice(index).filter((item) => /[\p{L}\p{N}]/u.test(item)).length;
       return tail <= count ? char : "*";
     }).join("");
   }
@@ -182,6 +182,21 @@
     return sum % 10 === 0;
   }
 
+  function looksLikeIdentityNumber(value) {
+    const digits = String(value || "");
+    if (!/^\d{16}$/.test(digits) || luhnValid(digits)) return false;
+    let day = Number(digits.slice(6, 8));
+    const month = Number(digits.slice(8, 10));
+    const year = Number(digits.slice(10, 12));
+    if (day > 40) day -= 40;
+    const date = new Date(2000 + year, month - 1, day);
+    return day >= 1
+      && month >= 1
+      && month <= 12
+      && date.getDate() === day
+      && date.getMonth() === month - 1;
+  }
+
   function maskSuggestion(type, confidence, reason, options = {}) {
     return {
       type,
@@ -206,11 +221,11 @@
     if (/^\+?\d[\d\s-]{7,}$/.test(text) && /^(0|62|\+62)/.test(text.replace(/\s/g, "")) && digits.length >= 8 && digits.length <= 15) {
       return maskSuggestion("phone", "tinggi", "format telepon");
     }
+    if (looksLikeIdentityNumber(text)) return maskSuggestion("identityNumber", "tinggi", "format NIK 16 digit");
     if (digits.length >= 13 && digits.length <= 19 && (luhnValid(digits) || /^\d{4}([\s-]?\d{4}){2,4}$/.test(text))) {
       return maskSuggestion("cardNumber", luhnValid(digits) ? "tinggi" : "sedang", "format nomor kartu", { cardPolicy: "default" });
     }
     if (/^\d{3,4}$/.test(text)) return maskSuggestion("cvv", "rendah", "3-4 digit");
-    if (/^\d{16}$/.test(digits) && digits === text) return maskSuggestion("identityNumber", "sedang", "16 digit");
     if (/^\d{22}$/.test(digits) && digits === text) return maskSuggestion("npwpNitku", "sedang", "22 digit");
     if (/^[A-Z]\s?\d{6,8}$/i.test(text)) return maskSuggestion("passport", "sedang", "format paspor");
     if (/^[A-Z]{2,}[A-Z0-9]{4,}$/i.test(text) && !/\s/.test(text)) return maskSuggestion("bcaUserId", "sedang", "format user id");

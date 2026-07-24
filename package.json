@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "node --check src/worker.js && node --check src/piiMasking.js && node tests/htmlSyntax.test.mjs",
-    "lint": "node --check src/worker.js && node --check src/piiMasking.js && node --check tests/datePickerInteraction.test.mjs",
-    "test": "node tests/htmlSyntax.test.mjs && node tests/datePickerInteraction.test.mjs && node tests/piiMasking.test.mjs && node tests/previewPagination.test.mjs && node tests/commentThread.test.mjs && node tests/collaborationIdle.test.mjs && node tests/pdfFont.test.mjs && node tests/pdfHeader.test.mjs && node tests/pdfRowContinuation.test.mjs && node tests/pdfClosingPagination.test.mjs && node tests/pdfBulletWrapping.test.mjs && node tests/sharedPagination.test.mjs && node tests/editorUx.test.mjs && node tests/previewInteraction.test.mjs",
+    "typecheck": "node --check src/worker.js && node --check src/piiMasking.js && node --check src/sharedData.js && node tests/htmlSyntax.test.mjs",
+    "lint": "node --check src/worker.js && node --check src/piiMasking.js && node --check src/sharedData.js && node --check tests/datePickerInteraction.test.mjs",
+    "test": "node tests/htmlSyntax.test.mjs && node tests/datePickerInteraction.test.mjs && node tests/piiMasking.test.mjs && node tests/sharedData.test.mjs && node tests/workerRouting.test.mjs && node tests/previewPagination.test.mjs && node tests/commentThread.test.mjs && node tests/collaborationIdle.test.mjs && node tests/pdfFont.test.mjs && node tests/pdfHeader.test.mjs && node tests/pdfRowContinuation.test.mjs && node tests/pdfClosingPagination.test.mjs && node tests/pdfBulletWrapping.test.mjs && node tests/sharedPagination.test.mjs && node tests/editorUx.test.mjs && node tests/previewInteraction.test.mjs",
     "dev:worker": "wrangler dev",
     "deploy:worker": "wrangler deploy"
   },

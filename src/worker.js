@@ -134,7 +134,21 @@ export default {
       );
     }
 
-    const docId = decodeURIComponent(match[1]).slice(0, 128);
+    let docId;
+    try {
+      docId = decodeURIComponent(match[1]).slice(0, 128);
+    } catch {
+      return Response.json(
+        { ok: false, error: "Invalid document id." },
+        { status: 400, headers: CORS_HEADERS }
+      );
+    }
+    if (!docId) {
+      return Response.json(
+        { ok: false, error: "Document id is required." },
+        { status: 400, headers: CORS_HEADERS }
+      );
+    }
     const objectId = env.BA_ROOMS.idFromName(docId);
     return env.BA_ROOMS.get(objectId).fetch(request);
   }
