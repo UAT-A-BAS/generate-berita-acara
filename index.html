@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="ba-collab-worker-url" content="https://generate-berita-acara-collab.alex-marcello08.workers.dev">
   <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/regular/style.css">
   <title>Generator Berita Acara</title>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <style>
@@ -1880,51 +1881,96 @@
     }
 
     .draft-comment-dialog .dialog-box {
-      width: min(500px, 100%);
+      width: min(520px, 100%);
       gap: 0;
       padding: 24px;
       border: 1px solid rgba(27, 77, 120, 0.14);
+      border-radius: 16px;
+      box-shadow: 0 24px 64px rgba(19, 42, 69, 0.24);
       animation: dialog-enter 160ms ease-out;
     }
 
     .draft-comment-heading {
       display: grid;
-      grid-template-columns: 40px minmax(0, 1fr);
-      gap: 12px;
+      grid-template-columns: 44px minmax(0, 1fr);
+      gap: 14px;
       align-items: start;
     }
 
     .draft-comment-icon {
       display: grid;
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       place-items: center;
-      border-radius: 10px;
-      background: var(--accent-soft);
+      border-radius: 50%;
+      background: #edf5fa;
       color: var(--brand);
     }
 
-    .draft-comment-icon .icon {
-      width: 19px;
-      height: 19px;
+    .draft-comment-icon .ph {
+      font-size: 21px;
+      line-height: 1;
+    }
+
+    .draft-comment-heading > div {
+      padding-top: 4px;
+    }
+
+    .draft-comment-dialog .dialog-box h3 {
+      color: var(--brand-2);
+      font-size: 15px;
+      font-weight: 850;
+      line-height: 1.35;
     }
 
     .draft-comment-dialog .dialog-box p {
-      margin-top: 8px;
-      font-weight: 650;
-      line-height: 1.55;
+      margin-top: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.75;
     }
 
     .draft-comment-dialog .actions {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-      margin-top: 22px;
+      gap: 8px;
+      margin-top: 26px;
     }
 
     .draft-comment-dialog .btn {
       width: 100%;
-      min-height: 42px;
+      min-height: 45px;
+      gap: 8px;
+      border-radius: 13px;
+      font-size: 14px;
+      font-weight: 750;
+    }
+
+    .draft-comment-dialog .btn .ph {
+      font-size: 17px;
+      line-height: 1;
+    }
+
+    #removeDraftCommentsBtn {
+      background: #fff;
+      color: #c32650;
+      border-color: #f0cbd4;
+    }
+
+    #removeDraftCommentsBtn:hover {
+      background: #fff8fa;
+      border-color: #e3a9b8;
+    }
+
+    #keepDraftCommentsBtn {
+      background: var(--brand);
+      border-color: var(--brand);
+      box-shadow: 0 0 0 4px rgba(27, 77, 120, 0.14), 0 8px 18px rgba(19, 42, 69, 0.18);
+    }
+
+    #keepDraftCommentsBtn:hover {
+      background: var(--brand-2);
+      border-color: var(--brand-2);
     }
 
     #maskDialog .dialog-box {
@@ -2441,16 +2487,16 @@
       <div class="dialog-box">
         <div class="draft-comment-heading">
           <span class="draft-comment-icon" aria-hidden="true">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/><path d="M8 10h8"/><path d="M8 14h5"/></svg>
+            <i class="ph ph-chat"></i>
           </span>
           <div>
-            <h3 id="draftCommentDialogTitle">Komentar ditemukan</h3>
-            <p id="draftCommentDialogDescription">Draft yang akan dimuat mengandung komentar. Apakah Anda ingin tetap menyimpan komentar tersebut di dalam dokumen?</p>
+            <h3 id="draftCommentDialogTitle">Comment ditemukan</h3>
+            <p id="draftCommentDialogDescription">Draft yang akan dimuat mengandung comment. Apakah Anda ingin tetap menyimpan comment tersebut di dalam dokumen?</p>
           </div>
         </div>
         <div class="actions">
-          <button class="btn btn-secondary" id="removeDraftCommentsBtn" type="button">Hapus Komentar</button>
-          <button class="btn btn-primary" id="keepDraftCommentsBtn" type="button">Simpan Komentar</button>
+          <button class="btn btn-secondary" id="removeDraftCommentsBtn" type="button"><i class="ph ph-trash" aria-hidden="true"></i><span>Hapus Comment</span></button>
+          <button class="btn btn-primary" id="keepDraftCommentsBtn" type="button"><i class="ph ph-chat" aria-hidden="true"></i><span>Simpan Comment</span></button>
         </div>
       </div>
     </div>
@@ -5653,9 +5699,9 @@
       applyData(data);
       commitHistory("load-draft");
       const message = commentChoice === "removed"
-        ? "Draft JSON berhasil diimpor tanpa komentar."
+        ? "Draft JSON berhasil diimpor tanpa comment."
         : commentChoice === "kept"
-          ? "Draft JSON berhasil diimpor beserta komentar."
+          ? "Draft JSON berhasil diimpor beserta comment."
           : "Draft JSON berhasil diimpor.";
       setMessage("ok", message);
       setStatus("Draft impor aktif.");
