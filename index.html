@@ -5886,8 +5886,8 @@
               <tr>
                 <th style="width:6%;">No.</th>
                 <th style="width:42%;">Aktivitas</th>
-                <th style="width:38%;">Hasil / Keterangan</th>
-                <th style="width:14%;">PIC</th>
+                <th style="width:36%;">Hasil / Keterangan</th>
+                <th style="width:16%;">PIC</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -6165,8 +6165,8 @@
       layout.columns = [
         layout.contentWidth * 0.06,
         layout.contentWidth * 0.42,
-        layout.contentWidth * 0.38,
-        layout.contentWidth * 0.14
+        layout.contentWidth * 0.36,
+        layout.contentWidth * 0.16
       ];
       return layout;
     }
@@ -6442,7 +6442,8 @@
         { text: row.pic, formats: row.picFormats }
       ];
       const lineCounts = values.map((value, index) => splitPdfRichText(pdf, value.text, widths[index] - layout.padX * 2, layout, value.formats).length);
-      return Math.max(28, Math.max(...lineCounts) * layout.bodyLine + layout.padY * 2);
+      const maxLineCount = Math.max(...lineCounts);
+      return Math.max(28, (maxLineCount - 1) * layout.bodyLine + layout.bodySize + layout.padY * 2);
     }
 
     function pdfCellHeight(pdf, layout, row, key, columnIndex) {
@@ -6453,7 +6454,7 @@
         layout,
         row[`${key}Formats`]
       ).length;
-      return Math.max(28, lineCount * layout.bodyLine + layout.padY * 2);
+      return Math.max(28, (lineCount - 1) * layout.bodyLine + layout.bodySize + layout.padY * 2);
     }
 
     function calculatePdfRowHeights(pdf, layout, rows) {
