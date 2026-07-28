@@ -3064,6 +3064,42 @@
       return formatMultiDateRange(dates, upper);
     }
 
+    function formatDayList(days, useConjunction = true) {
+      if (days.length <= 1) return String(days[0] || "");
+      if (!useConjunction) return days.join(", ");
+      if (days.length === 2) return `${days[0]} dan ${days[1]}`;
+      return `${days.slice(0, -1).join(", ")}, dan ${days.at(-1)}`;
+    }
+
+    function formatImplementationDateList(data) {
+      const dates = normalizeDateList(data.implementationDates?.length
+        ? data.implementationDates
+        : datesBetween(data.implementationStartDate || data.implementationDate, data.implementationEndDate || data.implementationDate));
+      const groups = [];
+
+      dates.forEach((value) => {
+        const date = parseDate(value);
+        const previous = groups.at(-1);
+        if (previous?.monthIndex === date.getMonth() && previous.year === date.getFullYear()) {
+          previous.days.push(date.getDate());
+          return;
+        }
+        groups.push({
+          days: [date.getDate()],
+          month: monthNames[date.getMonth()],
+          monthIndex: date.getMonth(),
+          year: date.getFullYear()
+        });
+      });
+
+      return groups.map((group, index) => {
+        const nextGroup = groups[index + 1];
+        const year = nextGroup?.year === group.year ? "" : ` ${group.year}`;
+        const useConjunction = index === groups.length - 1;
+        return `${formatDayList(group.days, useConjunction)} ${group.month}${year}`;
+      }).join(", ");
+    }
+
     function formatDateRangeSegment(startValue, endValue, upper = false) {
       const start = formatDateParts(startValue, upper);
       const end = formatDateParts(endValue, upper);
@@ -4236,7 +4272,7 @@
 
     function buildHeaderLineTwo(data) {
       const branch = toUpper(data.branchName);
-      const date = formatImplementationDateRange(data, true);
+      const date = formatImplementationDateList(data);
       return [branch, date].filter(Boolean).join(", ");
     }
 
