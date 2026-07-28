@@ -6202,7 +6202,7 @@
             groupIndex,
             dateText: formatActivityDate(group.date, group.dates),
             rows: measuredRows,
-            rowHeights: measuredRows.map((row) => pdfRowHeight(pdf, layout, row))
+            rowHeights: calculatePdfRowHeights(pdf, layout, measuredRows)
           };
         })
         .filter((group) => group.rows.length);
@@ -6443,6 +6443,49 @@
       ];
       const lineCounts = values.map((value, index) => splitPdfRichText(pdf, value.text, widths[index] - layout.padX * 2, layout, value.formats).length);
       return Math.max(28, Math.max(...lineCounts) * layout.bodyLine + layout.padY * 2);
+    }
+
+    function pdfCellHeight(pdf, layout, row, key, columnIndex) {
+      const lineCount = splitPdfRichText(
+        pdf,
+        row[key],
+        layout.columns[columnIndex] - layout.padX * 2,
+        layout,
+        row[`${key}Formats`]
+      ).length;
+      return Math.max(28, lineCount * layout.bodyLine + layout.padY * 2);
+    }
+
+    function calculatePdfRowHeights(pdf, layout, rows) {
+      const spans = buildPdfSpans(rows);
+      const keys = ["activity", "result", "pic"];
+      const rowHeights = rows.map((row, index) => {
+        const unmergedRow = { ...row };
+        keys.forEach((key) => {
+          const span = spans[key];
+          if (!span.hidden[index] && span.lengths[index] === 1) return;
+          unmergedRow[key] = "";
+          unmergedRow[`${key}Formats`] = [];
+        });
+        return pdfRowHeight(pdf, layout, unmergedRow);
+      });
+
+      keys.forEach((key, keyIndex) => {
+        const span = spans[key];
+        rows.forEach((row, index) => {
+          const spanLength = span.lengths[index];
+          if (span.hidden[index] || spanLength <= 1) return;
+          const requiredHeight = pdfCellHeight(pdf, layout, row, key, keyIndex + 1);
+          const currentHeight = sumRange(rowHeights, index, index + spanLength);
+          if (requiredHeight <= currentHeight) return;
+          const additionalHeight = (requiredHeight - currentHeight) / spanLength;
+          for (let rowIndex = index; rowIndex < index + spanLength; rowIndex += 1) {
+            rowHeights[rowIndex] += additionalHeight;
+          }
+        });
+      });
+
+      return rowHeights;
     }
 
     function splitPdfText(pdf, value, width) {
