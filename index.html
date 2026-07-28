@@ -4306,7 +4306,7 @@
 
     function buildHeaderLineTwo(data) {
       const branch = toUpper(data.branchName);
-      const date = formatImplementationDateList(data);
+      const date = toUpper(formatImplementationDateList(data));
       return [branch, date].filter(Boolean).join(", ");
     }
 
