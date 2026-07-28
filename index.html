@@ -3065,10 +3065,33 @@
     }
 
     function formatDayList(days, useConjunction = true) {
-      if (days.length <= 1) return String(days[0] || "");
-      if (!useConjunction) return days.join(", ");
-      if (days.length === 2) return `${days[0]} dan ${days[1]}`;
-      return `${days.slice(0, -1).join(", ")}, dan ${days.at(-1)}`;
+      if (!days.length) return "";
+      const ranges = [];
+      let start = days[0];
+      let previous = days[0];
+
+      days.slice(1).forEach((day) => {
+        if (day === previous + 1) {
+          previous = day;
+          return;
+        }
+        ranges.push([start, previous]);
+        start = day;
+        previous = day;
+      });
+      ranges.push([start, previous]);
+
+      const labels = ranges.map(([from, to]) => from === to ? String(from) : `${from}-${to}`);
+      if (labels.length === 1) return labels[0];
+      if (!useConjunction || ranges.some(([from, to]) => from !== to)) return labels.join(", ");
+      if (labels.length === 2) return `${labels[0]} dan ${labels[1]}`;
+      return `${labels.slice(0, -1).join(", ")}, dan ${labels.at(-1)}`;
+    }
+
+    function joinDateGroups(groups) {
+      if (groups.length <= 1) return groups[0] || "";
+      if (groups.length === 2) return `${groups[0]} dan ${groups[1]}`;
+      return `${groups.slice(0, -1).join(", ")}, dan ${groups.at(-1)}`;
     }
 
     function formatImplementationDateList(data) {
@@ -3092,12 +3115,13 @@
         });
       });
 
-      return groups.map((group, index) => {
+      const groupLabels = groups.map((group, index) => {
         const nextGroup = groups[index + 1];
         const year = nextGroup?.year === group.year ? "" : ` ${group.year}`;
-        const useConjunction = index === groups.length - 1;
+        const useConjunction = groups.length === 1;
         return `${formatDayList(group.days, useConjunction)} ${group.month}${year}`;
-      }).join(", ");
+      });
+      return joinDateGroups(groupLabels);
     }
 
     function formatDateRangeSegment(startValue, endValue, upper = false) {
