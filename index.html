@@ -3088,7 +3088,7 @@
       if (!ranges.length) return "";
       const labels = ranges.map(([from, to]) => from === to ? String(from) : `${from}-${to}`);
       if (labels.length === 1) return labels[0];
-      if (!useConjunction || ranges.some(([from, to]) => from !== to)) return labels.join(", ");
+      if (!useConjunction) return labels.join(", ");
       if (labels.length === 2) return `${labels[0]} dan ${labels[1]}`;
       return `${labels.slice(0, -1).join(", ")}, dan ${labels.at(-1)}`;
     }
