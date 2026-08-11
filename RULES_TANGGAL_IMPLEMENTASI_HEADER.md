@@ -1,6 +1,6 @@
-# Rules Tanggal Implementasi pada Header Berita Acara
+# Rules Tanggal pada Berita Acara
 
-Dokumen ini adalah spesifikasi perilaku yang harus dipahami dan dipertahankan oleh AI atau developer ketika membuat, memperbaiki, atau memindahkan fitur tanggal implementasi.
+Dokumen ini adalah spesifikasi perilaku yang harus dipahami dan dipertahankan oleh AI atau developer ketika membuat, memperbaiki, atau memindahkan fitur tanggal pada Berita Acara.
 
 Kata **WAJIB** berarti perilaku tidak boleh diubah tanpa persetujuan eksplisit. Kata **DILARANG** berarti hasil tersebut dianggap salah.
 
@@ -23,8 +23,18 @@ Rules header:
 1. Nama cabang dan tanggal implementasi WAJIB menggunakan huruf kapital.
 2. Cabang dan tanggal WAJIB dipisahkan dengan `, `.
 3. Elemen yang kosong tidak boleh menghasilkan koma tambahan.
-4. Nama hari DILARANG ditampilkan pada header.
+4. Nama hari DILARANG ditampilkan pada tanggal dokumen.
 5. Preview dan PDF WAJIB menggunakan hasil formatter yang sama.
+
+### Cakupan formatter
+
+Grammar tanggal dalam dokumen ini WAJIB digunakan pada:
+
+1. Tanggal implementasi di header.
+2. Tanggal aktivitas di dalam tabel.
+3. Tanggal sign-off pada bagian penutup.
+
+Header menggunakan huruf kapital. Tanggal aktivitas dan sign-off menggunakan title case agar mengikuti konteks isi dokumen. Pengurutan, pemadatan rentang, koma, dan kata `dan` tetap identik.
 
 ## 2. Sumber data
 
@@ -175,6 +185,8 @@ Implementasi dianggap benar jika seluruh kondisi berikut lolos:
 | AC-07 | Pilih tanggal lintas tahun | Tahun lama dan tahun baru sama-sama terlihat |
 | AC-08 | Kosongkan semua tanggal | Generate ditolak dengan pesan wajib diisi |
 | AC-09 | Buka preview dan generate PDF | Teks header keduanya identik |
+| AC-10 | Pilih beberapa tanggal aktivitas | Baris tanggal memakai grammar header dalam title case tanpa nama hari |
+| AC-11 | Pilih tanggal sign-off | Penutup memakai formatter bersama dalam title case |
 
 ## 10. Larangan perubahan implisit
 

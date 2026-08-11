@@ -3103,10 +3103,8 @@
       return `${groups.slice(0, -1).join(", ")}, dan ${groups.at(-1)}`;
     }
 
-    function formatImplementationDateList(data) {
-      const dates = normalizeDateList(data.implementationDates?.length
-        ? data.implementationDates
-        : datesBetween(data.implementationStartDate || data.implementationDate, data.implementationEndDate || data.implementationDate));
+    function formatDateList(values) {
+      const dates = normalizeDateList(values);
       const groups = [];
 
       dates.forEach((value) => {
@@ -3132,6 +3130,13 @@
       });
       const itemCount = groups.reduce((total, group) => total + groupConsecutiveDays(group.days).length, 0);
       return joinDateGroups(groupLabels, itemCount);
+    }
+
+    function formatImplementationDateList(data) {
+      const dates = data.implementationDates?.length
+        ? data.implementationDates
+        : datesBetween(data.implementationStartDate || data.implementationDate, data.implementationEndDate || data.implementationDate);
+      return formatDateList(dates);
     }
 
     function formatDateRangeSegment(startValue, endValue, upper = false) {
@@ -3174,11 +3179,7 @@
     }
 
     function formatActivityDate(value, dates = []) {
-      const selected = normalizeDateList(dates?.length ? dates : value);
-      if (!selected.length) return "";
-      const first = parseDate(selected[0]);
-      const prefix = selected.length === 1 ? `${dayNames[first.getDay()]},\u00a0` : "";
-      return `${prefix}${formatMultiDateRange(selected)}`;
+      return formatDateList(dates?.length ? dates : value);
     }
 
     function normalizeText(value) {
@@ -5953,7 +5954,7 @@
         <div class="doc-body">
           <div role="link" tabindex="0" data-preview-target-id="divisionLine"><strong>${escapeHtml(data.divisionLine || defaultDivisionLine())}</strong></div>
           <div role="link" tabindex="0" data-preview-target-id="applicationLine"><strong>${escapeHtml(data.applicationLine || defaultApplicationLine())}</strong></div>
-          <div role="link" tabindex="0" data-preview-target-id="city">${escapeHtml(data.city)}, <span data-preview-target-id="signDate">${escapeHtml(formatDate(data.signDate))}</span></div>
+          <div role="link" tabindex="0" data-preview-target-id="city">${escapeHtml(data.city)}, <span data-preview-target-id="signDate">${escapeHtml(formatDateList(data.signDate))}</span></div>
         </div>`;
         return closing;
       };
@@ -6815,7 +6816,7 @@
       pdf.text(data.applicationLine || defaultApplicationLine(), layout.left, y);
       y += 15;
       pdf.setFont(layout.fontFamily, "normal");
-      pdf.text(`${data.city}, ${formatDate(data.signDate)}`, layout.left, y);
+      pdf.text(`${data.city}, ${formatDateList(data.signDate)}`, layout.left, y);
       return y;
     }
 
