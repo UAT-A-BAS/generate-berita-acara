@@ -20,13 +20,14 @@ function extractFunction(name) {
 
 const previewRenderer = Function(`
   const previewWrapChars = { activity: 39, result: 37, pic: 10 };
-  ${["parseListLine", "normalizeCellText", "escapeHtml", "richSliceToHtml", "wrapPreviewRanges", "richTextToPreviewHtml"].map(extractFunction).join("\n")}
+  const AUTO_HANG_LIST_CONTINUATIONS = ${html.match(/const AUTO_HANG_LIST_CONTINUATIONS = (true|false);/)[1]};
+  ${["parseListLine", "layoutCellLines", "normalizeCellText", "escapeHtml", "richSliceToHtml", "wrapPreviewRanges", "richTextToPreviewHtml"].map(extractFunction).join("\n")}
   return richTextToPreviewHtml;
 `)();
 const receiverName = "- Nama penerima kuasa: Agustina Rosi Divina";
 assert.equal(
   previewRenderer(receiverName, [], "result"),
-  '<span class="doc-list-line is-level-1"><span class="doc-list-marker">-</span><span>Nama penerima kuasa: Agustina Rosi Divina</span></span>',
+  '<span class="doc-cell-list"><span class="doc-list-line is-level-1" style="--list-indent:0ch;--list-content:2ch"><span class="doc-list-marker">-</span><span class="doc-list-content">Nama penerima kuasa: Agustina Rosi Divina</span></span></span>',
   "preview preserves a manually entered legacy marker and leaves wrapping to CSS"
 );
 
