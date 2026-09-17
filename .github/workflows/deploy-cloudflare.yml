@@ -22,6 +22,11 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # GitHub does not allow the `secrets` context inside `if`, so the credentials are
+    # mapped to env here and the deploy steps test those env values instead.
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -32,7 +37,7 @@ jobs:
       - run: npm test
       - name: Deploy collab Worker
         # Optional: without CLOUDFLARE_API_TOKEN this step is skipped instead of failing the run.
-        if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' }}
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -41,9 +46,13 @@ jobs:
       - name: Build Pages bundle
         run: npm run build:pages
       - name: Publish Pages site
-        if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' }}
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy dist-pages --project-name=generate-berita-acara --branch=main
+      - name: Notice when Cloudflare credentials are absent
+        if: ${{ env.CLOUDFLARE_API_TOKEN == '' }}
+        run: |
+          echo "::notice title=Cloudflare deploy skipped::Set the CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID repository secrets to enable automatic Worker and Pages publishing. Tests still ran and passed."
