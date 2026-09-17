@@ -2,7 +2,11 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { chromium } from "playwright";
 
-const artifact = new URL("../berita-acara-generator-offline.html", import.meta.url);
+// OFFLINE_ARTIFACT_PATH lets this harness verify a copy obtained elsewhere, such as the
+// raw file downloaded from GitHub, instead of only the local working copy.
+const artifact = process.env.OFFLINE_ARTIFACT_PATH
+  ? new URL(`file://${process.env.OFFLINE_ARTIFACT_PATH}`)
+  : new URL("../berita-acara-generator-offline.html", import.meta.url);
 const browser = await chromium.launch();
 try {
   const context = await browser.newContext({ offline: true, viewport: { width: 1440, height: 1000 } });

@@ -33,3 +33,13 @@ Perintah terkait:
 `berita-acara-generator-offline.html` dapat dibuka langsung dari komputer tanpa internet. Seluruh JavaScript, ikon, dan jsPDF sudah tertanam; kolaborasi jaringan dinonaktifkan pada versi ini.
 
 Jalankan `npm ci` lalu `npm run build:offline` untuk membangun ulang. Verifikasi dengan `npm test` dan `npm run verify:offline` (Chromium: `npx playwright install chromium`). Workflow **Build Offline HTML** membangun, menguji, dan memperbarui file HTML di GitHub pada setiap perubahan yang didorong ke `main`.
+
+Untuk membuktikan salinan yang benar-benar diunduh dari GitHub tetap berjalan offline:
+
+```bash
+curl -sL -o /tmp/github-copy.html \
+  https://raw.githubusercontent.com/UAT-A-BAS/generate-berita-acara/main/berita-acara-generator-offline.html
+OFFLINE_ARTIFACT_PATH=/tmp/github-copy.html node scripts/verify-offline-artifact.mjs
+```
+
+Harness tersebut membuka berkas lewat `file://`, mengisi form, mengimpor draft, dan menekan Generate PDF, lalu memastikan tidak ada satu pun permintaan jaringan, WebSocket, atau error JavaScript.
