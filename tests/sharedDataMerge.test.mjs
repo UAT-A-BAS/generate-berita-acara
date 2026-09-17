@@ -113,6 +113,38 @@ function commitLikeClient(doc, baseline, data, timestamp, author) {
   assert.equal(readSharedData(doc.getMap("form")).makers.length, 0);
 }
 
+// The partial-payload trap: a room that only holds one field renders locally with freshly
+// synthesized defaults and brand-new group ids. Those must never be diffed as local edits,
+// or the next commit pushes a whole tree back and clears the other user's field.
+{
+  const partialRoom = { branchName: "CABANG DARI PEER B" };
+  // What the form looks like after rendering that payload: defaults, empty fields the app
+  // always renders, and a brand-new random group.
+  const normalizedAfterApply = {
+    ...baseData(),
+    branchName: "CABANG DARI PEER B",
+    approverName: "",
+    city: "Jakarta"
+  };
+
+  // Baseline from the raw payload: every synthesized path looks like a local change.
+  const naive = changedPaths(partialRoom, normalizedAfterApply);
+  assert.ok(naive.writes.size > 5, "the raw payload is not a safe baseline (this is the regression)");
+  assert.ok(
+    [...naive.writes.keys()].some((key) => key.includes("approverName")),
+    "the naive baseline even reports approverName as edited, which clears the other peer's value"
+  );
+
+  // Baseline from the normalized form: nothing is a local edit, so nothing is written.
+  const safe = changedPaths(normalizedAfterApply, normalizedAfterApply);
+  assert.equal(safe.writes.size, 0, "the normalized form is a stable baseline");
+  assert.deepEqual(safe.deletes, [], "a partial payload must not tombstone untouched paths");
+
+  // A real edit on top of that baseline is still detected.
+  const typed = changedPaths(normalizedAfterApply, { ...normalizedAfterApply, approverName: "Approver A" });
+  assert.deepEqual([...typed.writes.keys()], ['data:["approverName"]'], "only the typed field is written");
+}
+
 function baseData() {
   return {
     schema: 2,

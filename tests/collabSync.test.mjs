@@ -69,7 +69,14 @@ assert.ok(first >= Date.now() - 1000, "logical stamp is not behind wall time");
 assert.match(html, /const localEdits = changedPaths\(options\.full \? null : collaboration\.localSnapshot, data\);/);
 assert.match(html, /const changes = commitSharedChanges\(sharedState, localEdits, \{ timestamp: updatedAt, author: clientId \}\);/);
 assert.match(html, /collaboration\.localSnapshot = cloneSharedData\(data\);/);
-assert.match(html, /collaboration\.localSnapshot = cloneSharedData\(data\);\s*\n\s*persistAutosave/, "remote applies reset the baseline");
+// The baseline after a remote apply must be the normalized form, never the raw payload:
+// a partial payload rebuilds defaults and new group ids that are not local edits.
+assert.match(
+  html,
+  /applyData\(data, \{ fromShared: true \}\);\s*\n\s*\/\/[\s\S]{0,700}?collaboration\.localSnapshot = cloneSharedData\(collectData\(\)\);/,
+  "remote applies snapshot the normalized form as the baseline"
+);
+assert.match(html, /restoreEditorFocus\(focus\);/, "the caret returns after the baseline is taken");
 assert.match(html, /collaboration\.localSnapshot = cloneSharedData\(seedData \|\| collectData\(\)\);/);
 assert.match(html, /commitSharedData\(pendingCollabSeed, \{ full: true \}\)/, "seeding a new room writes every path on purpose");
 
@@ -87,8 +94,7 @@ assert.match(
 
 // Remote apply must not clobber the field the user is actively typing in.
 assert.match(html, /const focus = captureEditorFocus\(\);/);
-assert.match(html, /applyData\(data, \{ fromShared: true, focus \}\)/);
-assert.match(html, /restoreEditorFocus\(focus\);/);
+assert.match(html, /applyData\(data, \{ fromShared: true \}\)/);
 assert.match(html, /function captureEditorFocus\(\)/);
 assert.match(html, /setSelectionRange\(focus\.start, focus\.end \?\? focus\.start, focus\.direction \|\| "none"\)/);
 
@@ -103,11 +109,32 @@ assert.match(html, /commitSharedData\(localData, \{ persist: false \}\);/);
 
 // Liveness: a dead socket must be detected instead of silently showing "Connected".
 const pingSource = extractFunction("startPingLoop");
-assert.match(pingSource, /Date\.now\(\) - \(collaboration\.lastServerMessageAt \|\| 0\) > COLLAB_PING_INTERVAL_MS \* 2/);
+assert.match(pingSource, /const silence = Date\.now\(\) - \(collaboration\.lastServerMessageAt \|\| 0\);/);
+assert.match(pingSource, /if \(silence > COLLAB_PING_INTERVAL_MS \* 2\) \{/);
 assert.match(pingSource, /sharedSocket\.close\(4000, "stale"\)/);
 assert.match(html, /function stopPingLoop\(\)/);
 assert.match(html, /clearInterval\(collabPingTimer\)/);
 assert.match(html, /startPingLoop\(\);/);
+
+// Cost: an active room proves liveness with real traffic, and every message wakes the
+// hibernated room, so the ping must be skipped while traffic is still recent.
+assert.match(
+  pingSource,
+  /if \(silence < COLLAB_PING_INTERVAL_MS\) return;/,
+  "the room only checks in when it has been quiet for a full interval"
+);
+
+// Cost: the server persists every message it receives, so keystrokes must be coalesced.
+assert.match(html, /const COLLAB_UPDATE_DEBOUNCE_MS = 300;/);
+assert.match(
+  html,
+  /sharedUpdateTimer = setTimeout\(\(\) => \{\s*sharedUpdateTimer = null;\s*commitSharedData\(collectData\(\), \{ persist: false \}\);\s*\}, COLLAB_UPDATE_DEBOUNCE_MS\);/,
+  "keystrokes are coalesced into one message per burst"
+);
+// Uncommitted typing must be sent before remote data overwrites the form.
+assert.match(html, /function flushPendingSharedUpdate\(\)/);
+assert.match(html, /function applySharedDataIfNewer\(\) \{\s*flushPendingSharedUpdate\(\);/);
+assert.match(html, /sharedUpdateTimer = null;\s*commitSharedData\(/);
 
 // Server messages are parsed defensively; a bad frame must not break the socket.
 assert.match(html, /try \{\s*message = JSON\.parse\(event\.data \|\| "\{\}"\);\s*\} catch \{\s*message = \{\};/);

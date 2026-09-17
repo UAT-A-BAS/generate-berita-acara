@@ -37,7 +37,29 @@ const PROD_SITE = "https://generate-berita-acara.pages.dev";
 const results = [];
 function check(name, ok, detail = "") {
   results.push({ name, ok, detail });
-  console.log(`${ok ? "PASS" : "FAIL"} ${name}${detail ? `: ${detail}` : ""}`);
+  // Always render the observed value: an empty string is exactly the signal we care about.
+  console.log(`${ok ? "PASS" : "FAIL"} ${name}: ${JSON.stringify(detail)}`);
+}
+
+// Poll until every expectation holds, so a slow render is not mistaken for a lost edit,
+// while a genuine clobber still fails because it never converges on the right value.
+async function waitForAll(page, expectations, timeoutMs = 10000) {
+  const keys = Object.keys(expectations);
+  const deadline = Date.now() + timeoutMs;
+  let seen = {};
+  while (Date.now() < deadline) {
+    seen = await page.evaluate((fields) => {
+      const out = {};
+      fields.forEach((field) => {
+        const node = document.getElementById(field);
+        out[field] = node ? node.value : null;
+      });
+      return out;
+    }, keys);
+    if (keys.every((key) => seen[key] === expectations[key])) return { ok: true, seen };
+    await page.waitForTimeout(150);
+  }
+  return { ok: false, seen };
 }
 
 async function waitForHealth(url, timeoutMs = 150000) {
@@ -145,12 +167,12 @@ async function main() {
     // Concurrent edits to two different fields.
     await peerA.page.fill("#featureName", "PROJECT DARI PEER A");
     await peerB.page.fill("#branchName", "CABANG DARI PEER B");
-    await peerA.page.waitForTimeout(1500);
-
-    const bSeesA = await peerB.page.inputValue("#featureName");
-    const aSeesB = await peerA.page.inputValue("#branchName");
-    check("peer B receives peer A's project name", bSeesA === "PROJECT DARI PEER A", bSeesA);
-    check("peer A receives peer B's branch", aSeesB === "CABANG DARI PEER B", aSeesB);
+    const crossSeen = await waitForAll(peerB.page, {
+      featureName: "PROJECT DARI PEER A",
+      branchName: "CABANG DARI PEER B"
+    });
+    check("peer B receives peer A's project name", crossSeen.seen.featureName === "PROJECT DARI PEER A", crossSeen.seen.featureName);
+    check("peer A receives peer B's branch", (await peerA.page.inputValue("#branchName")) === "CABANG DARI PEER B", await peerA.page.inputValue("#branchName"));
 
     // The original clobber scenario: one peer keeps typing while the other commits.
     await peerB.page.click("#city");
@@ -160,27 +182,26 @@ async function main() {
       await peerB.page.fill("#city", value);
       await peerA.page.waitForTimeout(250);
     }
-    await peerA.page.waitForTimeout(2000);
+    // Both peers must converge on the same merged result: B's city AND A's approver.
+    const expected = { city: "BANDUNG 123", approverName: "Approver A" };
+    const seenA = await waitForAll(peerA.page, expected);
+    const seenB = await waitForAll(peerB.page, expected);
 
-    const finalCityB = await peerB.page.inputValue("#city");
-    const finalCityA = await peerA.page.inputValue("#city");
-    const finalApproverA = await peerA.page.inputValue("#approverName");
-    const finalApproverB = await peerB.page.inputValue("#approverName");
-
-    check("peer B's own city was not clobbered", finalCityB === "BANDUNG 123", finalCityB);
-    check("peer A received peer B's final city", finalCityA === "BANDUNG 123", finalCityA);
-    check("peer A's approver survived", finalApproverA === "Approver A", finalApproverA);
-    check("peer B received the approver", finalApproverB === "Approver A", finalApproverB);
+    check("peer B's own city was not clobbered", seenB.seen.city === "BANDUNG 123", seenB.seen.city);
+    check("peer A received peer B's final city", seenA.seen.city === "BANDUNG 123", seenA.seen.city);
+    check("peer A's approver survived", seenA.seen.approverName === "Approver A", seenA.seen.approverName);
+    check("peer B received the approver", seenB.seen.approverName === "Approver A", seenB.seen.approverName);
 
     // A third peer joining later must see the merged state, not a blank or stale doc.
     const peerC = await openPeer(browser, "Peer C");
-    await peerC.page.waitForTimeout(2000);
-    const cFeature = await peerC.page.inputValue("#featureName");
-    const cBranch = await peerC.page.inputValue("#branchName");
-    const cCity = await peerC.page.inputValue("#city");
-    check("late joiner sees merged project name", cFeature === "PROJECT DARI PEER A", cFeature);
-    check("late joiner sees merged branch", cBranch === "CABANG DARI PEER B", cBranch);
-    check("late joiner sees merged city", cCity === "BANDUNG 123", cCity);
+    const seenC = await waitForAll(peerC.page, {
+      featureName: "PROJECT DARI PEER A",
+      branchName: "CABANG DARI PEER B",
+      city: "BANDUNG 123"
+    });
+    check("late joiner sees merged project name", seenC.seen.featureName === "PROJECT DARI PEER A", seenC.seen.featureName);
+    check("late joiner sees merged branch", seenC.seen.branchName === "CABANG DARI PEER B", seenC.seen.branchName);
+    check("late joiner sees merged city", seenC.seen.city === "BANDUNG 123", seenC.seen.city);
 
     // Reload persistence: the room must survive a full page reload.
     await peerC.page.reload({ waitUntil: "domcontentloaded" });
@@ -189,9 +210,8 @@ async function main() {
       return document.getElementById("modeStatusText")?.textContent === "Live"
         && online.includes(document.getElementById("syncStatusText")?.textContent);
     }, null, { timeout: 30000 });
-    await peerC.page.waitForTimeout(1500);
-    const reloadedFeature = await peerC.page.inputValue("#featureName");
-    check("state survives reload from Durable Object storage", reloadedFeature === "PROJECT DARI PEER A", reloadedFeature);
+    const reloaded = await waitForAll(peerC.page, { featureName: "PROJECT DARI PEER A" });
+    check("state survives reload from Durable Object storage", reloaded.seen.featureName === "PROJECT DARI PEER A", reloaded.seen.featureName);
 
     // Unchanged snapshots must not write anything (the original overwrite bug).
     const drift = await peerC.page.evaluate(() => {
@@ -199,9 +219,8 @@ async function main() {
       return { before };
     });
     await peerA.page.fill("#branchName", "CABANG BARU A");
-    await peerA.page.waitForTimeout(1500);
-    const afterC = await peerC.page.inputValue("#branchName");
-    check("unchanged peer picks up the remote branch change", afterC === "CABANG BARU A", `${drift.before} -> ${afterC}`);
+    const afterC = await waitForAll(peerC.page, { branchName: "CABANG BARU A" });
+    check("unchanged peer picks up the remote branch change", afterC.seen.branchName === "CABANG BARU A", `${drift.before} -> ${afterC.seen.branchName}`);
 
     for (const peer of [peerA, peerB, peerC]) await peer.context.close();
   } finally {

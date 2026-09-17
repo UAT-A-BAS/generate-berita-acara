@@ -3610,6 +3610,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     const COLLAB_IDLE_TIMEOUT_MS = 5 * 60 * 1000;
     const COLLAB_HIDDEN_TIMEOUT_MS = 60 * 1000;
     const COLLAB_AUTOSAVE_DELAY_MS = 2500;
+    // The server writes to storage for every message it receives, so coalescing keystrokes
+    // here is what keeps the room cheap: one message per burst instead of one per keypress.
+    const COLLAB_UPDATE_DEBOUNCE_MS = 300;
     const COLLAB_RECONNECT_BASE_MS = 1200;
     const COLLAB_RECONNECT_MAX_MS = 15000;
     const COLLAB_PING_INTERVAL_MS = 25000;
@@ -4967,6 +4970,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
     function flushSharedChanges() {
       clearTimeout(sharedUpdateTimer);
+      sharedUpdateTimer = null;
       clearTimeout(autosaveTimer);
       const data = collectData();
       saveUserSettings(data);
@@ -5169,6 +5173,18 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     function queueSharedUpdate() {
       if (!collaboration.active || !sharedState || suppressSharedUpdate || applyingRemoteData) return;
       clearTimeout(sharedUpdateTimer);
+      sharedUpdateTimer = setTimeout(() => {
+        sharedUpdateTimer = null;
+        commitSharedData(collectData(), { persist: false });
+      }, COLLAB_UPDATE_DEBOUNCE_MS);
+    }
+
+    // Send whatever is still waiting in the debounce window. Called before applying remote
+    // data so uncommitted keystrokes get their own stamps instead of being re-rendered away.
+    function flushPendingSharedUpdate() {
+      if (!sharedUpdateTimer) return;
+      clearTimeout(sharedUpdateTimer);
+      sharedUpdateTimer = null;
       commitSharedData(collectData(), { persist: false });
     }
 
@@ -5195,6 +5211,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     }
 
     function applySharedDataIfNewer() {
+      flushPendingSharedUpdate();
       const data = readSharedData(sharedState);
       if (!data) return false;
       const remoteUpdatedAt = sharedMetaNumber("updatedAt");
@@ -5206,15 +5223,23 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       const focus = captureEditorFocus();
       applyingRemoteData = true;
       try {
-        applyData(data, { fromShared: true, focus });
+        applyData(data, { fromShared: true });
+        // One remote payload can rebuild parts of the form that were never sent: the defaults
+        // for division line, application line, city, and brand-new group/maker ids. Recording
+        // the raw payload as the baseline would make the next commit treat all of that as a
+        // local edit and push a whole synthesized tree back, which clears fields the other
+        // user owns. The baseline is the normalized form, captured before the caret returns.
+        collaboration.localSnapshot = cloneSharedData(collectData());
       } finally {
         applyingRemoteData = false;
       }
       collaboration.lastAppliedSignature = signature;
-      collaboration.localSnapshot = cloneSharedData(data);
       persistAutosave(data, remoteUpdatedAt || Date.now());
       if (remoteUpdatedAt) setLastSynced(formatSyncTime(new Date(remoteUpdatedAt)));
       reconcilePendingNodes();
+      // Restoring the caret after the baseline deliberately re-creates a diff, so text the
+      // user typed while the update was in flight still gets committed with a fresh stamp.
+      restoreEditorFocus(focus);
       return true;
     }
 
@@ -5408,7 +5433,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       collabPingTimer = setInterval(() => {
         if (!sharedSocket || sharedSocket.readyState !== WebSocket.OPEN) return;
         if (document.hidden || collaboration.idle) return;
-        if (Date.now() - (collaboration.lastServerMessageAt || 0) > COLLAB_PING_INTERVAL_MS * 2) {
+        const silence = Date.now() - (collaboration.lastServerMessageAt || 0);
+        if (silence > COLLAB_PING_INTERVAL_MS * 2) {
           setSyncStatus("offline");
           try {
             sharedSocket.close(4000, "stale");
@@ -5417,6 +5443,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           }
           return;
         }
+        // An active room already proves liveness with real traffic, and every message wakes
+        // the hibernated room. Only check in when nothing has been heard for a full interval.
+        if (silence < COLLAB_PING_INTERVAL_MS) return;
         sharedSocket.send(JSON.stringify({ type: "ping" }));
         if (collaboration.pendingNodes.size) {
           commitSharedData(collectData(), { persist: false });
@@ -5586,7 +5615,6 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
     function applyData(data, options = {}) {
       const fromShared = Boolean(options.fromShared);
-      const focus = options.focus || null;
       const settings = loadUserSettings();
       document.querySelector(`input[name='baType'][value='${data.baType || "pilot"}']`).checked = true;
       fields.featureName.value = data.featureName || "";
@@ -5615,7 +5643,6 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       renderPreview();
       renderComments();
       autosave();
-      restoreEditorFocus(focus);
       if (!fromShared) queueSharedUpdate();
     }
 
