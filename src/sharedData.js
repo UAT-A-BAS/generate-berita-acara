@@ -173,6 +173,50 @@
     return JSON.stringify(left) === JSON.stringify(right);
   }
 
+  // Diffs the committed payload against the last state this editor actually agreed on.
+  // Only genuine local edits become writes, so a field that merely has not been
+  // re-rendered yet is never mistaken for "the user cleared it" and cannot clobber
+  // a newer value that arrived from another peer.
+  function changedPaths(baselineData, data) {
+    const desired = flattenSharedData(data);
+    const baseline = baselineData ? flattenSharedData(baselineData) : new Map();
+    const writes = new Map();
+    const deletes = [];
+    desired.forEach((value, key) => {
+      if (!baseline.has(key) || !sameValue(baseline.get(key), value)) writes.set(key, cloneValue(value));
+    });
+    baseline.forEach((value, key) => {
+      if (!desired.has(key)) deletes.push(key);
+    });
+    return { writes, deletes };
+  }
+
+  function commitSharedChanges(sharedState, changes, options = {}) {
+    const timestamp = Number.isFinite(Number(options.timestamp)) ? Number(options.timestamp) : Date.now();
+    const author = String(options.author || options.actor || "unknown");
+    const written = [];
+    const removed = [];
+    const skipped = [];
+    (changes?.writes || new Map()).forEach((value, key) => {
+      const current = asSharedNode(sharedState.get(key));
+      if (current.d !== true && sameValue(nodeValue(current), value)) {
+        skipped.push(key);
+        return;
+      }
+      sharedState.set(key, { v: cloneValue(value), t: timestamp, by: author });
+      written.push(key);
+    });
+    (changes?.deletes || []).forEach((key) => {
+      if (sharedState.get(key) === undefined) {
+        skipped.push(key);
+        return;
+      }
+      sharedState.set(key, { d: true, t: timestamp, by: author });
+      removed.push(key);
+    });
+    return { written, removed, skipped, timestamp };
+  }
+
   function sameNode(left, right) {
     if (!isSharedNode(left) || !isSharedNode(right)) return false;
     return left.t === right.t
@@ -270,6 +314,8 @@
 
   root.SharedDataCodec = Object.freeze({
     DATA_PREFIX,
+    changedPaths,
+    commitSharedChanges,
     flattenSharedData,
     hasLegacySnapshot,
     hasSharedNodes,

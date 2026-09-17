@@ -40,18 +40,20 @@ function check(name, ok, detail = "") {
   console.log(`${ok ? "PASS" : "FAIL"} ${name}${detail ? `: ${detail}` : ""}`);
 }
 
-async function waitForHealth(url, timeoutMs = 60000) {
+async function waitForHealth(url, timeoutMs = 150000) {
   const deadline = Date.now() + timeoutMs;
+  let lastError = "";
   while (Date.now() < deadline) {
     try {
       const response = await fetch(url);
       if (response.ok) return await response.json();
+      lastError = `HTTP ${response.status}`;
     } catch {
-      // Worker not up yet.
+      lastError = "connection refused (still starting)";
     }
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
-  throw new Error(`Worker did not become healthy at ${url}`);
+  throw new Error(`Worker did not become healthy at ${url} (last: ${lastError})`);
 }
 
 function startSiteServer() {
@@ -117,7 +119,15 @@ async function main() {
       ? "https://generate-berita-acara-collab.alex-marcello08.workers.dev/health"
       : `http://127.0.0.1:${WORKER_PORT}/health`;
     if (PRODUCTION) console.log(`target: LIVE ${PROD_SITE} + ${healthUrl}`);
-    const health = await waitForHealth(healthUrl);
+    let health;
+    try {
+      health = await waitForHealth(healthUrl);
+    } catch (error) {
+      // Surface the dev server output so a startup failure is diagnosable, not mysterious.
+      console.log("\nwranger log tail:");
+      console.log(workerLog.join("").split("\n").slice(-25).join("\n"));
+      throw error;
+    }
     // Identity check: a stale dev server from another checkout must not silently stand in.
     const isOurWorker = health.ok === true && health.service === "generate-berita-acara-collab";
     check("Worker /health responds with the right service", isOurWorker, JSON.stringify(health));

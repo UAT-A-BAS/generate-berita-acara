@@ -6,6 +6,8 @@ import * as Y from "yjs";
 await import("../src/sharedData.js");
 
 const {
+  changedPaths,
+  commitSharedChanges,
   mergeSharedData,
   hasLegacySnapshot,
   hasSharedNodes,
@@ -15,6 +17,101 @@ const {
   readSharedData,
   reassertSharedNodes
 } = globalThis.SharedDataCodec;
+
+// Mirrors the client's commit path: diff the form against the baseline this editor last
+// agreed on, then write only those paths.
+function commitLikeClient(doc, baseline, data, timestamp, author) {
+  const state = doc.getMap("form");
+  const edits = changedPaths(baseline, data);
+  const changes = commitSharedChanges(state, edits, { timestamp, author });
+  return { changes, baseline: JSON.parse(JSON.stringify(data)) };
+}
+
+// The reported bug: user A types a project name, user B types a branch, and B's commit
+// wipes A's work because B's DOM had not rendered A's value yet. With a baseline diff,
+// B only writes what B actually changed.
+{
+  const room = new Y.Doc();
+  const peerA = new Y.Doc();
+  const peerB = new Y.Doc();
+  const start = baseData();
+  const startUpdate = (() => {
+    commitSharedChanges(room.getMap("form"), changedPaths(null, start), { timestamp: 1000, author: "seed" });
+    return Y.encodeStateAsUpdate(room);
+  })();
+  Y.applyUpdate(peerA, startUpdate);
+  Y.applyUpdate(peerB, startUpdate);
+
+  // Both peers start with the same agreed baseline.
+  let baselineA = JSON.parse(JSON.stringify(start));
+  let baselineB = JSON.parse(JSON.stringify(start));
+  const aVector = Y.encodeStateVector(peerA);
+  const bVector = Y.encodeStateVector(peerB);
+
+  // A renames the project; B rebranches, without yet having seen A's edit.
+  const aData = { ...start, featureName: "PROJECT DARI PEER A" };
+  const bData = { ...start, branchName: "CABANG DARI PEER B" };
+  const aResult = commitLikeClient(peerA, baselineA, aData, 2000, "peerA");
+  baselineA = aResult.baseline;
+  const bResult = commitLikeClient(peerB, baselineB, bData, 2000, "peerB");
+  baselineB = bResult.baseline;
+
+  // B must not have written anything for featureName: B never edited it.
+  assert.ok(
+    !bResult.changes.written.some((key) => key.includes("featureName")),
+    "an unrendered remote field must not be echoed back as a write"
+  );
+  assert.deepEqual(bResult.changes.removed, [], "untouched paths must not be tombstoned");
+
+  Y.applyUpdate(peerA, Y.encodeStateAsUpdate(peerB, bVector));
+  Y.applyUpdate(peerB, Y.encodeStateAsUpdate(peerA, aVector));
+
+  const mergedA = readSharedData(peerA.getMap("form"));
+  const mergedB = readSharedData(peerB.getMap("form"));
+  assert.equal(mergedB.featureName, "PROJECT DARI PEER A", "peer B keeps peer A's project name");
+  assert.equal(mergedA.branchName, "CABANG DARI PEER B", "peer A keeps peer B's branch");
+  assert.equal(mergedA.featureName, "PROJECT DARI PEER A");
+  assert.equal(mergedB.branchName, "CABANG DARI PEER B");
+}
+
+// A stale tab must be silent: re-committing an unchanged snapshot writes nothing at all.
+{
+  const doc = new Y.Doc();
+  const start = baseData();
+  commitSharedChanges(doc.getMap("form"), changedPaths(null, start), { timestamp: 1000, author: "seed" });
+  let baseline = JSON.parse(JSON.stringify(start));
+
+  const edited = { ...start, featureName: "edited by someone else" };
+  const other = commitLikeClient(doc, baseline, edited, 2000, "peer");
+  assert.equal(other.changes.written.length, 1);
+
+  // The stale tab still holds the old snapshot and commits again.
+  const stale = commitLikeClient(doc, start, start, 3000, "stale-tab");
+  assert.deepEqual(stale.changes.written, [], "unchanged snapshot writes nothing");
+  assert.deepEqual(stale.changes.removed, [], "unchanged snapshot tombstone nothing");
+  assert.equal(
+    readSharedData(doc.getMap("form")).featureName,
+    "edited by someone else",
+    "stale tab cannot clobber a field it never edited"
+  );
+  baseline = other.baseline;
+}
+
+// A deliberate clear or row deletion is still a real edit and must propagate.
+{
+  const doc = new Y.Doc();
+  const start = baseData();
+  commitSharedChanges(doc.getMap("form"), changedPaths(null, start), { timestamp: 1000, author: "seed" });
+  const baseline = JSON.parse(JSON.stringify(start));
+
+  const cleared = commitLikeClient(doc, baseline, { ...start, featureName: "" }, 2000, "me");
+  assert.ok(cleared.changes.written.some((key) => key.includes("featureName")), "clearing a field is a real edit");
+  assert.equal(readSharedData(doc.getMap("form")).featureName, "");
+
+  const withoutMakers = commitLikeClient(doc, cleared.baseline, { ...start, featureName: "", makers: [] }, 3000, "me");
+  assert.ok(withoutMakers.changes.removed.some((key) => key.includes("maker-1")), "deleting a row propagates as a tombstone");
+  assert.equal(readSharedData(doc.getMap("form")).makers.length, 0);
+}
 
 function baseData() {
   return {

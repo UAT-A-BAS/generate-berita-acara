@@ -63,13 +63,27 @@ const second = nextLogicalStamp();
 assert.ok(second > first, "logical stamps strictly increase");
 assert.ok(first >= Date.now() - 1000, "logical stamp is not behind wall time");
 
+// The overwrite bug: a commit used to diff the DOM against the live shared map, so a
+// field whose remote value had not rendered yet looked like "the user cleared it" and
+// got written back. Commits must now diff against the last state this editor agreed on.
+assert.match(html, /const localEdits = changedPaths\(options\.full \? null : collaboration\.localSnapshot, data\);/);
+assert.match(html, /const changes = commitSharedChanges\(sharedState, localEdits, \{ timestamp: updatedAt, author: clientId \}\);/);
+assert.match(html, /collaboration\.localSnapshot = cloneSharedData\(data\);/);
+assert.match(html, /collaboration\.localSnapshot = cloneSharedData\(data\);\s*\n\s*persistAutosave/, "remote applies reset the baseline");
+assert.match(html, /collaboration\.localSnapshot = cloneSharedData\(seedData \|\| collectData\(\)\);/);
+assert.match(html, /commitSharedData\(pendingCollabSeed, \{ full: true \}\)/, "seeding a new room writes every path on purpose");
+
 // Commits must carry a per-path patch so a peer can re-assert its own newer edits.
-assert.match(html, /const changes = mergeSharedData\(sharedState, data, \{ timestamp: updatedAt, author: clientId \}\);/);
 assert.match(html, /const patch = pendingNodePatch\(changes, sharedState, updatedAt, clientId\);/);
 assert.match(html, /patch\.forEach\(\(node, key\) => collaboration\.pendingNodes\.set\(key, node\)\);/);
 assert.match(html, /function reconcilePendingNodes\(\)/);
 assert.match(html, /reassertSharedNodes\(sharedState, reassert, \{ author: clientId \}\)/);
 assert.match(html, /collaboration\.pendingNodes\.delete\(key\)/);
+assert.match(
+  html,
+  /reassert\.forEach\(\(_node, key\) => collaboration\.pendingNodes\.delete\(key\)\);/,
+  "settled pending nodes are drained so the room stops re-asserting forever"
+);
 
 // Remote apply must not clobber the field the user is actively typing in.
 assert.match(html, /const focus = captureEditorFocus\(\);/);

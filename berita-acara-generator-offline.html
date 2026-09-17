@@ -3262,6 +3262,50 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     return JSON.stringify(left) === JSON.stringify(right);
   }
 
+  // Diffs the committed payload against the last state this editor actually agreed on.
+  // Only genuine local edits become writes, so a field that merely has not been
+  // re-rendered yet is never mistaken for "the user cleared it" and cannot clobber
+  // a newer value that arrived from another peer.
+  function changedPaths(baselineData, data) {
+    const desired = flattenSharedData(data);
+    const baseline = baselineData ? flattenSharedData(baselineData) : new Map();
+    const writes = new Map();
+    const deletes = [];
+    desired.forEach((value, key) => {
+      if (!baseline.has(key) || !sameValue(baseline.get(key), value)) writes.set(key, cloneValue(value));
+    });
+    baseline.forEach((value, key) => {
+      if (!desired.has(key)) deletes.push(key);
+    });
+    return { writes, deletes };
+  }
+
+  function commitSharedChanges(sharedState, changes, options = {}) {
+    const timestamp = Number.isFinite(Number(options.timestamp)) ? Number(options.timestamp) : Date.now();
+    const author = String(options.author || options.actor || "unknown");
+    const written = [];
+    const removed = [];
+    const skipped = [];
+    (changes?.writes || new Map()).forEach((value, key) => {
+      const current = asSharedNode(sharedState.get(key));
+      if (current.d !== true && sameValue(nodeValue(current), value)) {
+        skipped.push(key);
+        return;
+      }
+      sharedState.set(key, { v: cloneValue(value), t: timestamp, by: author });
+      written.push(key);
+    });
+    (changes?.deletes || []).forEach((key) => {
+      if (sharedState.get(key) === undefined) {
+        skipped.push(key);
+        return;
+      }
+      sharedState.set(key, { d: true, t: timestamp, by: author });
+      removed.push(key);
+    });
+    return { written, removed, skipped, timestamp };
+  }
+
   function sameNode(left, right) {
     if (!isSharedNode(left) || !isSharedNode(right)) return false;
     return left.t === right.t
@@ -3359,6 +3403,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
   root.SharedDataCodec = Object.freeze({
     DATA_PREFIX,
+    changedPaths,
+    commitSharedChanges,
     flattenSharedData,
     hasLegacySnapshot,
     hasSharedNodes,
@@ -3389,6 +3435,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       hasSharedData,
       hasSharedNodes,
       readSharedData,
+      changedPaths,
+      commitSharedChanges,
       mergeSharedData,
       nodeStamp,
       nodeValue,
@@ -3582,6 +3630,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       clock: 0,
       pendingNodes: new Map(),
       lastAppliedSignature: "",
+      localSnapshot: null,
       lastServerMessageAt: 0
     };
 
@@ -5086,6 +5135,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       return collaboration.clock;
     }
 
+    function cloneSharedData(data) {
+      return data == null ? null : JSON.parse(JSON.stringify(data));
+    }
+
     function preferSharedNode(candidate, current) {
       const candidateStamp = nodeStamp(candidate);
       const currentStamp = nodeStamp(current);
@@ -5098,12 +5151,18 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       const updatedAt = nextLogicalStamp();
       if (options.persist !== false) persistAutosave(data, updatedAt);
       sharedDoc.transact(() => {
-        const changes = mergeSharedData(sharedState, data, { timestamp: updatedAt, author: clientId });
+        // Diff against the last state this editor agreed on, not against the live shared
+        // map: a field whose remote value has not been rendered yet is "not edited by me",
+        // not "cleared by me", so it can never be echoed back as an overwrite.
+        // `full` is reserved for seeding a brand-new room, where every path is intentional.
+        const localEdits = changedPaths(options.full ? null : collaboration.localSnapshot, data);
+        const changes = commitSharedChanges(sharedState, localEdits, { timestamp: updatedAt, author: clientId });
         const patch = pendingNodePatch(changes, sharedState, updatedAt, clientId);
         patch.forEach((node, key) => collaboration.pendingNodes.set(key, node));
         sharedState.set("updatedAt", { v: updatedAt, t: updatedAt, by: clientId });
         sharedState.set("updatedBy", { v: clientId, t: updatedAt, by: clientId });
       }, LOCAL_ORIGIN);
+      collaboration.localSnapshot = cloneSharedData(data);
       setSyncStatus(sharedSocket?.readyState === WebSocket.OPEN ? "syncing" : "offline");
     }
 
@@ -5124,10 +5183,15 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         if (current === undefined || preferSharedNode(node, current)) reassert.set(key, node);
         else collaboration.pendingNodes.delete(key);
       });
-      if (!reassert.size) return;
-      sharedDoc.transact(() => {
-        reassertSharedNodes(sharedState, reassert, { author: clientId });
-      }, LOCAL_ORIGIN);
+      if (reassert.size) {
+        sharedDoc.transact(() => {
+          reassertSharedNodes(sharedState, reassert, { author: clientId });
+        }, LOCAL_ORIGIN);
+      }
+      // A pending node is settled once it either won and reached the shared map, or lost
+      // to a newer remote value. Dropping it here keeps the room from re-asserting forever
+      // and lets a later, genuinely newer remote edit take effect without a tug of war.
+      reassert.forEach((_node, key) => collaboration.pendingNodes.delete(key));
     }
 
     function applySharedDataIfNewer() {
@@ -5147,6 +5211,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         applyingRemoteData = false;
       }
       collaboration.lastAppliedSignature = signature;
+      collaboration.localSnapshot = cloneSharedData(data);
       persistAutosave(data, remoteUpdatedAt || Date.now());
       if (remoteUpdatedAt) setLastSynced(formatSyncTime(new Date(remoteUpdatedAt)));
       reconcilePendingNodes();
@@ -5194,6 +5259,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         collaboration.ready = true;
         collaboration.lastAppliedSignature = "";
         collaboration.pendingNodes = new Map();
+        // Baseline for "what did I actually edit?" is the pre-collab form. Anything the
+        // user types before the socket finishes opening is a genuine diff; everything else
+        // is left to whoever owns it.
+        collaboration.localSnapshot = cloneSharedData(seedData || collectData());
         scheduleCollaborationIdleTimer();
         connectCollaborationSocket();
       } catch (error) {
@@ -5316,15 +5385,16 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       const pendingKeys = collaboration.pendingNodes.size;
 
       if (pendingKeys) {
-        // Re-assert offline edits first; the merge keeps whichever side is newer per path.
+        // Re-assert offline edits first; only paths the user actually changed differ from
+        // the baseline, so untouched remote fields stay intact.
         commitSharedData(localData, { persist: false });
         if (hasRemoteData) applySharedDataIfNewer();
       } else if (pendingCollabSeed && (!hasRemoteData || pendingCollabSeedMustWin)) {
-        commitSharedData(pendingCollabSeed);
+        commitSharedData(pendingCollabSeed, { full: true });
       } else if (hasRemoteData) {
         applySharedDataIfNewer();
       } else if (pendingCollabSeed) {
-        commitSharedData(pendingCollabSeed);
+        commitSharedData(pendingCollabSeed, { full: true });
       }
 
       if (hadLegacySnapshot) commitSharedData(localData, { persist: false });
