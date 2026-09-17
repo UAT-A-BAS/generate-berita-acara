@@ -6,14 +6,21 @@
   "scripts": {
     "typecheck": "node --check src/worker.js && node --check src/piiMasking.js && node --check src/sharedData.js && node tests/htmlSyntax.test.mjs",
     "lint": "node --check src/worker.js && node --check src/piiMasking.js && node --check src/sharedData.js && node --check tests/datePickerInteraction.test.mjs && node --check tests/pdfPageGeometry.test.mjs && node --check tests/tabIndent.test.mjs",
-    "test": "node tests/htmlSyntax.test.mjs && node tests/datePickerInteraction.test.mjs && node tests/piiMasking.test.mjs && node tests/sharedData.test.mjs && node tests/workerRouting.test.mjs && node tests/previewPagination.test.mjs && node tests/commentThread.test.mjs && node tests/collaborationIdle.test.mjs && node tests/pdfFont.test.mjs && node tests/pdfHeader.test.mjs && node tests/pdfRowContinuation.test.mjs && node tests/pdfClosingPagination.test.mjs && node tests/pdfPageGeometry.test.mjs && node tests/pdfBulletWrapping.test.mjs && node tests/sharedPagination.test.mjs && node tests/editorUx.test.mjs && node tests/tabIndent.test.mjs && node tests/previewInteraction.test.mjs",
+    "test": "node tests/htmlSyntax.test.mjs && node tests/datePickerInteraction.test.mjs && node tests/piiMasking.test.mjs && node tests/sharedData.test.mjs && node tests/workerRouting.test.mjs && node tests/previewPagination.test.mjs && node tests/commentThread.test.mjs && node tests/collaborationIdle.test.mjs && node tests/pdfFont.test.mjs && node tests/pdfHeader.test.mjs && node tests/pdfRowContinuation.test.mjs && node tests/pdfClosingPagination.test.mjs && node tests/pdfPageGeometry.test.mjs && node tests/pdfBulletWrapping.test.mjs && node tests/sharedPagination.test.mjs && node tests/editorUx.test.mjs && node tests/tabIndent.test.mjs && node tests/previewInteraction.test.mjs && node tests/offlineArtifact.test.mjs && node tests/sharedDataMerge.test.mjs && node tests/collabSync.test.mjs",
     "dev:worker": "wrangler dev",
-    "deploy:worker": "wrangler deploy"
+    "deploy:worker": "wrangler deploy",
+    "build:offline": "node scripts/build-offline-html.mjs",
+    "verify:offline": "node scripts/verify-offline-artifact.mjs",
+    "build:pages": "node scripts/build-pages.mjs",
+    "verify:collab": "node scripts/verify-collab-e2e.mjs",
+    "deploy:pages": "wrangler pages deploy dist-pages --project-name=generate-berita-acara --branch=main"
   },
   "dependencies": {
     "yjs": "^13.6.27"
   },
   "devDependencies": {
+    "jspdf": "2.5.1",
+    "playwright": "1.63.0",
     "wrangler": "^4.16.1"
   }
 }

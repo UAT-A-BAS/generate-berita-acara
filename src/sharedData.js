@@ -5,6 +5,8 @@
   const KEYED_ARRAY_FIELDS = new Set(["groups", "rows", "makers", "comments", "replies"]);
   const ARRAY_ID_FIELDS = ["uid", "cid", "rid"];
   const POSITION_FIELD = "$position";
+  const LEGACY_STAMP = 0;
+  const LEGACY_AUTHOR = "legacy";
 
   function cloneValue(value) {
     if (value == null || typeof value !== "object") return value;
@@ -33,6 +35,33 @@
     if (!isPlainObject(value)) return "";
     const field = ARRAY_ID_FIELDS.find((name) => value[name]);
     return field ? String(value[field]) : "";
+  }
+
+  // A shared entry is stored as a versioned node `{ v, t, by }` (or `{ d: true, t, by }`
+  // for a deletion) so that every field carries its own logical timestamp. Raw legacy
+  // values written by older builds are read as nodes stamped 0 by "legacy".
+  function isSharedNode(value) {
+    return isPlainObject(value)
+      && typeof value.t === "number"
+      && typeof value.by === "string"
+      && ("v" in value || value.d === true);
+  }
+
+  function asSharedNode(value) {
+    return isSharedNode(value) ? value : { v: cloneValue(value), t: LEGACY_STAMP, by: LEGACY_AUTHOR };
+  }
+
+  function nodeValue(node) {
+    if (!isSharedNode(node)) return cloneValue(node);
+    return node.d === true ? undefined : cloneValue(node.v);
+  }
+
+  function nodeStamp(node) {
+    return isSharedNode(node) ? Number(node.t) || 0 : LEGACY_STAMP;
+  }
+
+  function maxSharedStamp(sharedState) {
+    return sharedEntries(sharedState).reduce((max, [, value]) => Math.max(max, nodeStamp(value)), 0);
   }
 
   function shouldUseKeyedArray(value, path) {
@@ -125,37 +154,134 @@
   }
 
   function hasSharedData(sharedState) {
-    return sharedEntries(sharedState).length > 0 || Boolean(sharedState?.get?.("data"));
+    return hasSharedNodes(sharedState) || Boolean(sharedState?.get?.("data"));
   }
 
   function readSharedData(sharedState) {
     const entries = sharedEntries(sharedState);
-    if (entries.length) return decodeTreeNode(buildTree(entries));
-    return cloneValue(sharedState?.get?.("data") || null);
+    const live = entries
+      .map(([key, value]) => [key, asSharedNode(value)])
+      .filter(([, node]) => node.d !== true)
+      .map(([key, node]) => [key, node.v]);
+    if (live.length) return decodeTreeNode(buildTree(live));
+    const legacy = sharedState?.get?.("data");
+    if (isSharedNode(legacy)) return null;
+    return cloneValue(legacy || null);
   }
 
   function sameValue(left, right) {
     return JSON.stringify(left) === JSON.stringify(right);
   }
 
-  function syncSharedData(sharedState, data) {
-    const desired = flattenSharedData(data);
-    const existingKeys = sharedEntries(sharedState).map(([key]) => key);
+  function sameNode(left, right) {
+    if (!isSharedNode(left) || !isSharedNode(right)) return false;
+    return left.t === right.t
+      && left.by === right.by
+      && Boolean(left.d) === Boolean(right.d)
+      && sameValue(left.d === true ? null : left.v, right.d === true ? null : right.v);
+  }
 
-    existingKeys.forEach((key) => {
-      if (!desired.has(key)) sharedState.delete(key);
+  function hasSharedNodes(sharedState) {
+    return sharedEntries(sharedState).some(([, value]) => asSharedNode(value).d !== true);
+  }
+
+  function hasLegacySnapshot(sharedState) {
+    const legacy = sharedState?.get?.("data");
+    return Boolean(legacy) && !isSharedNode(legacy) && isPlainObject(legacy);
+  }
+
+  // Writes only the paths that actually changed, each with its own logical stamp.
+  // Paths that disappeared locally become tombstones so a stale peer cannot resurrect them.
+  function mergeSharedData(sharedState, data, options = {}) {
+    const timestamp = Number.isFinite(Number(options.timestamp)) ? Number(options.timestamp) : Date.now();
+    const author = String(options.author || options.actor || "unknown");
+    const desired = flattenSharedData(data);
+    const existing = new Map();
+    sharedEntries(sharedState).forEach(([key, value]) => {
+      const node = asSharedNode(value);
+      existing.set(key, { node, value: node.d === true ? undefined : node.v });
     });
+
+    const written = [];
+    const removed = [];
+    const skipped = [];
     desired.forEach((value, key) => {
-      if (!sameValue(sharedState.get(key), value)) sharedState.set(key, cloneValue(value));
+      const current = existing.get(key);
+      if (current && current.node.d !== true && sameValue(current.value, value)) {
+        skipped.push(key);
+        return;
+      }
+      sharedState.set(key, { v: cloneValue(value), t: timestamp, by: author });
+      written.push(key);
     });
+    existing.forEach((current, key) => {
+      if (desired.has(key) || current.node.d === true) return;
+      sharedState.set(key, { d: true, t: timestamp, by: author });
+      removed.push(key);
+    });
+
+    return { written, removed, skipped, timestamp };
+  }
+
+  // Keeps a peer's newer value, re-asserts a locally owned newer value once so that
+  // concurrent edits to the same field converge on the highest logical stamp.
+  function reassertSharedNodes(sharedState, pendingNodes, options = {}) {
+    if (!pendingNodes?.size) return { reasserted: [], yielded: [] };
+    const author = String(options.author || options.actor || "unknown");
+    const reasserted = [];
+    const yielded = [];
+    [...pendingNodes.entries()].forEach(([key, node]) => {
+      const current = sharedState.get(key);
+      if (current === undefined) {
+        sharedState.set(key, { ...node, by: node.by || author });
+        reasserted.push(key);
+        return;
+      }
+      const currentStamp = nodeStamp(current);
+      if (currentStamp > nodeStamp(node)) {
+        pendingNodes.delete(key);
+        yielded.push(key);
+        return;
+      }
+      if (isSharedNode(current) && sameValue(current, node)) return;
+      sharedState.set(key, { ...node, by: node.by || author });
+      reasserted.push(key);
+    });
+    return { reasserted, yielded };
+  }
+
+  function pendingNodePatch(changes, sharedState, timestamp, author) {
+    const pending = new Map();
+    (changes?.written || []).forEach((key) => {
+      const node = sharedState.get(key);
+      if (node !== undefined) pending.set(key, cloneValue(node));
+    });
+    (changes?.removed || []).forEach((key) => {
+      pending.set(key, { d: true, t: timestamp, by: author });
+    });
+    return pending;
+  }
+
+  function syncSharedData(sharedState, data) {
+    const changes = mergeSharedData(sharedState, data, { timestamp: Date.now(), author: "sync" });
     sharedState.delete("data");
+    return changes;
   }
 
   root.SharedDataCodec = Object.freeze({
     DATA_PREFIX,
     flattenSharedData,
+    hasLegacySnapshot,
+    hasSharedNodes,
     hasSharedData,
+    isSharedNode,
+    mergeSharedData,
+    maxSharedStamp,
+    nodeStamp,
+    nodeValue,
+    pendingNodePatch,
     readSharedData,
+    reassertSharedNodes,
     syncSharedData
   });
 })(typeof globalThis !== "undefined" ? globalThis : window);

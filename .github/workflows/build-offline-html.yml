@@ -1,0 +1,43 @@
+name: Build Offline HTML
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - berita-acara-generator-offline.html
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: offline-html-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build:offline
+      - run: npm test
+      - run: npx playwright install --with-deps chromium
+      - run: npm run verify:offline
+      - name: Commit updated offline HTML
+        run: |
+          git add berita-acara-generator-offline.html
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "build: refresh offline HTML"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

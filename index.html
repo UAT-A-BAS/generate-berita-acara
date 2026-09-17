@@ -2690,7 +2690,17 @@
     const WORKER_BASE_URL = window.BA_COLLAB_WORKER_URL || document.querySelector("meta[name='ba-collab-worker-url']")?.content || "";
     const LOCAL_ORIGIN = "local-form";
     const REMOTE_ORIGIN = "remote-form";
-    const { hasSharedData, readSharedData, syncSharedData } = globalThis.SharedDataCodec;
+    const {
+      hasLegacySnapshot,
+      hasSharedData,
+      hasSharedNodes,
+      readSharedData,
+      mergeSharedData,
+      nodeStamp,
+      nodeValue,
+      pendingNodePatch,
+      reassertSharedNodes
+    } = globalThis.SharedDataCodec;
     const monthNames = [
       "Januari", "Februari", "Maret", "April", "Mei", "Juni",
       "Juli", "Agustus", "September", "Oktober", "November", "Desember"
@@ -2854,11 +2864,15 @@
     let pendingNameResolver = null;
     let collabIdleTimer = null;
     let collabHiddenTimer = null;
+    let collabPingTimer = null;
     const COLLAB_IDLE_TIMEOUT_MS = 5 * 60 * 1000;
     const COLLAB_HIDDEN_TIMEOUT_MS = 60 * 1000;
     const COLLAB_AUTOSAVE_DELAY_MS = 2500;
     const COLLAB_RECONNECT_BASE_MS = 1200;
     const COLLAB_RECONNECT_MAX_MS = 15000;
+    const COLLAB_PING_INTERVAL_MS = 25000;
+    const YJS_MODULE_URL = "https://esm.sh/yjs@13.6.27";
+    const COLLAB_DISABLED = window.BA_COLLAB_DISABLED === true;
     const COLLAB_ACTIVITY_EVENTS = ["keydown", "input", "click", "mousemove", "scroll", "touchstart"];
     const clientId = crypto.randomUUID();
     const collaboration = {
@@ -2870,7 +2884,11 @@
       ready: false,
       idle: false,
       reconnectAttempts: 0,
-      localUpdatedAt: 0
+      localUpdatedAt: 0,
+      clock: 0,
+      pendingNodes: new Map(),
+      lastAppliedSignature: "",
+      lastServerMessageAt: 0
     };
 
     function randomId(length = 10) {
@@ -4146,6 +4164,18 @@
       els.userCountText.textContent = `Users: ${total}`;
     }
 
+    function applyCollaborationAvailability() {
+      if (!COLLAB_DISABLED) return;
+      document.documentElement.classList.add("is-collab-disabled");
+      ["collabToggleBtn", "copyShareLinkBtn", "modeStatus", "syncStatus", "userCountStatus", "lastSyncedStatus"]
+        .forEach((id) => {
+          const node = document.getElementById(id);
+          if (node) node.hidden = true;
+        });
+      const panel = document.querySelector(".collab-panel");
+      if (panel) panel.hidden = true;
+    }
+
     function setLastSynced(value = "-") {
       els.lastSyncedText.textContent = `Last synced: ${value}`;
     }
@@ -4282,14 +4312,103 @@
       collaboration.localUpdatedAt = updatedAt;
     }
 
+    function sharedMetaNumber(key) {
+      return Number(nodeValue(sharedState?.get(key)) || 0);
+    }
+
+    function activeEditorKey() {
+      const element = document.activeElement;
+      if (!element || !element.matches?.("input, textarea, select")) return "";
+      return editorElementKey(element);
+    }
+
+    function editorElementKey(element) {
+      if (!element?.matches?.("input, textarea, select")) return "";
+      if (element.id) return `id:${element.id}`;
+      const field = element.dataset?.field || "";
+      const row = element.closest?.("[data-row]");
+      const group = element.closest?.("[data-group]");
+      const maker = element.closest?.("[data-maker]");
+      if (row && group) return `row:${group.dataset.uid || ""}:${row.dataset.uid || ""}:${field}`;
+      if (group) return `group:${group.dataset.uid || ""}:${field}`;
+      if (maker) return `maker:${maker.dataset.uid || ""}:${field}`;
+      return "";
+    }
+
+    function elementForEditorKey(key) {
+      if (!key) return null;
+      if (key.startsWith("id:")) return document.getElementById(key.slice(3));
+      const [kind, groupUid, second, third] = key.split(":");
+      const group = groupUid
+        ? [...els.groups.querySelectorAll("[data-group]")].find((node) => node.dataset.uid === groupUid)
+        : null;
+      if (kind === "group") return group?.querySelector(`[data-field='${second}']`) || null;
+      if (kind === "row") {
+        const row = [...(group?.querySelectorAll("[data-row]") || [])].find((node) => node.dataset.uid === second);
+        return row?.querySelector(`[data-field='${third}']`) || null;
+      }
+      if (kind === "maker") {
+        const maker = [...els.makers.querySelectorAll("[data-maker]")].find((node) => node.dataset.uid === groupUid);
+        return maker?.querySelector(`[data-field='${second}']`) || null;
+      }
+      return null;
+    }
+
+    // Remote updates re-render the whole form, so remember where the user was and
+    // restore the caret afterwards. The focused field keeps the local value because
+    // its own pending node is re-asserted right after the merge.
+    function captureEditorFocus() {
+      const element = document.activeElement;
+      const key = editorElementKey(element);
+      if (!key) return null;
+      return {
+        key,
+        value: element.value,
+        start: element.selectionStart,
+        end: element.selectionEnd,
+        direction: element.selectionDirection
+      };
+    }
+
+    function restoreEditorFocus(focus) {
+      if (!focus?.key) return;
+      const element = elementForEditorKey(focus.key);
+      if (!element) return;
+      if (typeof focus.value === "string" && element.value !== focus.value) element.value = focus.value;
+      try {
+        element.focus({ preventScroll: true });
+        if (typeof focus.start === "number" && element.setSelectionRange) {
+          element.setSelectionRange(focus.start, focus.end ?? focus.start, focus.direction || "none");
+        }
+      } catch {
+        // Focus restore is best-effort; the data merge already succeeded.
+      }
+    }
+
+    // Logical clock: strictly increasing and never behind wall time, so two peers
+    // editing concurrently always resolve to the same winner after merging.
+    function nextLogicalStamp() {
+      collaboration.clock = Math.max(Date.now(), collaboration.clock + 1);
+      return collaboration.clock;
+    }
+
+    function preferSharedNode(candidate, current) {
+      const candidateStamp = nodeStamp(candidate);
+      const currentStamp = nodeStamp(current);
+      if (candidateStamp !== currentStamp) return candidateStamp > currentStamp;
+      return String(candidate?.by || "") > String(current?.by || "");
+    }
+
     function commitSharedData(data = collectData(), options = {}) {
       if (!collaboration.active || !sharedState || !Y || applyingRemoteData) return;
-      const updatedAt = Date.now();
+      const updatedAt = nextLogicalStamp();
       if (options.persist !== false) persistAutosave(data, updatedAt);
       sharedDoc.transact(() => {
-        syncSharedData(sharedState, data);
-        sharedState.set("updatedAt", updatedAt);
-        sharedState.set("updatedBy", clientId);
+        const changes = mergeSharedData(sharedState, data, { timestamp: updatedAt, author: clientId });
+        const patch = pendingNodePatch(changes, sharedState, updatedAt, clientId);
+        patch.forEach((node, key) => collaboration.pendingNodes.set(key, node));
+        sharedState.set("updatedAt", { v: updatedAt, t: updatedAt, by: clientId });
+        sharedState.set("updatedBy", { v: clientId, t: updatedAt, by: clientId });
       }, LOCAL_ORIGIN);
       setSyncStatus(sharedSocket?.readyState === WebSocket.OPEN ? "syncing" : "offline");
     }
@@ -4300,15 +4419,43 @@
       commitSharedData(collectData(), { persist: false });
     }
 
+    // After a remote update lands, a local edit whose stamp still wins for its own
+    // path is written back once. Losers are dropped, so both peers settle on the same
+    // value instead of ping-ponging or silently overwriting the other side.
+    function reconcilePendingNodes() {
+      if (!sharedState || !collaboration.pendingNodes.size) return;
+      const reassert = new Map();
+      collaboration.pendingNodes.forEach((node, key) => {
+        const current = sharedState.get(key);
+        if (current === undefined || preferSharedNode(node, current)) reassert.set(key, node);
+        else collaboration.pendingNodes.delete(key);
+      });
+      if (!reassert.size) return;
+      sharedDoc.transact(() => {
+        reassertSharedNodes(sharedState, reassert, { author: clientId });
+      }, LOCAL_ORIGIN);
+    }
+
     function applySharedDataIfNewer() {
       const data = readSharedData(sharedState);
       if (!data) return false;
-      const remoteUpdatedAt = Number(sharedState.get("updatedAt") || "0");
+      const remoteUpdatedAt = sharedMetaNumber("updatedAt");
+      const signature = JSON.stringify(data);
+      if (signature === collaboration.lastAppliedSignature) {
+        reconcilePendingNodes();
+        return true;
+      }
+      const focus = captureEditorFocus();
       applyingRemoteData = true;
-      applyData(data, { fromShared: true });
-      applyingRemoteData = false;
+      try {
+        applyData(data, { fromShared: true, focus });
+      } finally {
+        applyingRemoteData = false;
+      }
+      collaboration.lastAppliedSignature = signature;
       persistAutosave(data, remoteUpdatedAt || Date.now());
       if (remoteUpdatedAt) setLastSynced(formatSyncTime(new Date(remoteUpdatedAt)));
+      reconcilePendingNodes();
       return true;
     }
 
@@ -4338,7 +4485,8 @@
       setSyncStatus("syncing");
 
       try {
-        Y = await import("https://esm.sh/yjs@13.6.27");
+        if (!YJS_MODULE_URL) throw new Error("Kolaborasi dinonaktifkan pada versi offline.");
+        Y = await import(/* @vite-ignore */ YJS_MODULE_URL);
         sharedDoc = new Y.Doc();
         sharedState = sharedDoc.getMap("form");
         sharedState.observe((event) => {
@@ -4350,6 +4498,8 @@
           sendYUpdate(update);
         });
         collaboration.ready = true;
+        collaboration.lastAppliedSignature = "";
+        collaboration.pendingNodes = new Map();
         scheduleCollaborationIdleTimer();
         connectCollaborationSocket();
       } catch (error) {
@@ -4378,6 +4528,10 @@
       collaboration.idle = false;
       collaboration.reconnectAttempts = 0;
       collaboration.users = new Map();
+      collaboration.pendingNodes = new Map();
+      collaboration.lastAppliedSignature = "";
+      clearInterval(collabPingTimer);
+      collabPingTimer = null;
       if (resetUi) {
         collaboration.active = false;
         setModeStatus("draft");
@@ -4409,16 +4563,27 @@
         collaboration.reconnectAttempts = 0;
         setSyncStatus("connected");
         scheduleCollaborationIdleTimer();
+        startPingLoop();
         sendPresence();
       });
 
       socket.addEventListener("message", async (event) => {
         if (socket !== sharedSocket) return;
+        collaboration.lastServerMessageAt = Date.now();
         if (typeof event.data === "string") {
-          const message = JSON.parse(event.data || "{}");
+          let message = {};
+          try {
+            message = JSON.parse(event.data || "{}");
+          } catch {
+            message = {};
+          }
           if (message.type === "saved") {
             setSyncStatus("saved");
             setLastSynced(formatSyncTime());
+          } else if (message.type === "pong") {
+            setSyncStatus(collaboration.pendingNodes.size ? "syncing" : "saved");
+          } else if (message.type === "error") {
+            setStatus(`Kolaborasi: ${message.message || "server menolak perubahan."}`);
           }
           handlePresenceMessage(message);
           return;
@@ -4428,25 +4593,14 @@
         Y.applyUpdate(sharedDoc, new Uint8Array(buffer), REMOTE_ORIGIN);
         if (!firstServerSync) {
           firstServerSync = true;
-          const hadLegacyData = Boolean(sharedState?.get("data"));
-          const hasRemoteData = hasSharedData(sharedState);
-          if (pendingCollabSeed && (!hasRemoteData || pendingCollabSeedMustWin)) {
-            commitSharedData(pendingCollabSeed);
-          } else if (!applySharedDataIfNewer() && pendingCollabSeed) {
-            commitSharedData(pendingCollabSeed);
-          } else if (hasRemoteData) {
-            applySharedDataIfNewer();
-          }
-          if (hadLegacyData) commitSharedData(collectData(), { persist: false });
-          pendingCollabSeed = null;
-          pendingCollabSeedMustWin = false;
-          sendYUpdate(Y.encodeStateAsUpdate(sharedDoc));
+          handleInitialServerSync();
         }
       });
 
       socket.addEventListener("close", () => {
         if (socket !== sharedSocket) return;
         sharedSocket = null;
+        stopPingLoop();
         collaboration.connected = false;
         setSyncStatus("offline");
         scheduleCollaborationReconnect();
@@ -4456,6 +4610,59 @@
         if (socket !== sharedSocket) return;
         setSyncStatus("offline");
       });
+    }
+
+    // The server state is authoritative for *unseen* paths only. Local pending edits
+    // keep their own logical stamps, so a reconnect never discards typing that happened
+    // while the socket was down.
+    function handleInitialServerSync() {
+      const hadLegacySnapshot = hasLegacySnapshot(sharedState);
+      const hasRemoteData = hasSharedData(sharedState);
+      const localData = collectData();
+      const pendingKeys = collaboration.pendingNodes.size;
+
+      if (pendingKeys) {
+        // Re-assert offline edits first; the merge keeps whichever side is newer per path.
+        commitSharedData(localData, { persist: false });
+        if (hasRemoteData) applySharedDataIfNewer();
+      } else if (pendingCollabSeed && (!hasRemoteData || pendingCollabSeedMustWin)) {
+        commitSharedData(pendingCollabSeed);
+      } else if (hasRemoteData) {
+        applySharedDataIfNewer();
+      } else if (pendingCollabSeed) {
+        commitSharedData(pendingCollabSeed);
+      }
+
+      if (hadLegacySnapshot) commitSharedData(localData, { persist: false });
+      pendingCollabSeed = null;
+      pendingCollabSeedMustWin = false;
+      sendYUpdate(Y.encodeStateAsUpdate(sharedDoc));
+    }
+
+    function startPingLoop() {
+      stopPingLoop();
+      collabPingTimer = setInterval(() => {
+        if (!sharedSocket || sharedSocket.readyState !== WebSocket.OPEN) return;
+        if (document.hidden || collaboration.idle) return;
+        if (Date.now() - (collaboration.lastServerMessageAt || 0) > COLLAB_PING_INTERVAL_MS * 2) {
+          setSyncStatus("offline");
+          try {
+            sharedSocket.close(4000, "stale");
+          } catch {
+            // Socket already gone; the close handler schedules the reconnect.
+          }
+          return;
+        }
+        sharedSocket.send(JSON.stringify({ type: "ping" }));
+        if (collaboration.pendingNodes.size) {
+          commitSharedData(collectData(), { persist: false });
+        }
+      }, COLLAB_PING_INTERVAL_MS);
+    }
+
+    function stopPingLoop() {
+      clearInterval(collabPingTimer);
+      collabPingTimer = null;
     }
 
     function setGenerateMessage(type, message) {
@@ -4615,6 +4822,7 @@
 
     function applyData(data, options = {}) {
       const fromShared = Boolean(options.fromShared);
+      const focus = options.focus || null;
       const settings = loadUserSettings();
       document.querySelector(`input[name='baType'][value='${data.baType || "pilot"}']`).checked = true;
       fields.featureName.value = data.featureName || "";
@@ -4643,6 +4851,7 @@
       renderPreview();
       renderComments();
       autosave();
+      restoreEditorFocus(focus);
       if (!fromShared) queueSharedUpdate();
     }
 
@@ -7697,6 +7906,10 @@
       if (event.key === "Enter") els.saveCollabNameBtn.click();
     });
     els.collabToggleBtn.addEventListener("click", async () => {
+      if (COLLAB_DISABLED) {
+        setStatus("Kolaborasi tidak tersedia pada versi offline.");
+        return;
+      }
       if (!await ensureCollabUserName()) return;
       startCollaboration(collaboration.active, true);
     });
@@ -7903,7 +8116,8 @@
     setSyncStatus("offline");
     renderPresence();
     setLastSynced("-");
-    if (collaboration.docId) {
+    applyCollaborationAvailability();
+    if (!COLLAB_DISABLED && collaboration.docId) {
       ensureCollabUserName().then((ok) => {
         if (ok) startCollaboration(false);
       });

@@ -1,0 +1,49 @@
+name: Deploy Cloudflare
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - src/**
+      - scripts/build-pages.mjs
+      - wrangler.toml
+      - package.json
+      - .github/workflows/deploy-cloudflare.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Deploy collab Worker
+        # Optional: without CLOUDFLARE_API_TOKEN this step is skipped instead of failing the run.
+        if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
+      - name: Build Pages bundle
+        run: npm run build:pages
+      - name: Publish Pages site
+        if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist-pages --project-name=generate-berita-acara --branch=main
