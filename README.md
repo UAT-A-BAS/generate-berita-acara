@@ -28,6 +28,19 @@ Perintah terkait:
 | `npm run verify:collab` | Uji dua browser + satu Worker lokal |
 | `COLLAB_E2E_TARGET=production npm run verify:collab` | Uji dua browser langsung ke situs produksi |
 
+### Efisiensi Worker (suspend otomatis)
+
+Room kolaborasi memakai WebSocket Hibernation API, sehingga saat tidak ada aktivitas Durable Object dikeluarkan dari memori dan tidak lagi ditagih durasinya walaupun koneksi tetap terbuka. Yang menjaga hal itu:
+
+| Mekanisme | Perilaku |
+| --- | --- |
+| Hibernasi server | `acceptWebSocket` + tanpa timer sama sekali; setiap update ditulis ke storage sebelum diakui, jadi data tetap aman saat objek di-evict |
+| Koalesensi klien | Ketikan digabung menjadi satu pesan per 300 ms, sehingga write ke storage ikut turun |
+| Ping hemat | Ping hanya dikirim setelah satu interval penuh tanpa lalu lintas; room yang aktif tidak membangunkan Worker |
+| Jeda klien | Kolaborasi dijeda setelah 5 menit idle atau 60 detik tab tidak aktif, lalu socket ditutup |
+
+`npm test` memverifikasi kontrak hibernasi ini lewat `tests/workerHibernation.test.mjs`, termasuk memastikan tidak ada `setTimeout`/`setInterval` dan tidak ada peta sesi di memori.
+
 ## HTML Offline
 
 `berita-acara-generator-offline.html` dapat dibuka langsung dari komputer tanpa internet. Seluruh JavaScript, ikon, dan jsPDF sudah tertanam; kolaborasi jaringan dinonaktifkan pada versi ini.
